@@ -14,15 +14,20 @@ final class CanvasToolbarBehaviorTests: XCTestCase {
             CanvasToolbarPresentation.actions(isExpanded: true),
             [
                 .drawing, .width, .color, .eraser,
-                .lasso, .text, .undo, .redo,
+                .lasso, .text, .shapes, .undo, .redo,
                 .zoomToContent, .minimap, .changePaper, .importContent, .layers, .home
             ]
         )
     }
 
-    func testExpandedVerticalToolbarUsesTwoColumnsToStayWithinTheCanvas() {
+    func testExpandedToolbarUsesOneBoundedScrollerAlongItsDockAxis() {
         XCTAssertEqual(CanvasToolbarPresentation.verticalColumnCount(isExpanded: false), 1)
-        XCTAssertEqual(CanvasToolbarPresentation.verticalColumnCount(isExpanded: true), 2)
+        XCTAssertEqual(CanvasToolbarPresentation.verticalColumnCount(isExpanded: true), 1)
+        XCTAssertEqual(CanvasToolbarPresentation.scrollAxis(orientation: .vertical), .vertical)
+        XCTAssertEqual(CanvasToolbarPresentation.scrollAxis(orientation: .horizontal), .horizontal)
+        XCTAssertEqual(CanvasToolbarPresentation.maximumExpandedLength(orientation: .vertical), 280)
+        XCTAssertEqual(CanvasToolbarPresentation.maximumExpandedLength(orientation: .horizontal), 500)
+        XCTAssertTrue(CanvasToolbarPresentation.isChevronPinned)
     }
 
     func testChevronRotatesHalfATurnAndMatchesToolbarAxis() {

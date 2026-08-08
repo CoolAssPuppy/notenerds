@@ -14,6 +14,7 @@ struct NotebookEditorView: View {
     @State var previousCanvasTool = CanvasTool.pencil
     @State private var textEditingSession: CanvasTextEditingSession?
     @State var isTextToolActive = false
+    @State var selectedShapeKind: RecognizedShapeKind?
     @State private var isFileImporterPresented = false
     @State private var exportDocument: NotebookExportDocument?
     @State private var exportContentType = UTType.pdf
@@ -69,6 +70,7 @@ struct NotebookEditorView: View {
                 ),
                 textEditingSession: textEditingSession,
                 isTextToolActive: isTextToolActive,
+                shapePlacementKind: selectedShapeKind,
                 onStrokesCompleted: { strokes in
                     let didSnapShape = model.addStrokes(
                         strokes,
@@ -112,6 +114,7 @@ struct NotebookEditorView: View {
                     textEditingSession = .editing(textBlock)
                 },
                 onPlaceText: placeText,
+                onPlaceShape: placeShape,
                 onCommitText: commitText,
                 onCancelText: { textEditingSession = nil },
                 onObjectSelectionChanged: { isObjectSelectionActive = $0 },
@@ -272,6 +275,7 @@ struct NotebookEditorView: View {
     }
     func select(_ toolConfiguration: ToolConfiguration) {
         isTextToolActive = false
+        selectedShapeKind = nil
         if configuration.tool != toolConfiguration.tool { previousCanvasTool = configuration.tool }
         palette.select(toolConfiguration.tool)
         palette.setWidth(toolConfiguration.width)
@@ -303,6 +307,7 @@ struct NotebookEditorView: View {
 
     func selectTool(_ tool: CanvasTool) {
         isTextToolActive = false
+        selectedShapeKind = nil
         if configuration.tool != tool { previousCanvasTool = configuration.tool }
         if tool != .eraser && tool != .lasso { previousDrawingTool = tool }
         palette.select(tool)
@@ -318,6 +323,7 @@ struct NotebookEditorView: View {
 
     func selectEraser(_ mode: EraserMode) {
         isTextToolActive = false
+        selectedShapeKind = nil
         palette.select(.eraser)
         palette.setEraserMode(mode)
     }

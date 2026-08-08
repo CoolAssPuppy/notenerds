@@ -1,5 +1,22 @@
 # Current work
 
+## Shape tools and compact expanded toolbar
+
+- [x] Add failing behavior tests for classic shapes, shape placement, toolbar scrolling, and the fixed chevron.
+- [x] Add failing UI tests for choosing a shape, placing it, selecting it, and scrolling expanded tools.
+- [x] Add line, arrow, rectangle, square, circle, ellipse, and triangle tools.
+- [x] Create a selected shape by tapping the canvas and edit it through direct selection handles.
+- [x] Make expanded vertical and horizontal toolbars single-axis scroll views with bounded size.
+- [x] Keep the expansion chevron visible outside the scrolling tool list.
+- [x] Run focused and complete tests, strict lint, performance checks, static analysis, security checks, and warnings-as-errors builds.
+- [x] Commit and push the verified changes.
+
+### Review
+
+- Added seven classic shape tools that use the current ink color, width, instrument, and active layer. A canvas tap creates an undoable shape, and a later tap selects it for direct move, resize, rotate, duplicate, or delete actions.
+- Replaced the expanded vertical grid and unbounded horizontal row with compact, single-axis scrolling tool lists. The chevron remains fixed beside the scrolling region in both orientations.
+- Passed 30 full UI tests, the complete behavior and performance suites, strict SwiftLint, Xcode static analysis, release and all-target warnings-as-errors builds, release tooling tests, secret scans of the working tree and Git history, and the third-party dependency check.
+
 ## Canvases sheet actions and writing tools
 
 - [x] Add failing behavior tests for shared canvas actions and undoable canvas rename.

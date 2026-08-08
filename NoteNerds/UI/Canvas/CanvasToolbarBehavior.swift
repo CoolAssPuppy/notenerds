@@ -7,6 +7,7 @@ enum CanvasToolbarAction: Equatable {
     case eraser
     case lasso
     case text
+    case shapes
     case undo
     case redo
     case zoomToContent
@@ -18,15 +19,17 @@ enum CanvasToolbarAction: Equatable {
 }
 
 enum CanvasToolbarPresentation {
+    static let isChevronPinned = true
+
     static func verticalColumnCount(isExpanded: Bool) -> Int {
-        isExpanded ? 2 : 1
+        1
     }
 
     static func actions(isExpanded: Bool) -> [CanvasToolbarAction] {
         let essentials: [CanvasToolbarAction] = [.drawing, .width, .color, .eraser]
         guard isExpanded else { return essentials }
         return essentials + [
-            .lasso, .text, .undo, .redo,
+            .lasso, .text, .shapes, .undo, .redo,
             .zoomToContent, .minimap, .changePaper, .importContent, .layers, .home
         ]
     }
@@ -38,6 +41,19 @@ enum CanvasToolbarPresentation {
     static func chevronRotation(isExpanded: Bool) -> Double {
         isExpanded ? 180 : 0
     }
+
+    static func scrollAxis(orientation: CanvasToolbarOrientation) -> CanvasToolbarScrollAxis {
+        orientation == .vertical ? .vertical : .horizontal
+    }
+
+    static func maximumExpandedLength(orientation: CanvasToolbarOrientation) -> Double {
+        orientation == .vertical ? 280 : 500
+    }
+}
+
+enum CanvasToolbarScrollAxis: Equatable {
+    case vertical
+    case horizontal
 }
 
 enum CanvasToolbarDock: Equatable {

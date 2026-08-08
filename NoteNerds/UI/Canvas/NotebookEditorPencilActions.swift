@@ -3,6 +3,7 @@ import UIKit
 extension NotebookEditorView {
     func switchToPreviousTool() {
         isTextToolActive = false
+        selectedShapeKind = nil
         let currentTool = configuration.tool
         palette.select(previousCanvasTool)
         previousCanvasTool = currentTool
@@ -11,6 +12,7 @@ extension NotebookEditorView {
 
     func switchDrawingToolAndEraser() {
         isTextToolActive = false
+        selectedShapeKind = nil
         if configuration.tool == .eraser {
             palette.select(previousDrawingTool)
         } else {

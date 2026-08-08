@@ -10,6 +10,14 @@ struct TextBlockInsertion {
     let canvasID: CanvasID
 }
 
+struct ShapeInsertion {
+    let kind: RecognizedShapeKind
+    let point: CanvasPoint
+    let style: StrokeStyle
+    let layerID: LayerID
+    let canvasID: CanvasID
+}
+
 extension AppModel {
     func addStroke(_ stroke: Stroke, to notebookID: NotebookID, canvasID: CanvasID, layerID: LayerID) {
         guard var notebook = library.notebook(id: notebookID) else { return }
@@ -190,6 +198,24 @@ extension AppModel {
             layerID: insertion.layerID,
             index: Int.max,
             object: .text(textBlock)
+        )
+        execute(
+            .replaceObjects(canvasID: insertion.canvasID, before: [], after: [placement]),
+            on: notebookID
+        )
+    }
+
+    func addShape(_ insertion: ShapeInsertion, notebookID: NotebookID) {
+        let shape = ShapeFactory.make(
+            insertion.kind,
+            centeredAt: insertion.point,
+            layerID: insertion.layerID,
+            style: insertion.style
+        )
+        let placement = ObjectPlacement(
+            layerID: insertion.layerID,
+            index: Int.max,
+            object: .shape(shape)
         )
         execute(
             .replaceObjects(canvasID: insertion.canvasID, before: [], after: [placement]),

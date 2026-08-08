@@ -15,14 +15,8 @@ struct CanvasToolbarView: View {
     ]
 
     var body: some View {
-        Group {
-            if editor.toolbarOrientation == .vertical && isExpanded {
-                expandedVerticalToolbar
-            } else {
-                toolbarLayout { toolbarItems }
-            }
-        }
-        .padding(6)
+        toolbarContainer
+        .padding(4)
         .background(toolbarBackground)
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -41,7 +35,39 @@ struct CanvasToolbarView: View {
     }
 
     @ViewBuilder
-    private var toolbarItems: some View {
+    private var toolbarContainer: some View {
+        if editor.toolbarOrientation == .vertical {
+            VStack(spacing: 2) {
+                toolbarViewport
+                expansionButton
+            }
+        } else {
+            HStack(spacing: 2) {
+                toolbarViewport
+                expansionButton
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var toolbarViewport: some View {
+        if isExpanded {
+            ScrollView(scrollAxes, showsIndicators: false) {
+                toolbarLayout { toolbarActionItems }
+            }
+            .accessibilityLabel("Expanded tools")
+            .frame(
+                maxWidth: editor.toolbarOrientation == .horizontal ? maximumExpandedLength : nil,
+                maxHeight: editor.toolbarOrientation == .vertical ? maximumExpandedLength : nil
+            )
+            .scrollBounceBehavior(.basedOnSize)
+        } else {
+            toolbarLayout { toolbarActionItems }
+        }
+    }
+
+    @ViewBuilder
+    private var toolbarActionItems: some View {
         drawingToolInspectorButton
         widthInspectorButton
         colorInspectorButton
@@ -55,6 +81,7 @@ struct CanvasToolbarView: View {
                 editor.activateTextTool()
             }
             .accessibilityValue(editor.isTextToolActive ? "Selected" : "Not selected")
+            shapeInspectorButton
             chromeDivider
             chromeButton("Undo", symbol: "arrow.uturn.backward") { editor.model.undo(editor.notebook.id) }
                 .keyboardShortcut("z", modifiers: .command)
@@ -70,24 +97,6 @@ struct CanvasToolbarView: View {
             layersButton
             chromeButton("Home", symbol: "house") { editor.returnHome() }
         }
-        expansionButton
-            .gridCellColumns(verticalColumnCount)
-    }
-
-    private var expandedVerticalToolbar: some View {
-        LazyVGrid(
-            columns: Array(
-                repeating: GridItem(.fixed(44), spacing: 4),
-                count: verticalColumnCount
-            ),
-            spacing: 4
-        ) {
-            toolbarItems
-        }
-    }
-
-    private var verticalColumnCount: Int {
-        CanvasToolbarPresentation.verticalColumnCount(isExpanded: isExpanded)
     }
 
     private var toolbarLayout: AnyLayout {
@@ -125,6 +134,21 @@ struct CanvasToolbarView: View {
                 onSaveFavoriteOne: editor.saveFavoriteOne,
                 onSaveFavoriteTwo: editor.saveFavoriteTwo
             )
+        }
+    }
+
+    private var shapeInspectorButton: some View {
+        Button { presentedInspector = .shapes } label: {
+            CanvasChromeIcon(symbol: "square.on.circle", isSelected: editor.selectedShapeKind != nil)
+        }
+        .accessibilityLabel("Shapes")
+        .accessibilityValue(editor.selectedShapeKind?.displayName ?? "Not selected")
+        .help("Shapes")
+        .popover(isPresented: inspectorBinding(.shapes)) {
+            CanvasShapeInspector(selectedKind: editor.selectedShapeKind) { kind in
+                editor.activateShapeTool(kind)
+                presentedInspector = nil
+            }
         }
     }
 
@@ -246,6 +270,14 @@ struct CanvasToolbarView: View {
         isReduceMotionEnabled ? .linear(duration: 0.12) : .spring(response: 0.36, dampingFraction: 0.88)
     }
 
+    private var scrollAxes: Axis.Set {
+        editor.toolbarOrientation == .vertical ? .vertical : .horizontal
+    }
+
+    private var maximumExpandedLength: CGFloat {
+        CanvasToolbarPresentation.maximumExpandedLength(orientation: editor.toolbarOrientation)
+    }
+
     private var chromeDivider: some View {
         Rectangle()
             .fill(Color.primary.opacity(0.1))
@@ -254,7 +286,6 @@ struct CanvasToolbarView: View {
                 height: editor.toolbarOrientation == .vertical ? 1 : 24
             )
             .padding(editor.toolbarOrientation == .vertical ? .vertical : .horizontal, 3)
-            .gridCellColumns(verticalColumnCount)
     }
 
     private var renamePresentation: Binding<Bool> {
@@ -293,6 +324,7 @@ private enum CanvasToolbarInspector {
     case width
     case color
     case eraser
+    case shapes
 }
 
 private struct CanvasChromeIcon: View {

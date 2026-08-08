@@ -14,6 +14,7 @@ struct PencilCanvasView: UIViewRepresentable {
     let isFingerDrawingEnabled: Bool
     let textEditingSession: CanvasTextEditingSession?
     let isTextToolActive: Bool
+    let shapePlacementKind: RecognizedShapeKind?
     let onStrokesCompleted: @MainActor ([Stroke]) -> Void
     let onDrawingChanged: @MainActor ([Stroke]) -> Void
     let onConvertStrokesToText: @MainActor ([Stroke]) -> Void
@@ -23,6 +24,7 @@ struct PencilCanvasView: UIViewRepresentable {
     let onMoveObjectsToLayer: @MainActor (Set<ObjectID>, LayerID) -> Void
     let onEditText: @MainActor (TextBlock) -> Void
     let onPlaceText: @MainActor (CanvasPoint) -> Void
+    let onPlaceShape: @MainActor (CanvasPoint) -> Void
     let onCommitText: @MainActor (TextBlock) -> Void
     let onCancelText: @MainActor () -> Void
     let onObjectSelectionChanged: @MainActor (Bool) -> Void
@@ -86,7 +88,7 @@ struct PencilCanvasView: UIViewRepresentable {
         updateInlineTextEditor(in: canvasView, coordinator: context.coordinator)
         bringCanvasOverlaysToFront(in: canvasView, coordinator: context.coordinator)
         canvasView.drawingPolicy = isFingerDrawingEnabled ? .anyInput : .pencilOnly
-        canvasView.drawingGestureRecognizer.isEnabled = !isTextToolActive
+        canvasView.drawingGestureRecognizer.isEnabled = !isTextToolActive && shapePlacementKind == nil
         canvasView.delegate = context.coordinator
         return canvasView
     }
@@ -95,7 +97,7 @@ struct PencilCanvasView: UIViewRepresentable {
         context.coordinator.configuration = configuration
         context.coordinator.canonicalStrokes = strokes
         canvasView.drawingPolicy = isFingerDrawingEnabled ? .anyInput : .pencilOnly
-        canvasView.drawingGestureRecognizer.isEnabled = !isTextToolActive
+        canvasView.drawingGestureRecognizer.isEnabled = !isTextToolActive && shapePlacementKind == nil
         if context.coordinator.paperType != template {
             applyPaper(to: canvasView, coordinator: context.coordinator)
         }
@@ -127,6 +129,7 @@ struct PencilCanvasView: UIViewRepresentable {
         var highlightedStrokeIDs: Set<StrokeID> = []
         var isLassoOverlayEnabled = false
         var isTextPlacementOverlayEnabled = false
+        var shapePlacementKind: RecognizedShapeKind?
         var configuration = ToolConfiguration.favoriteOne
         var latestPencilRoll = 0.0
         var latestPencilLocation: CGPoint?

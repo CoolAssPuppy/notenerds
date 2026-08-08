@@ -10,6 +10,8 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
     private let onPaste: ([CanvasObject]) -> Void
     private let onMoveToLayer: (Set<ObjectID>, LayerID) -> Void
     private let onEditText: (TextBlock) -> Void
+    private let shapePlacementKind: RecognizedShapeKind?
+    private let onPlaceShape: (CanvasPoint) -> Void
     private let onSelectionChanged: (Bool) -> Void
     private(set) var selectedIDs: Set<ObjectID> = []
     private var lassoPoints: [CanvasPoint] = []
@@ -25,6 +27,8 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
         onPaste: @escaping ([CanvasObject]) -> Void,
         onMoveToLayer: @escaping (Set<ObjectID>, LayerID) -> Void,
         onEditText: @escaping (TextBlock) -> Void,
+        shapePlacementKind: RecognizedShapeKind?,
+        onPlaceShape: @escaping (CanvasPoint) -> Void,
         onSelectionChanged: @escaping (Bool) -> Void
     ) {
         self.objects = objects
@@ -35,6 +39,8 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
         self.onPaste = onPaste
         self.onMoveToLayer = onMoveToLayer
         self.onEditText = onEditText
+        self.shapePlacementKind = shapePlacementKind
+        self.onPlaceShape = onPlaceShape
         self.onSelectionChanged = onSelectionChanged
         super.init(frame: frame)
         isOpaque = false
@@ -48,7 +54,7 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
     }
 
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        guard !isLassoEnabled else { return true }
+        guard !isLassoEnabled, shapePlacementKind == nil else { return true }
         let hitRegion = CanvasRect(x: point.x - 18, y: point.y - 18, width: 36, height: 36)
         return !spatialIndex.objects(in: hitRegion).isEmpty
     }
@@ -165,6 +171,8 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
             onSelectionChanged(true)
             setNeedsDisplay()
             UISelectionFeedbackGenerator().selectionChanged()
+        } else if shapePlacementKind != nil {
+            onPlaceShape(CanvasPoint(x: point.x, y: point.y))
         } else if isLassoEnabled {
             selectedIDs = []
             onSelectionChanged(false)

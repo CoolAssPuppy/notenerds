@@ -32,6 +32,14 @@ extension NotebookEditorView {
 
     var configuration: ToolConfiguration { palette.current }
 
+    var shapeStyle: StrokeStyle {
+        StrokeStyle(
+            instrument: selectedDrawingTool.instrument ?? .ballpoint,
+            width: configuration.width.points,
+            color: configuration.color
+        )
+    }
+
     var currentRecognizedText: [String] {
         notebook.recognitionByCanvas[currentCanvas.id, default: []].map(\.result.text)
     }
@@ -45,6 +53,26 @@ extension NotebookEditorView {
     }
 
     func activateTextTool() {
+        selectedShapeKind = nil
         isTextToolActive = true
+    }
+
+    func activateShapeTool(_ kind: RecognizedShapeKind) {
+        isTextToolActive = false
+        selectedShapeKind = kind
+    }
+
+    func placeShape(at point: CanvasPoint) {
+        guard let selectedShapeKind else { return }
+        model.addShape(
+            ShapeInsertion(
+                kind: selectedShapeKind,
+                point: point,
+                style: shapeStyle,
+                layerID: activeLayer.id,
+                canvasID: currentCanvas.id
+            ),
+            notebookID: notebook.id
+        )
     }
 }

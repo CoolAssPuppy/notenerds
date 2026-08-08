@@ -39,3 +39,4 @@
 - During long builds and audits, give the user a concrete status at least once per hour. State what passes, what remains, and any action only the user can take.
 - Canvas management belongs in the Canvases sheet. Give long press and the trailing ellipsis the same Rename canvas, Duplicate canvas, and Change paper actions, with rename performed in place on the canvas label.
 - Keep editor chrome task-specific. The note-view ellipsis opens the Canvases sheet, and Draw with finger belongs with Writing tools.
+- Keep an expanded floating toolbar bounded and scrollable along its dock axis. The expansion chevron stays fixed and visible while tool buttons scroll.

@@ -21,12 +21,14 @@ extension PencilCanvasView {
                 || coordinator.overlayAssets != assets
                 || coordinator.highlightedStrokeIDs != highlightedStrokeIDs
                 || coordinator.isLassoOverlayEnabled != (configuration.tool == .lasso)
-                || coordinator.isTextPlacementOverlayEnabled != isTextToolActive else { return }
+                || coordinator.isTextPlacementOverlayEnabled != isTextToolActive
+                || coordinator.shapePlacementKind != shapePlacementKind else { return }
         coordinator.overlayObjects = nonStrokeObjects
         coordinator.overlayAssets = assets
         coordinator.highlightedStrokeIDs = highlightedStrokeIDs
         coordinator.isLassoOverlayEnabled = configuration.tool == .lasso
         coordinator.isTextPlacementOverlayEnabled = isTextToolActive
+        coordinator.shapePlacementKind = shapePlacementKind
         let contentOverlayTag = 8_417
         let selectionOverlayTag = 8_418
         let highlightOverlayTag = 8_419
@@ -35,7 +37,7 @@ extension PencilCanvasView {
         canvasView.viewWithTag(selectionOverlayTag)?.removeFromSuperview()
         canvasView.viewWithTag(highlightOverlayTag)?.removeFromSuperview()
         canvasView.viewWithTag(textPlacementOverlayTag)?.removeFromSuperview()
-        if !nonStrokeObjects.isEmpty {
+        if !nonStrokeObjects.isEmpty || shapePlacementKind != nil {
             addObjectOverlays(
                 to: canvasView,
                 coordinator: coordinator,
@@ -98,6 +100,8 @@ extension PencilCanvasView {
             onPaste: onPasteObjects,
             onMoveToLayer: onMoveObjectsToLayer,
             onEditText: onEditText,
+            shapePlacementKind: shapePlacementKind,
+            onPlaceShape: onPlaceShape,
             onSelectionChanged: onObjectSelectionChanged
         )
         selectionOverlay.tag = selectionTag

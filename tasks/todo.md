@@ -48,7 +48,7 @@
 - [ ] Run the live development-workspace integration suite.
 - [x] Run security, privacy, performance, accessibility, build, and dependency audits and fix every issue.
 - [x] Update README, privacy policy, App Store copy, deployment docs, and CI.
-- [ ] Commit and push the completed feature.
+- [x] Commit and push the completed feature.
 
 ### Decisions
 
@@ -73,6 +73,7 @@
 - Queued sync work resumes after reopening and honors a persisted retry date. API and durable retries use bounded jitter.
 - A missing bound page clears its stale binding. The app asks the user to use Sync now before it creates a replacement.
 - Restore conflicts offer Keep local, Use Notion, and Import a copy without changing the local original.
+- Commit `0faa8b6` is pushed to `origin/main` with the completed integration and verified canvas work.
 - Live workspace authorization and data checks remain pending user approval in the simulator.
 
 ## Match the App Store Connect application record

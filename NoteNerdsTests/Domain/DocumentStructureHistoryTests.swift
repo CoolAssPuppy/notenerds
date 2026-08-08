@@ -12,6 +12,10 @@ final class DocumentStructureHistoryTests: XCTestCase {
         twoCanvases.canvases.append(added)
         try assertRoundTrip(.deleteCanvas(placement), original: twoCanvases)
         try assertRoundTrip(.moveCanvas(sourceIndex: 0, destinationIndex: 1), original: twoCanvases)
+        try assertRoundTrip(
+            .renameCanvas(canvasID: original.canvases[0].id, before: "Canvas 1", after: "Research notes"),
+            original: original
+        )
     }
 
     func testLayerOperationsAndTemplateApplyUndoAndRedoExactly() throws {

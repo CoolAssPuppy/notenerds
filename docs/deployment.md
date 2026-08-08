@@ -36,7 +36,7 @@ The specification places iPhone support after version 1. The current target does
 
 Complete these steps after creating the app in App Store Connect.
 
-### Register the App ID
+### Configure the App ID
 
 1. Open Certificates, Identifiers & Profiles in the Apple Developer portal.
 2. Confirm `com.strategicnerds.notenerds` is registered as an explicit App ID.
@@ -93,9 +93,17 @@ doppler secrets set ASC_APP_ID="<numeric Apple ID>" \
 
 doppler secrets set ASC_PRIVATE_KEY="$(cat ~/.private_keys/AuthKey_<key id>.p8)" \
   --project notenerds --config prd
+
+doppler secrets set NOTION_CLIENT_ID="<Notion client id>" \
+  --project notenerds --config prd
+
+doppler secrets set NOTION_CLIENT_SECRET="<Notion client secret>" \
+  --project notenerds --config prd
 ```
 
 Do not add empty or sample values. The release preflight should fail until the real values exist.
+
+Set `http://localhost:53117/oauth/notion` as the exact redirect URI for the public Notion integration. The release command injects encoded client values through the `xcodebuild` child process environment. They do not appear in command arguments or build logs.
 
 ## GitHub release access
 

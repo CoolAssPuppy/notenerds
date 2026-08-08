@@ -25,4 +25,20 @@ final class LocalLibraryRepositoryBehaviorTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: assetURL), asset.data)
         XCTAssertEqual(restored, library)
     }
+
+    func testSavingAReplacementAssetUpdatesThePersistedBytes() async throws {
+        let directoryURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        let repository = LocalLibraryRepository(fileURL: directoryURL.appending(path: "library.json"))
+        let assetID = AssetID()
+        var original = LibraryState()
+        original.storeAsset(DocumentAsset(id: assetID, data: Data("old".utf8), contentType: "image/png"))
+        try await repository.save(original)
+        var replacement = LibraryState()
+        replacement.storeAsset(DocumentAsset(id: assetID, data: Data("new".utf8), contentType: "image/png"))
+
+        try await repository.save(replacement)
+        let restored = try await repository.load()
+
+        XCTAssertEqual(restored.asset(id: assetID)?.data, Data("new".utf8))
+    }
 }

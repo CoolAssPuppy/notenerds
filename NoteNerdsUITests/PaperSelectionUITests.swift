@@ -21,7 +21,8 @@ final class PaperSelectionUITests: XCTestCase {
         galleryScreenshot.lifetime = .keepAlways
         add(galleryScreenshot)
         application.buttons["Paper, Yellow legal pad"].tap()
-        application.buttons["Done"].tap()
+        application.navigationBars["Paper"].buttons["Done"].tap()
+        application.navigationBars["Settings"].buttons["Done"].tap()
 
         application.buttons["New notebook"].tap()
         let legalCanvasScreenshot = XCTAttachment(screenshot: application.screenshot())
@@ -32,7 +33,7 @@ final class PaperSelectionUITests: XCTestCase {
         let firstCanvas = application.buttons["Canvas thumbnail, Canvas 1"]
         XCTAssertTrue(firstCanvas.waitForExistence(timeout: 2))
         XCTAssertTrue((firstCanvas.value as? String)?.contains("Yellow legal pad") == true)
-        application.buttons["Done"].tap()
+        application.navigationBars["Canvases"].buttons["Done"].tap()
 
         application.buttons["New canvas"].tap()
         assertPaperGallery(in: application)
@@ -44,7 +45,7 @@ final class PaperSelectionUITests: XCTestCase {
         XCTAssertTrue((secondCanvas.value as? String)?.contains("Grid small") == true)
 
         firstCanvas.press(forDuration: 1)
-        application.buttons["Change paper"].tap()
+        hittableButton("Change paper", in: application).tap()
         assertPaperGallery(in: application)
         application.buttons["Paper, Dot large"].tap()
         application.buttons["Apply"].tap()
@@ -58,9 +59,18 @@ final class PaperSelectionUITests: XCTestCase {
         }
     }
 
+    private func hittableButton(_ label: String, in application: XCUIApplication) -> XCUIElement {
+        let matches = application.buttons.matching(NSPredicate(format: "label == %@", label))
+        for index in 0..<matches.count {
+            let candidate = matches.element(boundBy: index)
+            if candidate.isHittable { return candidate }
+        }
+        return matches.firstMatch
+    }
+
     private func makeApplication() -> XCUIApplication {
         let application = XCUIApplication()
-        application.launchArguments = ["-ui-testing", "-reset-library", "-defaultPaperType", "blankWhite"]
+        application.launchArguments = ["-ui-testing", "-reset-library"]
         return application
     }
 }

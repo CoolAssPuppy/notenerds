@@ -49,10 +49,11 @@ struct NotebookTitleToolbarView: View {
     @ViewBuilder
     private var titleControl: some View {
         if isEditing {
-            InlineNotebookTitleField(
+            InlineTitleField(
                 text: $draftTitle,
                 onCommit: commit,
-                onCancel: cancel
+                onCancel: cancel,
+                accessibilityLabel: "Notebook title"
             )
                 .frame(minWidth: 140, idealWidth: 220, maxWidth: 280)
         } else {
@@ -93,31 +94,33 @@ struct NotebookTitleToolbarView: View {
     }
 }
 
-private struct InlineNotebookTitleField: UIViewRepresentable {
+struct InlineTitleField: UIViewRepresentable {
     @Binding var text: String
     let onCommit: (String) -> Void
     let onCancel: () -> Void
+    let accessibilityLabel: String
+    var textAlignment: NSTextAlignment = .center
 
     func makeCoordinator() -> Coordinator {
         Coordinator(text: $text, onCommit: onCommit, onCancel: onCancel)
     }
 
-    func makeUIView(context: Context) -> NotebookTitleTextField {
-        let textField = NotebookTitleTextField()
+    func makeUIView(context: Context) -> InlineTitleTextField {
+        let textField = InlineTitleTextField()
         textField.text = text
         textField.font = .preferredFont(forTextStyle: .headline)
-        textField.textAlignment = .center
+        textField.textAlignment = textAlignment
         textField.borderStyle = .none
         textField.clearButtonMode = .never
         textField.returnKeyType = .done
         textField.delegate = context.coordinator
         textField.addTarget(context.coordinator, action: #selector(Coordinator.textChanged), for: .editingChanged)
         textField.onEscape = context.coordinator.cancel
-        textField.accessibilityLabel = "Notebook title"
+        textField.accessibilityLabel = accessibilityLabel
         return textField
     }
 
-    func updateUIView(_ textField: NotebookTitleTextField, context: Context) {
+    func updateUIView(_ textField: InlineTitleTextField, context: Context) {
         if textField.text != text { textField.text = text }
     }
 
@@ -167,7 +170,7 @@ private struct InlineNotebookTitleField: UIViewRepresentable {
     }
 }
 
-private final class NotebookTitleTextField: UITextField {
+final class InlineTitleTextField: UITextField {
     var onEscape: (() -> Void)?
 
     override func didMoveToWindow() {

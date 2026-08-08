@@ -1,0 +1,324 @@
+import Combine
+import Foundation
+
+enum NotionIntegrationState: Equatable, Sendable {
+    case unavailable
+    case disconnected
+    case connecting
+    case connected(workspaceName: String)
+    case selectingDestination
+    case syncing
+    case preparingRestore
+    case reviewingRestore
+    case restoring
+    case disconnecting
+    case actionNeeded
+}
+
+@MainActor
+protocol NotionConnectionManaging: AnyObject {
+    func currentConnection() throws -> NotionStoredConnection?
+    func connect() async throws -> NotionStoredConnection
+    func refresh() async throws -> NotionStoredConnection
+    func disconnect() async throws
+}
+
+extension NotionConnectionService: NotionConnectionManaging {}
+
+protocol NotionDestinationProviding: Sendable {
+    func searchPages(query: String?) async throws -> [NotionPageSummary]
+    func createDatabase(parentPageID: String) async throws -> NotionDestination
+    func createLibraryManifestPage(parentPageID: String) async throws -> NotionPageBinding
+}
+
+extension NotionAPIClient: NotionDestinationProviding {}
+
+@MainActor
+final class NotionIntegrationModel: ObservableObject {
+    @Published private(set) var state: NotionIntegrationState
+    @Published private(set) var pages: [NotionPageSummary] = []
+    @Published private(set) var destination: NotionDestination?
+    @Published private(set) var failureMessage: String?
+    @Published private(set) var lastSyncSummary: String?
+    @Published private(set) var restoreCandidates: [NotionRestoreCandidate] = []
+    @Published private(set) var syncedNotebookIDs: Set<String> = []
+
+    private let isConfigured: Bool
+    private let connectionManager: any NotionConnectionManaging
+    private let destinationProviderFactory: (String) -> any NotionDestinationProviding
+    private let registry: NotionSyncRegistry
+    private let publisher: (any NotionLibraryPublishing)?
+    private let restorer: (any NotionLibraryRestoring)?
+    private let automaticSyncDelay: Duration
+    private var connection: NotionStoredConnection?
+    private var destinationProvider: (any NotionDestinationProviding)?
+    private var pendingAutomaticSync: LibraryState?
+    private var automaticSyncInFlight: LibraryState?
+    private var automaticSyncTask: Task<Void, Never>?
+    private var automaticSyncGeneration = 0
+
+    init(
+        isConfigured: Bool,
+        connectionManager: any NotionConnectionManaging,
+        destinationProviderFactory: @escaping (String) -> any NotionDestinationProviding = {
+            NotionAPIClient(accessToken: $0)
+        },
+        registry: NotionSyncRegistry,
+        publisher: (any NotionLibraryPublishing)? = nil,
+        restorer: (any NotionLibraryRestoring)? = nil,
+        automaticSyncDelay: Duration = .seconds(2)
+    ) {
+        self.isConfigured = isConfigured
+        self.connectionManager = connectionManager
+        self.destinationProviderFactory = destinationProviderFactory
+        self.registry = registry
+        self.publisher = publisher
+        self.restorer = restorer
+        self.automaticSyncDelay = automaticSyncDelay
+        state = isConfigured ? .disconnected : .unavailable
+    }
+
+    func restore(library: LibraryState? = nil) async {
+        guard isConfigured else { return }
+        do {
+            guard let stored = try connectionManager.currentConnection() else {
+                state = .disconnected
+                return
+            }
+            try await applyConnection(stored)
+            if let library {
+                try await resumeQueuedSync(library)
+            }
+        } catch {
+            showFailure("Your Notion connection could not be opened.")
+        }
+    }
+
+    func connect() async {
+        guard isConfigured else {
+            state = .unavailable
+            return
+        }
+        state = .connecting
+        failureMessage = nil
+        do {
+            let stored = try await connectionManager.connect()
+            try await applyConnection(stored)
+        } catch NotionOAuthError.callbackCancelled {
+            state = .disconnected
+        } catch {
+            showFailure("Note Nerds could not connect to Notion.")
+        }
+    }
+
+    func reloadPages(query: String? = nil) async {
+        guard let destinationProvider else { return }
+        do {
+            pages = try await destinationProvider.searchPages(query: query)
+        } catch {
+            showFailure("Accessible Notion pages could not be retrieved.")
+        }
+    }
+
+    func selectDestination(parentPage: NotionPageSummary) async {
+        guard let connection, let destinationProvider else { return }
+        state = .selectingDestination
+        failureMessage = nil
+        do {
+            let selected = try await destinationProvider.createDatabase(parentPageID: parentPage.id)
+            let manifestPage = try await destinationProvider.createLibraryManifestPage(
+                parentPageID: parentPage.id
+            )
+            try await registry.setDestination(
+                workspaceID: connection.credentials.workspaceID,
+                destination: selected,
+                manifestPageID: manifestPage.pageID
+            )
+            destination = selected
+            state = .connected(workspaceName: connection.credentials.workspaceName)
+        } catch {
+            showFailure("The Note Nerds database could not be created in Notion.")
+        }
+    }
+
+    func disconnect() async {
+        guard isConfigured else { return }
+        state = .disconnecting
+        failureMessage = nil
+        do {
+            try await connectionManager.disconnect()
+            connection = nil
+            destinationProvider = nil
+            pages = []
+            destination = nil
+            restoreCandidates = []
+            syncedNotebookIDs = []
+            state = .disconnected
+        } catch {
+            showFailure("Notion could not be disconnected. Try again.")
+        }
+    }
+
+    func sync(_ library: LibraryState, notebookID: NotebookID? = nil) async {
+        guard destination != nil, let publisher else { return }
+        state = .syncing
+        failureMessage = nil
+        do {
+            let report = try await publisher.publish(library, notebookID: notebookID)
+            lastSyncSummary = Self.syncSummary(report)
+            try await refreshSyncedNotebookIDs()
+            if let connection {
+                state = .connected(workspaceName: connection.credentials.workspaceName)
+            }
+        } catch is CancellationError {
+            if let connection {
+                state = .connected(workspaceName: connection.credentials.workspaceName)
+            }
+        } catch NotionAPIError.httpStatus(404) {
+            showFailure("A Notion notebook page is missing. Tap Sync now to create a replacement.")
+        } catch {
+            showFailure("Your notebooks could not be sent to Notion.")
+        }
+    }
+
+    func scheduleAutomaticSync(_ library: LibraryState) {
+        scheduleAutomaticSync(library, delay: automaticSyncDelay)
+    }
+
+    private func scheduleAutomaticSync(_ library: LibraryState, delay: Duration) {
+        guard destination != nil, publisher != nil else { return }
+        pendingAutomaticSync = library
+        guard automaticSyncTask == nil else { return }
+        automaticSyncGeneration += 1
+        let generation = automaticSyncGeneration
+        automaticSyncTask = Task { [weak self] in
+            await self?.runAutomaticSync(generation: generation, delay: delay)
+        }
+    }
+
+    func pauseAutomaticSync() {
+        if let automaticSyncInFlight {
+            pendingAutomaticSync = automaticSyncInFlight
+        }
+        automaticSyncGeneration += 1
+        automaticSyncTask?.cancel()
+        automaticSyncTask = nil
+        automaticSyncInFlight = nil
+    }
+
+    func resumeAutomaticSync() {
+        guard let pendingAutomaticSync else { return }
+        scheduleAutomaticSync(pendingAutomaticSync)
+    }
+
+    func isSynced(_ notebookID: NotebookID) -> Bool {
+        syncedNotebookIDs.contains(notebookID.rawValue.uuidString.lowercased())
+    }
+
+    func pageURL(for notebookID: NotebookID) async -> URL? {
+        guard let binding = try? await registry.snapshot().binding(
+            notebookID: notebookID.rawValue.uuidString.lowercased()
+        ) else { return nil }
+        let compactID = binding.pageID.replacingOccurrences(of: "-", with: "")
+        return URL(string: "https://www.notion.so/\(compactID)")
+    }
+
+    func prepareRestore(local: LibraryState) async -> [NotionRestoreCandidate] {
+        guard destination != nil, let restorer else { return [] }
+        state = .preparingRestore
+        failureMessage = nil
+        do {
+            restoreCandidates = try await restorer.prepare(local: local)
+            state = .reviewingRestore
+            return restoreCandidates
+        } catch {
+            showFailure("Your Notion notebooks could not be prepared for restore.")
+            return []
+        }
+    }
+
+    func completeRestore(
+        local: LibraryState,
+        choices: [NotebookID: NotionRestoreChoice]
+    ) -> LibraryState? {
+        guard let restorer else { return nil }
+        state = .restoring
+        do {
+            let restored = try restorer.complete(
+                local: local,
+                choices: choices
+            )
+            restoreCandidates = []
+            if let connection {
+                state = .connected(workspaceName: connection.credentials.workspaceName)
+            }
+            return restored
+        } catch {
+            showFailure("The selected notebooks could not be restored.")
+            return nil
+        }
+    }
+
+    private func applyConnection(_ stored: NotionStoredConnection) async throws {
+        connection = stored
+        destinationProvider = destinationProviderFactory(stored.credentials.accessToken)
+        let savedState = try await registry.snapshot()
+        destination = savedState.workspaceID == stored.credentials.workspaceID
+            ? savedState.destination
+            : nil
+        syncedNotebookIDs = Set(savedState.bindings.map(\.notebookID))
+        state = .connected(workspaceName: stored.credentials.workspaceName)
+        await reloadPages()
+    }
+
+    private func resumeQueuedSync(_ library: LibraryState) async throws {
+        let currentDate = Date()
+        let queue = try await registry.snapshot().queue
+        let retryable = queue.filter { item in
+            item.attemptCount == 0 || item.nextAttemptAt != nil
+        }
+        guard !retryable.isEmpty else { return }
+        let nextDate = retryable.compactMap(\.nextAttemptAt).min() ?? currentDate
+        let wait = max(0, nextDate.timeIntervalSince(currentDate))
+        scheduleAutomaticSync(library, delay: wait > 0 ? .seconds(wait) : automaticSyncDelay)
+    }
+
+    private func showFailure(_ message: String) {
+        failureMessage = message
+        state = .actionNeeded
+    }
+
+    private func takePendingAutomaticSync() -> LibraryState? {
+        defer { pendingAutomaticSync = nil }
+        return pendingAutomaticSync
+    }
+
+    private func runAutomaticSync(generation: Int, delay: Duration) async {
+        do {
+            try await Task.sleep(for: delay)
+        } catch {
+            return
+        }
+        guard automaticSyncGeneration == generation else { return }
+        while !Task.isCancelled, let library = takePendingAutomaticSync() {
+            automaticSyncInFlight = library
+            await sync(library)
+            guard automaticSyncGeneration == generation else { return }
+            automaticSyncInFlight = nil
+        }
+        guard automaticSyncGeneration == generation else { return }
+        automaticSyncTask = nil
+    }
+
+    private func refreshSyncedNotebookIDs() async throws {
+        syncedNotebookIDs = Set(try await registry.snapshot().bindings.map(\.notebookID))
+    }
+
+    private static func syncSummary(_ report: NotionPublishReport) -> String {
+        if report.uploadedNotebookCount == 0 {
+            return "Notion is up to date."
+        }
+        let noun = report.uploadedNotebookCount == 1 ? "notebook" : "notebooks"
+        return "Sent \(report.uploadedNotebookCount) \(noun) to Notion."
+    }
+}

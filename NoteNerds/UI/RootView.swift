@@ -1,7 +1,9 @@
+import Combine
 import SwiftUI
 
 struct RootView: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var notion: NotionIntegrationModel
     @State private var selectedItems: Set<LibraryItemID> = []
     @State private var isSelecting = false
 
@@ -15,6 +17,7 @@ struct RootView: View {
                 NavigationSplitView {
                     LibrarySidebarView(
                         model: model,
+                        notion: notion,
                         isSelecting: $isSelecting,
                         selectedItems: $selectedItems
                     )
@@ -27,10 +30,14 @@ struct RootView: View {
                 }
             }
         }
+        .environmentObject(notion)
         .alert("Note Nerds", isPresented: errorBinding) {
             Button("OK") { model.presentedError = nil }
         } message: {
             Text(model.presentedError ?? "")
+        }
+        .onReceive(model.$library.dropFirst()) { library in
+            notion.scheduleAutomaticSync(library)
         }
     }
 

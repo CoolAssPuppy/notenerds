@@ -48,9 +48,17 @@ actor LocalLibraryRepository {
 
     private func saveAssetIfNeeded(_ asset: DocumentAsset) throws {
         let url = assetFileURL(for: asset.id)
-        guard !FileManager.default.fileExists(atPath: url.path) else { return }
+        if fileManagerContains(asset.data, at: url) { return }
         try FileManager.default.createDirectory(at: assetsURL, withIntermediateDirectories: true)
         try asset.data.write(to: url, options: [.atomic, .completeFileProtection])
+    }
+
+    private func fileManagerContains(_ expectedData: Data, at url: URL) -> Bool {
+        guard FileManager.default.fileExists(atPath: url.path),
+              let storedData = try? Data(contentsOf: url, options: .mappedIfSafe) else {
+            return false
+        }
+        return storedData == expectedData
     }
 
     private func assetFileURL(for id: AssetID) -> URL {

@@ -5,6 +5,9 @@ struct CanvasToolbarView: View {
     @State private var layerToRename: Layer?
     @State private var proposedLayerName = ""
     @State private var presentedInspector: CanvasToolbarInspector?
+    @AppStorage("isCanvasToolbarExpanded") private var isExpanded = false
+    @Environment(\.accessibilityReduceMotion) private var isReduceMotionEnabled
+    @Environment(\.accessibilityReduceTransparency) private var isReduceTransparencyEnabled
 
     private let drawingTools: [CanvasTool] = [
         .ballpoint, .fineliner, .mechanicalPencil, .pencil,
@@ -12,12 +15,39 @@ struct CanvasToolbarView: View {
     ]
 
     var body: some View {
-        toolbarLayout {
-            drawingToolInspectorButton
-            widthInspectorButton
-            colorInspectorButton
+        Group {
+            if editor.toolbarOrientation == .vertical && isExpanded {
+                expandedVerticalToolbar
+            } else {
+                toolbarLayout { toolbarItems }
+            }
+        }
+        .padding(6)
+        .background(toolbarBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
+        }
+        .shadow(color: .black.opacity(0.09), radius: 18, y: 6)
+        .animation(toolbarAnimation, value: isExpanded)
+        .alert("Rename layer", isPresented: renamePresentation) {
+            TextField("Layer name", text: $proposedLayerName)
+            Button("Rename") {
+                if let layerToRename { editor.renameLayer(layerToRename, to: proposedLayerName) }
+                layerToRename = nil
+            }
+            Button("Cancel", role: .cancel) { layerToRename = nil }
+        }
+    }
+
+    @ViewBuilder
+    private var toolbarItems: some View {
+        drawingToolInspectorButton
+        widthInspectorButton
+        colorInspectorButton
+        eraserInspectorButton
+        if isExpanded {
             chromeDivider
-            eraserInspectorButton
             chromeButton("Lasso", symbol: "lasso", isSelected: editor.configuration.tool == .lasso) {
                 editor.selectTool(.lasso)
             }
@@ -31,23 +61,33 @@ struct CanvasToolbarView: View {
             chromeButton("Redo", symbol: "arrow.uturn.forward") { editor.model.redo(editor.notebook.id) }
                 .keyboardShortcut("z", modifiers: [.command, .shift])
             chromeDivider
-            moreMenu
-        }
-        .padding(6)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
-        }
-        .shadow(color: .black.opacity(0.09), radius: 18, y: 6)
-        .alert("Rename layer", isPresented: renamePresentation) {
-            TextField("Layer name", text: $proposedLayerName)
-            Button("Rename") {
-                if let layerToRename { editor.renameLayer(layerToRename, to: proposedLayerName) }
-                layerToRename = nil
+            chromeButton("Zoom to content", symbol: "arrow.up.left.and.arrow.down.right") {
+                editor.zoomToContent()
             }
-            Button("Cancel", role: .cancel) { layerToRename = nil }
+            chromeButton("Minimap", symbol: "map") { editor.toggleMinimap() }
+            chromeButton("Change paper", symbol: "doc.text.image") { editor.showPaperGallery() }
+            chromeButton("Import", symbol: "square.and.arrow.down") { editor.importContent() }
+            layersButton
+            chromeButton("Home", symbol: "house") { editor.returnHome() }
         }
+        expansionButton
+            .gridCellColumns(verticalColumnCount)
+    }
+
+    private var expandedVerticalToolbar: some View {
+        LazyVGrid(
+            columns: Array(
+                repeating: GridItem(.fixed(44), spacing: 4),
+                count: verticalColumnCount
+            ),
+            spacing: 4
+        ) {
+            toolbarItems
+        }
+    }
+
+    private var verticalColumnCount: Int {
+        CanvasToolbarPresentation.verticalColumnCount(isExpanded: isExpanded)
     }
 
     private var toolbarLayout: AnyLayout {
@@ -73,6 +113,7 @@ struct CanvasToolbarView: View {
                 selectedTool: editor.selectedDrawingTool,
                 favoriteOne: editor.favoriteOne,
                 favoriteTwo: editor.favoriteTwo,
+                isFingerDrawingEnabled: editor.$isFingerDrawingEnabled,
                 onSelectTool: { tool in
                     editor.selectTool(tool)
                     presentedInspector = nil
@@ -141,24 +182,24 @@ struct CanvasToolbarView: View {
         }
     }
 
-    private var moreMenu: some View {
-        Menu {
-            Button("Import", systemImage: "square.and.arrow.down") { editor.importContent() }
-            Button("Home", systemImage: "house") { editor.returnHome() }
-            Button("Zoom to content", systemImage: "arrow.up.left.and.arrow.down.right") {
-                editor.zoomToContent()
-            }
-            Button("Minimap", systemImage: "map") { editor.toggleMinimap() }
-            Button("Change paper", systemImage: "doc.text.image") { editor.showPaperGallery() }
-            layersMenu
+    private var expansionButton: some View {
+        Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            withAnimation(toolbarAnimation) { isExpanded.toggle() }
         } label: {
-            CanvasChromeIcon(symbol: "ellipsis")
+            Image(systemName: CanvasToolbarPresentation.chevronSymbol(orientation: editor.toolbarOrientation))
+                .font(.system(size: 16, weight: .semibold))
+                .rotationEffect(.degrees(CanvasToolbarPresentation.chevronRotation(isExpanded: isExpanded)))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
-        .accessibilityLabel("More")
-        .help("More")
+        .buttonStyle(.plain)
+        .accessibilityLabel(isExpanded ? "Show fewer tools" : "Show more tools")
+        .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
+        .help(isExpanded ? "Show fewer tools" : "Show more tools")
     }
 
-    private var layersMenu: some View {
+    private var layersButton: some View {
         Menu("Layers", systemImage: "square.3.layers.3d") {
             ForEach(editor.currentCanvas.layers) { layer in
                 Button(layer.isVisible ? "Hide \(layer.name)" : "Show \(layer.name)") {
@@ -185,6 +226,24 @@ struct CanvasToolbarView: View {
             Divider()
             Button("New layer", systemImage: "plus", action: editor.addLayer)
         }
+        .labelStyle(.iconOnly)
+        .frame(width: 44, height: 44)
+        .accessibilityLabel("Layers")
+        .help("Layers")
+    }
+
+    @ViewBuilder
+    private var toolbarBackground: some View {
+        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+        if isReduceTransparencyEnabled {
+            shape.fill(Color(uiColor: .systemBackground))
+        } else {
+            shape.fill(.thinMaterial)
+        }
+    }
+
+    private var toolbarAnimation: Animation? {
+        isReduceMotionEnabled ? .linear(duration: 0.12) : .spring(response: 0.36, dampingFraction: 0.88)
     }
 
     private var chromeDivider: some View {
@@ -195,6 +254,7 @@ struct CanvasToolbarView: View {
                 height: editor.toolbarOrientation == .vertical ? 1 : 24
             )
             .padding(editor.toolbarOrientation == .vertical ? .vertical : .horizontal, 3)
+            .gridCellColumns(verticalColumnCount)
     }
 
     private var renamePresentation: Binding<Bool> {

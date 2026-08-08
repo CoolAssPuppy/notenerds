@@ -27,7 +27,7 @@ struct PencilCanvasView: UIViewRepresentable {
     let onCancelText: @MainActor () -> Void
     let onObjectSelectionChanged: @MainActor (Bool) -> Void
     let onViewportChanged: @MainActor (CanvasRect) -> Void
-    let onPencilSqueeze: @MainActor (CGPoint?) -> Void
+    let onPencilSqueeze: @MainActor (PencilSqueezeResponse, CGPoint?) -> Void
     let onPencilDoubleTap: @MainActor () -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -43,7 +43,6 @@ struct PencilCanvasView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> PKCanvasView {
         let canvasView = PKCanvasView()
-        canvasView.delegate = context.coordinator
         let pencilInteraction = UIPencilInteraction()
         pencilInteraction.delegate = context.coordinator
         canvasView.addInteraction(pencilInteraction)
@@ -76,13 +75,19 @@ struct PencilCanvasView: UIViewRepresentable {
         context.coordinator.isApplyingModelDrawing = false
         updateObjectOverlays(in: canvasView, coordinator: context.coordinator)
         updateAccessibility(for: canvasView)
-        context.coordinator.reportViewport(canvasView)
+        let coordinator = context.coordinator
+        DispatchQueue.main.async { [weak canvasView, weak coordinator] in
+            guard let canvasView, let coordinator else { return }
+            coordinator.reportViewport(canvasView)
+        }
         apply(configuration, to: canvasView, coordinator: context.coordinator)
         apply(navigationCommand, to: canvasView, coordinator: context.coordinator)
         apply(editingCommand, to: canvasView, coordinator: context.coordinator)
         updateInlineTextEditor(in: canvasView, coordinator: context.coordinator)
+        bringCanvasOverlaysToFront(in: canvasView, coordinator: context.coordinator)
         canvasView.drawingPolicy = isFingerDrawingEnabled ? .anyInput : .pencilOnly
         canvasView.drawingGestureRecognizer.isEnabled = !isTextToolActive
+        canvasView.delegate = context.coordinator
         return canvasView
     }
 
@@ -96,6 +101,7 @@ struct PencilCanvasView: UIViewRepresentable {
         }
         updateObjectOverlays(in: canvasView, coordinator: context.coordinator)
         updateInlineTextEditor(in: canvasView, coordinator: context.coordinator)
+        bringCanvasOverlaysToFront(in: canvasView, coordinator: context.coordinator)
         updateAccessibility(for: canvasView)
         apply(configuration, to: canvasView, coordinator: context.coordinator)
         if strokes.count != context.coordinator.knownStrokeCount {
@@ -123,12 +129,13 @@ struct PencilCanvasView: UIViewRepresentable {
         var isTextPlacementOverlayEnabled = false
         var configuration = ToolConfiguration.favoriteOne
         var latestPencilRoll = 0.0
+        var latestPencilLocation: CGPoint?
         var paperType: PaperType?
         private let onStrokesCompleted: @MainActor ([Stroke]) -> Void
         private let onDrawingChanged: @MainActor ([Stroke]) -> Void
         private let onConvertStrokesToText: @MainActor ([Stroke]) -> Void
         private let onViewportChanged: @MainActor (CanvasRect) -> Void
-        private let onPencilSqueeze: @MainActor (CGPoint?) -> Void
+        private let onPencilSqueeze: @MainActor (PencilSqueezeResponse, CGPoint?) -> Void
         private let onPencilDoubleTap: @MainActor () -> Void
 
         init(
@@ -136,7 +143,7 @@ struct PencilCanvasView: UIViewRepresentable {
             onDrawingChanged: @escaping @MainActor ([Stroke]) -> Void,
             onConvertStrokesToText: @escaping @MainActor ([Stroke]) -> Void,
             onViewportChanged: @escaping @MainActor (CanvasRect) -> Void,
-            onPencilSqueeze: @escaping @MainActor (CGPoint?) -> Void,
+            onPencilSqueeze: @escaping @MainActor (PencilSqueezeResponse, CGPoint?) -> Void,
             onPencilDoubleTap: @escaping @MainActor () -> Void
         ) {
             self.onStrokesCompleted = onStrokesCompleted
@@ -221,10 +228,20 @@ struct PencilCanvasView: UIViewRepresentable {
             _ interaction: UIPencilInteraction,
             didReceiveSqueeze squeeze: UIPencilInteraction.Squeeze
         ) {
-            guard squeeze.phase == .began else { return }
             latestPencilRoll = squeeze.hoverPose.map { Double($0.rollAngle) } ?? latestPencilRoll
+            let response = PencilSqueezeBehavior.response(
+                for: UIPencilInteraction.preferredSqueezeAction,
+                phase: squeeze.phase
+            )
+            guard response != .none else { return }
             UISelectionFeedbackGenerator().selectionChanged()
-            onPencilSqueeze(squeeze.hoverPose?.location)
+            onPencilSqueeze(
+                response,
+                PencilSqueezeBehavior.location(
+                    poseLocation: squeeze.hoverPose?.location,
+                    lastHoverLocation: latestPencilLocation
+                )
+            )
         }
 
         @objc func handlePencilHover(_ recognizer: UIHoverGestureRecognizer) {
@@ -236,6 +253,7 @@ struct PencilCanvasView: UIViewRepresentable {
                     ? max(18, configuration.width.points * 8)
                     : max(8, configuration.width.points * 4)
                 let location = recognizer.location(in: recognizer.view)
+                latestPencilLocation = location
                 preview.bounds = CGRect(x: 0, y: 0, width: diameter, height: diameter)
                 preview.center = location
                 preview.layer.cornerRadius = diameter / 2

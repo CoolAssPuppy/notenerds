@@ -23,7 +23,17 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Install build tools
-        run: brew install xcodegen swiftlint
+        run: brew install gitleaks ripgrep swiftlint xcodegen
+
+      - name: Scan tracked files for secrets
+        run: gitleaks dir --no-banner --redact --exit-code 1 .
+
+      - name: Confirm there are no third-party runtime packages
+        run: |
+          if rg --quiet 'XCRemoteSwiftPackageReference' NoteNerds.xcodeproj/project.pbxproj; then
+            echo "Third-party package references require a security review."
+            exit 1
+          fi
 
       - name: Test release tooling
         run: PYTHONPATH=scripts python3 -m unittest discover -s scripts/tests -v
@@ -63,7 +73,26 @@ jobs:
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             -resultBundlePath "$RUNNER_TEMP/BehaviorTests.xcresult" \
-            -only-testing:NoteNerdsTests \
+            -only-testing:NoteNerdsTests
+
+      - name: Run performance checks
+        run: |
+          xcodebuild test -quiet \
+            -project NoteNerds.xcodeproj \
+            -scheme NoteNerds \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/PerformanceTests.xcresult" \
+            -only-testing:NoteNerdsPerformanceTests
+
+      - name: Run Xcode static analysis
+        run: |
+          xcodebuild analyze -quiet \
+            -project NoteNerds.xcodeproj \
+            -scheme NoteNerds \
+            -configuration Debug \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath "$RUNNER_TEMP/AnalyzeDerivedData" \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Run launch check
@@ -74,8 +103,7 @@ jobs:
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             -resultBundlePath "$RUNNER_TEMP/LaunchTests.xcresult" \
-            -only-testing:NoteNerdsUITests/NoteNerdsLaunchTests/testApplicationLaunchesIntoLibrary \
-            CODE_SIGNING_ALLOWED=NO
+            -only-testing:NoteNerdsUITests/NoteNerdsLaunchTests/testApplicationLaunchesIntoLibrary
 
       - name: Upload test results after failure
         if: failure()

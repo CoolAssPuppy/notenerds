@@ -132,8 +132,8 @@ final class InlineCanvasTextEditor: UIView, UITextViewDelegate {
     private func cancel() {
         guard !isFinishingEditing else { return }
         isFinishingEditing = true
-        textView.resignFirstResponder()
         onCancel()
+        textView.resignFirstResponder()
     }
 
     private func commit() {
@@ -145,8 +145,8 @@ final class InlineCanvasTextEditor: UIView, UITextViewDelegate {
         guard !isFinishingEditing else { return }
         isFinishingEditing = true
         textBlock.text = text
-        textView.resignFirstResponder()
         onCommit(textBlock)
+        textView.resignFirstResponder()
     }
 
     private func decreaseSize() {
@@ -178,7 +178,11 @@ final class InlineCanvasTextEditor: UIView, UITextViewDelegate {
 
     func textViewDidEndEditing(_ textView: UITextView) {
         guard !isFinishingEditing else { return }
-        cancel()
+        if textView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            cancel()
+        } else {
+            commit()
+        }
     }
 
     func textView(

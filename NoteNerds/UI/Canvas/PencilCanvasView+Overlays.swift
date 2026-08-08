@@ -2,6 +2,20 @@ import PencilKit
 import UIKit
 
 extension PencilCanvasView {
+    func bringCanvasOverlaysToFront(in canvasView: PKCanvasView, coordinator: Coordinator) {
+        for tag in 8_417...8_420 {
+            if let overlay = canvasView.viewWithTag(tag) {
+                canvasView.bringSubviewToFront(overlay)
+            }
+        }
+        if let editor = coordinator.inlineTextEditor {
+            canvasView.bringSubviewToFront(editor)
+        }
+        if let hoverPreview = coordinator.hoverPreview {
+            canvasView.bringSubviewToFront(hoverPreview)
+        }
+    }
+
     func updateObjectOverlays(in canvasView: PKCanvasView, coordinator: Coordinator) {
         guard coordinator.overlayObjects != nonStrokeObjects
                 || coordinator.overlayAssets != assets

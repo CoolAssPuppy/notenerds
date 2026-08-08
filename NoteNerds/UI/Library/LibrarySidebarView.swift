@@ -2,14 +2,11 @@ import SwiftUI
 
 struct LibrarySidebarView: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var notion: NotionIntegrationModel
     @Binding var isSelecting: Bool
     @Binding var selectedItems: Set<LibraryItemID>
-    @AppStorage("canvasToolbarOrientation") private var toolbarOrientation =
-        CanvasToolbarOrientation.vertical.rawValue
-    @AppStorage("isToolbarOnLeft") private var isToolbarOnLeft = true
-    @AppStorage("defaultPaperType") private var defaultPaperTypeRawValue = PaperType.blankWhite.rawValue
     @State private var isConfirmingEmptyTrash = false
-    @State private var isDefaultPaperGalleryPresented = false
+    @State private var isAppSettingsPresented = false
 
     var body: some View {
         List(selection: selectedSection) {
@@ -75,10 +72,8 @@ struct LibrarySidebarView: View {
         } message: {
             Text("This action cannot be undone.")
         }
-        .sheet(isPresented: $isDefaultPaperGalleryPresented) {
-            PaperGalleryView(initialSelection: defaultPaperType, confirmationTitle: "Done") { paperType in
-                defaultPaperTypeRawValue = paperType.rawValue
-            }
+        .sheet(isPresented: $isAppSettingsPresented) {
+            AppSettingsView(model: model, notion: notion)
         }
     }
 
@@ -127,7 +122,9 @@ struct LibrarySidebarView: View {
             selectionActions
             trashActions
             Divider()
-            appSettings
+            Button("App settings", systemImage: AppSymbol.settings) {
+                isAppSettingsPresented = true
+            }
             privacyInformation
         }
     }
@@ -162,25 +159,6 @@ struct LibrarySidebarView: View {
                 isConfirmingEmptyTrash = true
             }
         }
-    }
-
-    private var appSettings: some View {
-        Menu("App settings", systemImage: AppSymbol.settings) {
-            Picker("Editing tools", selection: $toolbarOrientation) {
-                ForEach(CanvasToolbarOrientation.allCases, id: \.self) { orientation in
-                    Label(orientation.label, systemImage: orientation.symbol).tag(orientation.rawValue)
-                }
-            }
-            Toggle("Vertical tools on left", isOn: $isToolbarOnLeft)
-                .disabled(toolbarOrientation != CanvasToolbarOrientation.vertical.rawValue)
-            Button("Default paper", systemImage: "doc.text.image") {
-                isDefaultPaperGalleryPresented = true
-            }
-        }
-    }
-
-    private var defaultPaperType: PaperType {
-        PaperType(rawValue: defaultPaperTypeRawValue) ?? .blankWhite
     }
 
     private var privacyInformation: some View {

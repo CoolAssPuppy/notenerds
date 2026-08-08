@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import base64
 import shutil
 import subprocess
 from pathlib import Path
@@ -91,3 +92,15 @@ def require(*names: str) -> dict[str, str]:
             f"  Set them in .env, your shell, or Doppler."
         )
     return {n: os.environ[n] for n in names}
+
+
+def notion_build_environment(client_id: str, client_secret: str) -> dict[str, str]:
+    """Return encoded Xcode build settings for a child process environment."""
+    return {
+        "NOTION_CLIENT_ID_B64": _base64url(client_id),
+        "NOTION_CLIENT_SECRET_B64": _base64url(client_secret),
+    }
+
+
+def _base64url(value: str) -> str:
+    return base64.urlsafe_b64encode(value.encode("utf-8")).decode("ascii").rstrip("=")

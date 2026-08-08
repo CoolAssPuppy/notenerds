@@ -32,6 +32,7 @@ enum DocumentOperation: Codable, Hashable, Sendable {
     case insertCanvas(canvas: Canvas, index: Int)
     case deleteCanvas(CanvasPlacement)
     case moveCanvas(sourceIndex: Int, destinationIndex: Int)
+    case renameCanvas(canvasID: CanvasID, before: String, after: String)
     case insertLayer(canvasID: CanvasID, layer: Layer, index: Int)
     case deleteLayer(LayerPlacement)
     case moveLayer(canvasID: CanvasID, sourceIndex: Int, destinationIndex: Int)
@@ -144,6 +145,8 @@ enum DocumentOperation: Codable, Hashable, Sendable {
             notebook.canvases.remove(at: index)
         case let .moveCanvas(source, destination):
             try notebook.moveCanvas(from: source, to: destination)
+        case let .renameCanvas(canvasID, before, after):
+            try notebook.renameCanvas(canvasID, expectedName: before, to: after)
         default:
             try applyLayerStructure(to: &notebook)
         }
@@ -213,6 +216,8 @@ enum DocumentOperation: Codable, Hashable, Sendable {
             notebook.canvases.insert(placement.canvas, at: placement.index)
         case let .moveCanvas(source, destination):
             try notebook.moveCanvas(from: destination, to: source)
+        case let .renameCanvas(canvasID, before, after):
+            try notebook.renameCanvas(canvasID, expectedName: after, to: before)
         default:
             try undoLayerStructure(on: &notebook)
         }
@@ -246,7 +251,7 @@ enum DocumentOperation: Codable, Hashable, Sendable {
 extension DocumentOperation {
     var requiresSearchIndexUpdate: Bool {
         switch self {
-        case .addStroke, .moveCanvas, .moveLayer, .updateLayer, .changeTemplate:
+        case .addStroke, .moveCanvas, .renameCanvas, .moveLayer, .updateLayer, .changeTemplate:
             false
         case let .deleteObjects(_, objects): objects.contains { $0.object.searchText != nil }
         case .convertStrokesToText: true
@@ -271,7 +276,7 @@ extension DocumentOperation {
              let .changeTemplate(canvasID, _, _):
             canvasID
         case let .deleteLayer(placement): placement.canvasID
-        case .insertCanvas, .deleteCanvas, .moveCanvas: nil
+        case .insertCanvas, .deleteCanvas, .moveCanvas, .renameCanvas: nil
         }
     }
 }
@@ -293,6 +298,12 @@ private extension Canvas {
 }
 
 private extension Notebook {
+    mutating func renameCanvas(_ canvasID: CanvasID, expectedName: String, to name: String) throws {
+        let index = try canvasIndex(for: canvasID)
+        guard canvases[index].title == expectedName else { throw DocumentOperationError.canvasNotFound }
+        canvases[index].title = name
+    }
+
     mutating func replaceLayer(_ expected: Layer, with replacement: Layer, in canvasID: CanvasID) throws {
         let canvasIndex = try canvasIndex(for: canvasID)
         guard expected.id == replacement.id,

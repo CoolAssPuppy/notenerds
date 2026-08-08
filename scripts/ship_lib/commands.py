@@ -194,6 +194,7 @@ def _archive_and_export(
         "-authenticationKeyID", asc_key_id,
         "-authenticationKeyIssuerID", asc_issuer_id,
     ]
+    notion_env = secrets.require("NOTION_CLIENT_ID", "NOTION_CLIENT_SECRET")
 
     log.step("Archiving (Release, generic/platform=iOS)")
     xcode.run([
@@ -206,7 +207,9 @@ def _archive_and_export(
         "-allowProvisioningUpdates",
         *auth_args,
         "archive",
-    ], log_path=log_path, beautify=True)
+    ], log_path=log_path, beautify=True, environment=secrets.notion_build_environment(
+        notion_env["NOTION_CLIENT_ID"], notion_env["NOTION_CLIENT_SECRET"]
+    ))
 
     plist = exportplist.write_app_store(
         cfg.project.team_id, dest_dir=cfg.project.dist_dir
@@ -265,6 +268,7 @@ def cmd_simulator(cfg: config.ShipConfig, args: argparse.Namespace) -> int:
     dist = _ensure_dist(cfg)
     log_path = dist / "build-simulator.log"
     destination = f"id={sim.udid}"
+    notion_env = secrets.require("NOTION_CLIENT_ID", "NOTION_CLIENT_SECRET")
 
     log.step("Building Debug for simulator")
     xcode.run([
@@ -275,7 +279,9 @@ def cmd_simulator(cfg: config.ShipConfig, args: argparse.Namespace) -> int:
         "-destination", destination,
         "-allowProvisioningUpdates",
         "build",
-    ], log_path=log_path, beautify=True)
+    ], log_path=log_path, beautify=True, environment=secrets.notion_build_environment(
+        notion_env["NOTION_CLIENT_ID"], notion_env["NOTION_CLIENT_SECRET"]
+    ))
 
     products = xcode.built_products_dir(
         cfg.project.xcodeproj,

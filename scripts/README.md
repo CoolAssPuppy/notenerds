@@ -95,8 +95,12 @@ Required release secrets:
 | `ASC_ISSUER_ID` | App Store Connect issuer identifier |
 | `ASC_APP_ID` | Numeric Apple ID for the Note Nerds app record |
 | `ASC_PRIVATE_KEY` | Full contents of the App Store Connect `.p8` private key |
+| `NOTION_CLIENT_ID` | Public Notion integration client identifier |
+| `NOTION_CLIENT_SECRET` | Public Notion integration client secret embedded in release builds |
 
 The local upload command expects the private key at `~/.private_keys/AuthKey_<ASC_KEY_ID>.p8`. The GitHub release workflow builds this file from `ASC_PRIVATE_KEY` for the duration of the job.
+
+The build command encodes the Notion values and passes them only through the `xcodebuild` child process environment. The values stay out of command arguments, Xcode configuration files, and build logs.
 
 Run `./scripts/setup-doppler.sh` after signing into Doppler. The script creates or selects `notenerds/prd` without writing placeholder secrets.
 

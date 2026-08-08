@@ -50,6 +50,8 @@ BRING YOUR WORK WITH YOU
 • Export notebooks as PDF, PNG, or editable Note Nerds packages
 • Share through the standard iPad share sheet
 • Keep your library updated through your private iCloud account
+• Send restorable notebook copies to a Notion workspace you connect
+• Restore missing or newer notebooks from Notion after review
 
 MADE FOR IPAD
 
@@ -57,7 +59,7 @@ Note Nerds uses familiar iPad controls, Apple Pencil input, keyboard shortcuts, 
 
 PRIVATE BY DESIGN
 
-Your notebooks belong to you. Note Nerds has no ads, no analytics SDK, and no tracking. Notes are stored on your device and in your private iCloud account when sync is available.
+Your notebooks belong to you. Note Nerds has no ads, no analytics SDK, and no tracking. Notes are stored on your device and in your private iCloud account when sync is available. Optional Notion sync sends copies directly to the workspace you connect.
 
 ## Keywords
 
@@ -123,16 +125,18 @@ On-screen ending: “Your ideas. Your paper. Note Nerds.”
 
 ## App privacy answers
 
-Based on the 1.0.0 code:
+Based on the 1.0.0 code, use the conservative disclosure for the optional Notion connection:
 
-- Select “No, we do not collect data from this app.”
+- Select “Yes, we collect data from this app.”
+- User Content: Other User Content, linked to the user, used for App Functionality.
+- Identifiers: User ID, linked to the user, used for App Functionality. This covers the Notion workspace and bot identifiers.
 - Tracking: No.
 - Third-party advertising: No.
 - Developer advertising or marketing data collection: No.
 - Analytics data collection: No.
 - Data broker sharing: No.
 
-Notes and drawings are processed locally. Private CloudKit storage is provided by Apple. The app contains no advertising, analytics, crash-reporting, or account SDK. Review these answers again if any hosted service or third-party SDK is added.
+Notes and drawings are processed locally unless the user enables Notion. Private CloudKit storage is provided by Apple. Notion receives the content selected for sync and stores it in the user's workspace. The app contains no advertising, analytics, crash-reporting, or developer account SDK.
 
 ## Age rating guidance
 
@@ -167,7 +171,7 @@ None required.
 
 ### Review notes
 
-Note Nerds is an iPad-only, local-first notebook and drawing app. No account or subscription is required.
+Note Nerds is an iPad-only, local-first notebook and drawing app. No account or subscription is required. Notion connection is optional and can be reviewed without connecting an account.
 
 Suggested review path:
 
@@ -178,8 +182,11 @@ Suggested review path:
 5. Return to the library, create a folder with the plus button beside Folders, and drag the notebook into it.
 6. Tap Search and search for typed text.
 7. Open the notebook and use the share menu to export a PDF.
+8. Optional: open App settings, connect Notion, choose an accessible page, then use Sync now.
 
 iCloud sync uses the user’s private CloudKit database and may require an iCloud-enabled test device. All core notebook, drawing, text, organization, import, and export features work locally.
+
+Notion OAuth returns to `http://localhost:53117/oauth/notion` through a listener bound to this device. Note Nerds sends notebook data directly to Notion and does not use a developer server.
 
 Apple Pencil improves the drawing experience but is not required for review. Finger drawing can be enabled in Settings.
 

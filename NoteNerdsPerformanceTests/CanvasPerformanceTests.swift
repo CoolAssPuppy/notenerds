@@ -3,6 +3,31 @@ import UIKit
 @testable import NoteNerds
 
 final class CanvasPerformanceTests: XCTestCase {
+    func testNotionQueueWithOneThousandEntriesRestoresWithinOneTenthSecond() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "NoteNerds-Notion-Performance-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = LocalNotionSyncStateStore(directoryURL: directory)
+        let queue = (0..<1_000).map { index in
+            NotionSyncQueueItem(
+                notebookID: deterministicUUIDString(index: index),
+                enqueuedAt: Date(timeIntervalSince1970: TimeInterval(index)),
+                attemptCount: index % 4,
+                nextAttemptAt: nil,
+                lastFailure: nil
+            )
+        }
+        try await store.save(NotionSyncState(queue: queue))
+
+        let clock = ContinuousClock()
+        let start = clock.now
+        let restored = try await store.load()
+        let elapsed = start.duration(to: clock.now)
+
+        XCTAssertEqual(restored?.queue.count, 1_000)
+        XCTAssertLessThan(elapsed, .milliseconds(100))
+    }
+
     func testVisibleRegionQueryWithTwentyThousandObjects() {
         let layerID = LayerID()
         let objects = (0..<20_000).map { index in
@@ -129,5 +154,9 @@ final class CanvasPerformanceTests: XCTestCase {
             style: StrokeStyle(instrument: .ballpoint, width: 2, color: .black),
             createdAt: Date()
         )
+    }
+
+    private func deterministicUUIDString(index: Int) -> String {
+        String(format: "00000000-0000-0000-0000-%012d", index)
     }
 }

@@ -89,9 +89,10 @@ final class NoteNerdsLaunchTests: XCTestCase {
         let application = makeApplication()
         application.launch()
         application.buttons["New notebook"].tap()
-        application.buttons["More"].firstMatch.tap()
-        application.buttons["Draw with finger"].tap()
         application.buttons["Drawing tools"].tap()
+        let drawWithFinger = application.switches["Draw with finger"]
+        XCTAssertTrue(drawWithFinger.waitForExistence(timeout: 2))
+        drawWithFinger.tap()
         application.buttons["Highlighter"].tap()
         XCTAssertEqual(application.buttons["Drawing tools"].value as? String, "Highlighter")
 
@@ -106,6 +107,7 @@ final class NoteNerdsLaunchTests: XCTestCase {
             object: canvas
         )
         XCTAssertEqual(XCTWaiter.wait(for: [strokeAppeared], timeout: 3), .completed)
+        expandCanvasToolbarIfNeeded(in: application)
         application.buttons["Undo"].tap()
         application.buttons["Redo"].tap()
         application.buttons["Eraser"].tap()
@@ -121,6 +123,7 @@ final class NoteNerdsLaunchTests: XCTestCase {
         let application = makeApplication()
         application.launch()
         application.buttons["New notebook"].tap()
+        expandCanvasToolbarIfNeeded(in: application)
         application.buttons["Add text"].tap()
         let editor = application.textViews["Canvas text editor"]
         XCTAssertEqual(application.buttons["Add text"].value as? String, "Selected")
@@ -155,6 +158,7 @@ final class NoteNerdsLaunchTests: XCTestCase {
         let application = makeApplication()
         application.launch()
         application.buttons["New notebook"].tap()
+        expandCanvasToolbarIfNeeded(in: application)
         application.buttons["Add text"].tap()
         let canvas = application.scrollViews["Infinite canvas"]
         canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.55, dy: 0.35)).tap()
@@ -178,6 +182,7 @@ final class NoteNerdsLaunchTests: XCTestCase {
         let application = makeApplication()
         application.launch()
         application.buttons["New notebook"].tap()
+        expandCanvasToolbarIfNeeded(in: application)
         application.buttons["Add text"].tap()
         let canvas = application.scrollViews["Infinite canvas"]
         canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.55, dy: 0.35)).tap()
@@ -193,6 +198,7 @@ final class NoteNerdsLaunchTests: XCTestCase {
         let application = makeApplication()
         application.launch()
         application.buttons["New notebook"].tap()
+        expandCanvasToolbarIfNeeded(in: application)
         application.buttons["Add text"].tap()
         let canvas = application.scrollViews["Infinite canvas"]
         let insertion = canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.55, dy: 0.35))
@@ -210,6 +216,10 @@ final class NoteNerdsLaunchTests: XCTestCase {
         XCTAssertTrue(editor.waitForExistence(timeout: 2))
         editor.typeText("Visible canvas text\n")
         XCTAssertTrue(editor.waitForNonExistence(timeout: 2))
+        XCTAssertTrue(
+            (canvas.value as? String)?.contains("1 other objects") == true,
+            "The committed text object should be present before checking its rendered pixels"
+        )
 
         let afterScreenshot = application.screenshot()
         let pixelsAfterCommit = afterScreenshot.image.darkPixelCount(in: textFrame)
@@ -284,10 +294,11 @@ final class NoteNerdsLaunchTests: XCTestCase {
         let application = makeApplication()
         application.launch()
         application.buttons["New notebook"].tap()
-        application.buttons["More"].firstMatch.tap()
+        application.buttons["Canvases"].tap()
+        XCTAssertTrue(application.navigationBars["Canvases"].waitForExistence(timeout: 2))
 
         let attachment = XCTAttachment(screenshot: application.screenshot())
-        attachment.name = "Canvas More menu"
+        attachment.name = "Canvases sheet"
         attachment.lifetime = .keepAlways
         add(attachment)
     }
@@ -343,17 +354,16 @@ final class NoteNerdsLaunchTests: XCTestCase {
         XCTAssertTrue(application.buttons["Canvas browser"].exists)
         XCTAssertTrue(application.buttons["New canvas"].exists)
         XCTAssertTrue(application.buttons["Share"].exists)
-        XCTAssertTrue(application.buttons["More"].exists)
+        XCTAssertTrue(application.buttons["Canvases"].exists)
         XCTAssertFalse(application.buttons["Quick tools"].exists)
 
         let drawingTools = application.buttons["Drawing tools"]
         let eraser = application.buttons["Eraser"]
-        let lasso = application.buttons["Lasso"]
-        let addText = application.buttons["Add text"]
         XCTAssertTrue(drawingTools.exists)
         XCTAssertLessThan(drawingTools.frame.midY, eraser.frame.midY)
-        XCTAssertLessThan(eraser.frame.midY, lasso.frame.midY)
-        XCTAssertLessThan(lasso.frame.midY, addText.frame.midY)
+        expandCanvasToolbarIfNeeded(in: application)
+        XCTAssertTrue(application.buttons["Lasso"].exists)
+        XCTAssertTrue(application.buttons["Add text"].exists)
 
         let attachment = XCTAttachment(screenshot: application.screenshot())
         attachment.name = "Apple standard notebook editor"
@@ -461,40 +471,21 @@ final class NoteNerdsLaunchTests: XCTestCase {
             makeApplication().launch()
         }
     }
+}
+
+private extension NoteNerdsLaunchTests {
+    private func expandCanvasToolbarIfNeeded(in application: XCUIApplication) {
+        let showMoreTools = application.buttons["Show more tools"]
+        if showMoreTools.exists {
+            showMoreTools.tap()
+        }
+        XCTAssertTrue(application.buttons["Show fewer tools"].waitForExistence(timeout: 2))
+    }
 
     private func makeApplication(additionalArguments: [String] = []) -> XCUIApplication {
         XCUIDevice.shared.orientation = .portrait
         let application = XCUIApplication()
         application.launchArguments = ["-ui-testing", "-reset-library"] + additionalArguments
         return application
-    }
-}
-
-private extension UIImage {
-    func darkPixelCount(in pointRect: CGRect) -> Int {
-        guard let source = cgImage else { return 0 }
-        let horizontalScale = CGFloat(source.width) / size.width
-        let verticalScale = CGFloat(source.height) / size.height
-        let pixelRect = CGRect(
-            x: pointRect.minX * horizontalScale,
-            y: pointRect.minY * verticalScale,
-            width: pointRect.width * horizontalScale,
-            height: pointRect.height * verticalScale
-        ).integral.intersection(CGRect(x: 0, y: 0, width: source.width, height: source.height))
-        guard let cropped = source.cropping(to: pixelRect), pixelRect.width > 0, pixelRect.height > 0 else { return 0 }
-        let width = Int(pixelRect.width)
-        let height = Int(pixelRect.height)
-        var pixels = [UInt8](repeating: 0, count: width * height)
-        guard let context = CGContext(
-            data: &pixels,
-            width: width,
-            height: height,
-            bitsPerComponent: 8,
-            bytesPerRow: width,
-            space: CGColorSpaceCreateDeviceGray(),
-            bitmapInfo: CGImageAlphaInfo.none.rawValue
-        ) else { return 0 }
-        context.draw(cropped, in: CGRect(x: 0, y: 0, width: width, height: height))
-        return pixels.count { $0 < 96 }
     }
 }

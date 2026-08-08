@@ -157,6 +157,8 @@ private extension SearchMatchType {
 
 private struct NotebookCard: View {
     @ObservedObject var model: AppModel
+    @EnvironmentObject private var notion: NotionIntegrationModel
+    @Environment(\.openURL) private var openURL
     let notebook: Notebook
     let isSelecting: Bool
     let isSelected: Bool
@@ -259,6 +261,20 @@ private struct NotebookCard: View {
             Button("Add tag", systemImage: "tag") { isAddingTag = true }
             Button(notebook.isFavorite ? "Remove favorite" : "Favorite", systemImage: "star") {
                 model.toggleFavorite(notebook.id)
+            }
+            if notion.destination != nil {
+                Button("Sync to Notion", systemImage: "arrow.triangle.2.circlepath") {
+                    Task { await notion.sync(model.library, notebookID: notebook.id) }
+                }
+                if notion.isSynced(notebook.id) {
+                    Button("Open in Notion", systemImage: "arrow.up.forward.app") {
+                        Task {
+                            if let url = await notion.pageURL(for: notebook.id) {
+                                openURL(url)
+                            }
+                        }
+                    }
+                }
             }
             Button("Move to Trash", systemImage: AppSymbol.trash, role: .destructive) { model.delete(notebook.id) }
         } else {

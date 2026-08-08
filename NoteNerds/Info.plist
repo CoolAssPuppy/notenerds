@@ -65,6 +65,10 @@
 	<string>public.app-category.productivity</string>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<key>NNNotionClientIDBase64</key>
+	<string>$(NOTION_CLIENT_ID_B64)</string>
+	<key>NNNotionClientSecretBase64</key>
+	<string>$(NOTION_CLIENT_SECRET_B64)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

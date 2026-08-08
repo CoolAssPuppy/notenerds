@@ -108,6 +108,14 @@ extension AppModel {
         execute(.insertCanvas(canvas: duplicate, index: index + 1), on: notebookID)
     }
 
+    func renameCanvas(_ canvasID: CanvasID, to proposedName: String, in notebookID: NotebookID) {
+        guard let name = CanvasName.normalized(proposedName),
+              let notebook = library.notebook(id: notebookID),
+              let canvas = notebook.canvases.first(where: { $0.id == canvasID }),
+              name != canvas.title else { return }
+        execute(.renameCanvas(canvasID: canvasID, before: canvas.title, after: name), on: notebookID)
+    }
+
     func deleteCanvas(_ canvasID: CanvasID, in notebookID: NotebookID) {
         guard let notebook = library.notebook(id: notebookID),
               notebook.canvases.count > 1,

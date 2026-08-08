@@ -8,7 +8,6 @@ struct CanvasHeaderView: ToolbarContent {
     let layers: [Layer]
     let isSelectionMenuVisible: Bool
     let isObjectSelectionActive: Bool
-    @Binding var isFingerDrawingEnabled: Bool
     let onClose: () -> Void
     let onRenameNotebook: (String) -> Void
     let onOpenBrowser: () -> Void
@@ -18,9 +17,6 @@ struct CanvasHeaderView: ToolbarContent {
     let onExportPNG: () -> Void
     let onExportNative: () -> Void
     let onSharePDF: () -> Void
-    let onDuplicateCanvas: () -> Void
-    let onDeleteCanvas: () -> Void
-    let onMoveCanvas: (Int) -> Void
 
     var body: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
@@ -41,7 +37,8 @@ struct CanvasHeaderView: ToolbarContent {
             Button("New canvas", systemImage: AppSymbol.add, action: onNewCanvas)
                 .keyboardShortcut("n", modifiers: [.command, .shift])
             shareMenu
-            documentMenu
+            Button("Canvases", systemImage: AppSymbol.more, action: onOpenBrowser)
+                .accessibilityHint("Shows every canvas in this notebook")
         }
     }
 
@@ -83,19 +80,4 @@ struct CanvasHeaderView: ToolbarContent {
         }
     }
 
-    private var documentMenu: some View {
-        Menu("More", systemImage: AppSymbol.more) {
-            Button("Duplicate canvas", systemImage: "plus.square.on.square", action: onDuplicateCanvas)
-            if canvasIndex > 0 {
-                Button("Move canvas earlier", systemImage: "arrow.up") { onMoveCanvas(canvasIndex - 1) }
-            }
-            if canvasIndex < canvasCount - 1 {
-                Button("Move canvas later", systemImage: "arrow.down") { onMoveCanvas(canvasIndex + 1) }
-            }
-            Toggle("Draw with finger", isOn: $isFingerDrawingEnabled)
-            Divider()
-            Button("Delete canvas", systemImage: AppSymbol.trash, role: .destructive, action: onDeleteCanvas)
-                .disabled(canvasCount == 1)
-        }
-    }
 }

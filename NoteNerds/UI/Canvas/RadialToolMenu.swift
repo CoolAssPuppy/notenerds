@@ -12,42 +12,94 @@ struct RadialToolMenu: View {
     let onCycleColor: () -> Void
     let onSelectionAction: (CanvasEditingAction) -> Void
     @Environment(\.accessibilityReduceMotion) private var isReduceMotionEnabled
+    @State private var isExpanded = false
+    @State private var isRippleExpanded = false
 
     var body: some View {
-        ZStack {
-            Color.black.opacity(0.12).ignoresSafeArea().onTapGesture { isVisible = false }
-            GeometryReader { proxy in
-                ZStack {
-                    Circle().fill(.ultraThinMaterial).frame(width: 270, height: 270)
-                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        let angle = (Double(index) / Double(items.count)) * Double.pi * 2 - Double.pi / 2
-                        Button(item.label, systemImage: item.symbol) {
-                            perform(item.action)
-                        }
-                        .labelStyle(.iconOnly)
-                        .font(.title2)
-                        .frame(width: 52, height: 52)
-                        .background(
-                            item.action.selectedTool == configuration.tool
-                                ? Color.primary.opacity(0.14)
-                                : Color.clear,
-                            in: Circle()
-                        )
-                        .offset(x: cos(angle) * 98, y: sin(angle) * 98)
+        GeometryReader { proxy in
+            let layout = PencilRadialMenuLayout(size: proxy.size, requestedOrigin: requestedOrigin)
+            ZStack {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { isVisible = false }
+
+                Circle()
+                    .stroke(Color.accentColor.opacity(isRippleExpanded ? 0 : 0.5), lineWidth: 2)
+                    .frame(
+                        width: isRippleExpanded ? 68 : 18,
+                        height: isRippleExpanded ? 68 : 18
+                    )
+                    .opacity(isRippleExpanded ? 0 : 1)
+                    .position(layout.anchor)
+                    .animation(.easeOut(duration: 0.38), value: isRippleExpanded)
+
+                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                    Button(item.label, systemImage: item.symbol) {
+                        perform(item.action)
                     }
-                    Button("Close quick tools", systemImage: "xmark") { isVisible = false }
-                        .labelStyle(.iconOnly)
-                        .frame(width: 48, height: 48)
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(foregroundStyle(for: item.action))
+                    .frame(width: 54, height: 54)
+                    .background(buttonBackground(for: item.action))
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(.white.opacity(0.82), lineWidth: 1)
+                    }
+                    .shadow(
+                        color: item.action.selectedTool == configuration.tool
+                            ? Color.accentColor.opacity(0.28)
+                            : Color.black.opacity(0.14),
+                        radius: 12,
+                        y: 8
+                    )
+                    .scaleEffect(isExpanded ? 1 : 0.24)
+                    .opacity(isExpanded ? 1 : 0)
+                    .position(
+                        isExpanded
+                            ? layout.position(itemAt: index, itemCount: items.count)
+                            : layout.anchor
+                    )
+                    .animation(itemAnimation(for: index), value: isExpanded)
                 }
-                .position(adaptedOrigin(in: proxy.size))
             }
         }
-        .animation(
-            isReduceMotionEnabled ? nil : .spring(response: 0.3, dampingFraction: 0.85),
-            value: configuration.tool
-        )
+        .onAppear(perform: beginAppearance)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Quick tools")
+    }
+
+    @ViewBuilder
+    private func buttonBackground(for action: RadialAction) -> some View {
+        if action.selectedTool == configuration.tool {
+            Color.accentColor
+        } else {
+            Rectangle().fill(.ultraThinMaterial)
+        }
+    }
+
+    private func foregroundStyle(for action: RadialAction) -> Color {
+        if action == .color { return configuration.color.swiftUIColor }
+        return action.selectedTool == configuration.tool ? .white : .primary
+    }
+
+    private func itemAnimation(for index: Int) -> Animation? {
+        guard !isReduceMotionEnabled else { return nil }
+        return .spring(response: 0.42, dampingFraction: 0.72)
+            .delay(Double(index) * 0.026)
+    }
+
+    private func beginAppearance() {
+        guard !isReduceMotionEnabled else {
+            isExpanded = true
+            return
+        }
+        Task { @MainActor in
+            await Task.yield()
+            isRippleExpanded = true
+            isExpanded = true
+        }
     }
 
     private var items: [RadialItem] {
@@ -67,12 +119,6 @@ struct RadialToolMenu: View {
             ]
         }
         return [
-            RadialItem(
-                id: "pen",
-                label: configuration.tool.label,
-                symbol: configuration.tool.symbol,
-                action: .tool(configuration.tool)
-            ),
             RadialItem(id: "eraser", label: "Eraser", symbol: "eraser", action: .tool(.eraser)),
             RadialItem(id: "lasso", label: "Lasso", symbol: "lasso", action: .tool(.lasso)),
             RadialItem(id: "undo", label: "Undo", symbol: "arrow.uturn.backward", action: .undo),
@@ -95,14 +141,6 @@ struct RadialToolMenu: View {
         isVisible = false
     }
 
-    private func adaptedOrigin(in size: CGSize) -> CGPoint {
-        let desired = requestedOrigin ?? CGPoint(x: size.width / 2, y: size.height / 2)
-        let inset = 125.0
-        return CGPoint(
-            x: min(max(inset, desired.x), size.width - inset),
-            y: min(max(inset, desired.y - 90), size.height - inset)
-        )
-    }
 }
 
 private struct RadialItem {
@@ -154,5 +192,11 @@ extension CanvasTool {
         case .handwritingToText: "character.cursor.ibeam"
         case .ballpoint, .fineliner: "pencil.tip"
         }
+    }
+}
+
+private extension InkColor {
+    var swiftUIColor: Color {
+        Color(red: red, green: green, blue: blue, opacity: alpha)
     }
 }

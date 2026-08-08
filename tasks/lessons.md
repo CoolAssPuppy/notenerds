@@ -26,3 +26,16 @@
 - Keep library search compact until requested. Expand the search icon into a focused field, then collapse it when the user taps outside.
 - Give release jobs a build number derived from the CI run. A clean checkout otherwise repeats the build number stored in the repository.
 - Read the registered App Store Connect record before finalizing identifiers. The Apple ID, product name, and bundle identifier must agree before signing and upload checks begin.
+- When adding OAuth to a related native app, inspect the user's existing implementation before choosing a hosted callback design. Note Nerds should follow Sync Bar's fixed localhost callback for Notion unless the platform proves it cannot run reliably.
+- On iPadOS, do not open OAuth authorization with `UIApplication.open` while waiting on an in-app localhost listener. Present the authorization with `ASWebAuthenticationSession` so the app remains active and the authentication view returns directly to the app.
+- Apple Pencil squeeze controls must leave the canvas unchanged. Design and approve the contextual palette in Paper before changing the production interface, honor the system squeeze preference, and anchor the palette near the Pencil tip.
+- When a named MCP server is not in the visible tool list, check the configured and deferred MCP catalog before using browser or accessibility control. Use the named server when it is available.
+- The Apple Pencil squeeze menu is radial. Improve its placement, symbols, material, and motion without changing it into a horizontal palette.
+- Center the squeeze menu ring on the live Pencil position. Keep the radius tight, omit the current Pencil tool from the center, and retain the last hover point for squeeze events that omit their pose.
+- Doppler secret deletion prints the full remaining configuration unless silent output is requested. Always add `--silent` to mutating Doppler commands and use name-only JSON checks so secret values never enter task output.
+- Xcode prints values read from an `-xcconfig` file, including reversible encodings. Pass protected build values through the child process environment, keep them out of command arguments and build logs, and verify that behavior with dummy-value tests before using Doppler credentials.
+- Check every field named in a date-versioned API upgrade guide. A matching version header does not prevent removed response fields from breaking decoding.
+- Do not run UI and behavior test commands against the same simulator at the same time. The competing test runners can terminate each other.
+- During long builds and audits, give the user a concrete status at least once per hour. State what passes, what remains, and any action only the user can take.
+- Canvas management belongs in the Canvases sheet. Give long press and the trailing ellipsis the same Rename canvas, Duplicate canvas, and Change paper actions, with rename performed in place on the canvas label.
+- Keep editor chrome task-specific. The note-view ellipsis opens the Canvases sheet, and Draw with finger belongs with Writing tools.

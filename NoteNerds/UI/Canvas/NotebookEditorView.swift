@@ -2,7 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 struct NotebookEditorView: View {
     @ObservedObject var model: AppModel
-    @Environment(\.accessibilityReduceMotion) private var isReduceMotionEnabled
+    @Environment(\.accessibilityReduceMotion) var isReduceMotionEnabled
     let notebook: Notebook
     @State var canvasIndex = 0
     @State var palette = ToolPaletteState()
@@ -10,7 +10,8 @@ struct NotebookEditorView: View {
     @State var favoriteTwo = ToolConfiguration.favoriteTwo
     @State private var isRadialMenuVisible = false
     @State private var radialMenuOrigin: CGPoint?
-    @State private var previousDrawingTool = CanvasTool.ballpoint
+    @State var previousDrawingTool = CanvasTool.ballpoint
+    @State var previousCanvasTool = CanvasTool.pencil
     @State private var textEditingSession: CanvasTextEditingSession?
     @State var isTextToolActive = false
     @State private var isFileImporterPresented = false
@@ -26,10 +27,12 @@ struct NotebookEditorView: View {
     @State private var isCanvasBrowserPresented = false
     @State private var paperPickerPurpose: PaperPickerPurpose?
     @State private var sharedFile: SharedFile?
+    @GestureState var toolbarDragTranslation = CGSize.zero
+    @GestureState var isToolbarDragging = false
     @AppStorage("defaultPaperType") private var defaultPaperTypeRawValue = PaperType.blankWhite.rawValue
-    @AppStorage("isFingerDrawingEnabled") private var isFingerDrawingEnabled = false
+    @AppStorage("isFingerDrawingEnabled") var isFingerDrawingEnabled = false
     @AppStorage("isToolbarOnLeft") var isToolbarOnLeft = true
-    @AppStorage("canvasToolbarOrientation") private var toolbarOrientationRawValue =
+    @AppStorage("canvasToolbarOrientation") var toolbarOrientationRawValue =
         CanvasToolbarOrientation.vertical.rawValue
     @AppStorage("favoriteToolOne") private var favoriteOneData = ""
     @AppStorage("favoriteToolTwo") private var favoriteTwoData = ""
@@ -113,15 +116,14 @@ struct NotebookEditorView: View {
                 onCancelText: { textEditingSession = nil },
                 onObjectSelectionChanged: { isObjectSelectionActive = $0 },
                 onViewportChanged: { visibleCanvasBounds = $0 },
-                onPencilSqueeze: { location in
-                    radialMenuOrigin = location
-                    showRadialMenu()
+                onPencilSqueeze: { response, location in
+                    handlePencilSqueeze(response, location: location)
                 },
                 onPencilDoubleTap: switchDrawingToolAndEraser
             )
             floatingToolbar
             if isRadialMenuVisible {
-            RadialToolMenu(
+                RadialToolMenu(
                     configuration: configuration,
                     isVisible: $isRadialMenuVisible,
                     requestedOrigin: radialMenuOrigin,
@@ -133,7 +135,6 @@ struct NotebookEditorView: View {
                     onCycleColor: cycleColor,
                     onSelectionAction: sendEditingCommand
                 )
-                    .transition(.opacity.combined(with: .scale(scale: 0.86)))
             }
             if isMinimapVisible {
                 CanvasMinimapView(
@@ -186,9 +187,16 @@ struct NotebookEditorView: View {
             CanvasBrowserView(
                 notebook: notebook,
                 selectedIndex: $canvasIndex,
+                onRename: { canvasID, name in
+                    model.renameCanvas(canvasID, to: name, in: notebook.id)
+                },
+                onDuplicate: { canvasID in
+                    model.duplicateCanvas(canvasID, in: notebook.id)
+                },
                 onMove: { source, destination in
                     model.moveCanvas(from: source, to: destination, in: notebook.id)
                 },
+                onDelete: deleteCanvas,
                 onChangePaper: { canvasID, paperType in
                     model.changeTemplate(paperType, notebookID: notebook.id, canvasID: canvasID)
                 }
@@ -226,7 +234,6 @@ struct NotebookEditorView: View {
             layers: currentCanvas.layers,
             isSelectionMenuVisible: configuration.tool == .lasso || isObjectSelectionActive,
             isObjectSelectionActive: isObjectSelectionActive,
-            isFingerDrawingEnabled: $isFingerDrawingEnabled,
             onClose: model.closeNotebook,
             onRenameNotebook: { model.renameNotebook(notebook.id, to: $0) },
             onOpenBrowser: { isCanvasBrowserPresented = true },
@@ -235,10 +242,7 @@ struct NotebookEditorView: View {
             onExportPDF: preparePDFExport,
             onExportPNG: preparePNGExport,
             onExportNative: prepareNativeExport,
-            onSharePDF: preparePDFShare,
-            onDuplicateCanvas: { model.duplicateCanvas(currentCanvas.id, in: notebook.id) },
-            onDeleteCanvas: deleteCanvas,
-            onMoveCanvas: moveCanvas
+            onSharePDF: preparePDFShare
         )
     }
 
@@ -256,12 +260,19 @@ struct NotebookEditorView: View {
         canvasIndex = max(0, canvasIndex - 1)
     }
 
+    private func deleteCanvas(_ canvasID: CanvasID) {
+        guard let index = notebook.canvases.firstIndex(where: { $0.id == canvasID }) else { return }
+        model.deleteCanvas(canvasID, in: notebook.id)
+        if index <= canvasIndex { canvasIndex = max(0, canvasIndex - 1) }
+    }
+
     private func moveCanvas(to destination: Int) {
         model.moveCanvas(from: canvasIndex, to: destination, in: notebook.id)
         canvasIndex = destination
     }
     func select(_ toolConfiguration: ToolConfiguration) {
         isTextToolActive = false
+        if configuration.tool != toolConfiguration.tool { previousCanvasTool = configuration.tool }
         palette.select(toolConfiguration.tool)
         palette.setWidth(toolConfiguration.width)
         palette.setColor(toolConfiguration.color)
@@ -292,6 +303,7 @@ struct NotebookEditorView: View {
 
     func selectTool(_ tool: CanvasTool) {
         isTextToolActive = false
+        if configuration.tool != tool { previousCanvasTool = configuration.tool }
         if tool != .eraser && tool != .lasso { previousDrawingTool = tool }
         palette.select(tool)
     }
@@ -325,29 +337,31 @@ struct NotebookEditorView: View {
         palette.setColor(colors[(index + 1) % colors.count])
     }
 
-    func showRadialMenu() {
+    func toggleRadialMenu() {
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
         if isReduceMotionEnabled {
-            isRadialMenuVisible = true
+            isRadialMenuVisible.toggle()
         } else {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { isRadialMenuVisible = true }
+            withAnimation(.easeOut(duration: 0.12)) { isRadialMenuVisible.toggle() }
         }
     }
 
-    func changeTemplate(_ template: CanvasTemplate) {
-        model.changeTemplate(template, notebookID: notebook.id, canvasID: currentCanvas.id)
+    func handlePencilSqueeze(_ response: PencilSqueezeResponse, location: CGPoint?) {
+        switch response {
+        case .none:
+            break
+        case .switchEraser:
+            switchDrawingToolAndEraser()
+        case .switchPreviousTool:
+            switchToPreviousTool()
+        case .showRadialPalette:
+            radialMenuOrigin = location
+            toggleRadialMenu()
+        }
     }
 
     func showPaperGallery() {
         paperPickerPurpose = .currentCanvas
-    }
-
-    func addLayer() {
-        model.addLayer(to: currentCanvas.id, in: notebook.id)
-    }
-
-    func activateTextTool() {
-        isTextToolActive = true
     }
 
     private func placeText(at point: CanvasPoint) {
@@ -356,8 +370,10 @@ struct NotebookEditorView: View {
     }
 
     private func commitText(_ textBlock: TextBlock) {
-        guard let session = textEditingSession else { return }
-        if session.isExistingText {
+        let isExistingText = currentCanvas.layers
+            .flatMap(\.objects)
+            .contains { $0.id == textBlock.id }
+        if isExistingText {
             model.updateTextBlock(textBlock, canvasID: currentCanvas.id, notebookID: notebook.id)
         } else {
             model.addTextBlock(
@@ -474,16 +490,5 @@ extension NotebookEditorView {
             get: { exportDocument != nil },
             set: { if !$0 { exportDocument = nil } }
         )
-    }
-
-    func switchDrawingToolAndEraser() {
-        isTextToolActive = false
-        if configuration.tool == .eraser {
-            palette.select(previousDrawingTool)
-        } else {
-            if configuration.tool != .lasso { previousDrawingTool = configuration.tool }
-            palette.select(.eraser)
-        }
-        UISelectionFeedbackGenerator().selectionChanged()
     }
 }

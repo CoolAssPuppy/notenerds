@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -37,6 +38,7 @@ def run(
     log_path: Path | None = None,
     cwd: Path | None = None,
     beautify: bool = False,
+    environment: dict[str, str] | None = None,
 ) -> int:
     """Run `cmd`, streaming stdout/stderr live.
 
@@ -46,19 +48,25 @@ def run(
     """
     log.info("$ " + " ".join(_shellish(c) for c in cmd))
     if beautify and have("xcbeautify"):
-        rc = _run_with_xcbeautify(cmd, log_path, cwd)
+        rc = _run_with_xcbeautify(cmd, log_path, cwd, environment)
     else:
-        rc = _run_simple(cmd, log_path, cwd)
+        rc = _run_simple(cmd, log_path, cwd, environment)
     if rc != 0:
         raise CommandError(f"command failed (exit {rc}): {cmd[0]}")
     return rc
 
 
-def _run_simple(cmd: list[str], log_path: Path | None, cwd: Path | None) -> int:
+def _run_simple(
+    cmd: list[str],
+    log_path: Path | None,
+    cwd: Path | None,
+    environment: dict[str, str] | None,
+) -> int:
     log_file = log_path.open("w") if log_path else None
     try:
         proc = subprocess.Popen(
             cmd, cwd=cwd,
+            env=_child_environment(environment),
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, bufsize=1,
         )
@@ -73,11 +81,17 @@ def _run_simple(cmd: list[str], log_path: Path | None, cwd: Path | None) -> int:
             log_file.close()
 
 
-def _run_with_xcbeautify(cmd: list[str], log_path: Path | None, cwd: Path | None) -> int:
+def _run_with_xcbeautify(
+    cmd: list[str],
+    log_path: Path | None,
+    cwd: Path | None,
+    environment: dict[str, str] | None,
+) -> int:
     log_file = log_path.open("w") if log_path else None
     try:
         primary = subprocess.Popen(
             cmd, cwd=cwd,
+            env=_child_environment(environment),
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, bufsize=1,
         )
@@ -109,6 +123,12 @@ def _shellish(token: str) -> str:
     if not s or any(ch in s for ch in ' "\'$`\\'):
         return f"'{s}'"
     return s
+
+
+def _child_environment(overrides: dict[str, str] | None) -> dict[str, str] | None:
+    if overrides is None:
+        return None
+    return {**os.environ, **overrides}
 
 
 def capture(cmd: list[str], *, cwd: Path | None = None) -> str:
@@ -168,7 +188,7 @@ class Simulator:
         return self.state == "Booted"
 
 
-_VARIANT_RANK = {"Pro Max": 4, "Pro": 3, "Plus": 2, "": 1, "mini": 0}
+_DEVICE_CLASS_RANK = {"Pro": 3, "Air": 2, "": 1, "mini": 0}
 
 
 def _runtime_score(runtime: str) -> tuple[int, int]:
@@ -178,12 +198,13 @@ def _runtime_score(runtime: str) -> tuple[int, int]:
 
 
 def _name_score(name: str) -> tuple[int, int]:
-    m = re.search(r"(\d+)(?:-inch)?(?:\s+\([^)]*\))?(?:\s+(.+))?", name)
-    if not m:
-        return (0, -1)
-    major = int(m.group(1))
-    suffix = (m.group(2) or "").strip()
-    return (major, _VARIANT_RANK.get(suffix, -1))
+    size_match = re.search(r"(\d+)-inch", name)
+    size = int(size_match.group(1)) if size_match else 0
+    device_class = next(
+        (value for value in ("Pro", "Air", "mini") if re.search(rf"\b{value}\b", name)),
+        "",
+    )
+    return (size, _DEVICE_CLASS_RANK[device_class])
 
 
 def _sim_sort_key(s: Simulator) -> tuple:

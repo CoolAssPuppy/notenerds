@@ -17,7 +17,7 @@ key_dir = "~/.private_keys"
 [doppler]
 project = "notenerds"
 config = "prd"
-secrets = ["ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_APP_ID", "ASC_PRIVATE_KEY"]
+secrets = ["ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_APP_ID", "ASC_PRIVATE_KEY", "NOTION_CLIENT_ID", "NOTION_CLIENT_SECRET"]
 
 [release]
 release_type = "MANUAL"

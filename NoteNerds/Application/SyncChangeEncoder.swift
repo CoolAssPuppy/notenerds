@@ -125,6 +125,7 @@ extension DocumentOperation {
         case let .insertCanvas(canvas, _): canvas.id.rawValue.uuidString
         case let .deleteCanvas(placement): placement.canvas.id.rawValue.uuidString
         case let .moveCanvas(source, destination): "\(source)-\(destination)"
+        case let .renameCanvas(canvasID, _, _): canvasID.rawValue.uuidString
         case let .insertLayer(_, layer, _): layer.id.rawValue.uuidString
         case let .deleteLayer(placement): placement.layer.id.rawValue.uuidString
         case let .moveLayer(canvasID, _, _): canvasID.rawValue.uuidString
@@ -137,7 +138,7 @@ extension DocumentOperation {
         switch self {
         case .addStroke: "stroke:\(affectedObjectIdentifier)"
         case .deleteObjects, .replaceObjects, .convertStrokesToText: "object:\(affectedObjectIdentifier)"
-        case .insertCanvas, .deleteCanvas: "canvas:\(affectedObjectIdentifier)"
+        case .insertCanvas, .deleteCanvas, .renameCanvas: "canvas:\(affectedObjectIdentifier)"
         case .moveCanvas: "canvas-order"
         case .insertLayer, .deleteLayer, .updateLayer: "layer:\(affectedObjectIdentifier)"
         case .moveLayer: "layer-order:\(affectedObjectIdentifier)"

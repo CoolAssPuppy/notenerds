@@ -15,6 +15,9 @@ settings:
     SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
     GCC_TREAT_WARNINGS_AS_ERRORS: YES
     CLANG_WARN_DOCUMENTATION_COMMENTS: YES
+    LM_FILTER_WARNINGS: YES
+    ENABLE_APP_INTENTS_METADATA_GENERATION: NO
+    INFOPLIST_KEY_UILaunchScreen_Generation: YES
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     IPHONEOS_DEPLOYMENT_TARGET: "18.0"
 targets:
@@ -28,6 +31,8 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         ITSAppUsesNonExemptEncryption: false
+        NNNotionClientIDBase64: $(NOTION_CLIENT_ID_B64)
+        NNNotionClientSecretBase64: $(NOTION_CLIENT_SECRET_B64)
         LSApplicationCategoryType: public.app-category.productivity
         LSSupportsOpeningDocumentsInPlace: true
         UIApplicationSceneManifest:

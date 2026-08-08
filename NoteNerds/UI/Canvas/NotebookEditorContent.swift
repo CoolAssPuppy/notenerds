@@ -35,4 +35,16 @@ extension NotebookEditorView {
     var currentRecognizedText: [String] {
         notebook.recognitionByCanvas[currentCanvas.id, default: []].map(\.result.text)
     }
+
+    func changeTemplate(_ template: CanvasTemplate) {
+        model.changeTemplate(template, notebookID: notebook.id, canvasID: currentCanvas.id)
+    }
+
+    func addLayer() {
+        model.addLayer(to: currentCanvas.id, in: notebook.id)
+    }
+
+    func activateTextTool() {
+        isTextToolActive = true
+    }
 }

@@ -5,6 +5,7 @@ struct CanvasDrawingToolInspector: View {
     let selectedTool: CanvasTool
     let favoriteOne: ToolConfiguration
     let favoriteTwo: ToolConfiguration
+    @Binding var isFingerDrawingEnabled: Bool
     let onSelectTool: (CanvasTool) -> Void
     let onSelectFavorite: (ToolConfiguration) -> Void
     let onSaveFavoriteOne: () -> Void
@@ -20,6 +21,7 @@ struct CanvasDrawingToolInspector: View {
                     toolButton(tool)
                 }
             }
+            Toggle("Draw with finger", isOn: $isFingerDrawingEnabled)
             Divider()
             Text("Favorites").font(.subheadline.weight(.semibold))
             HStack(spacing: 12) {

@@ -1,0 +1,168 @@
+import XCTest
+@testable import NoteNerds
+
+final class NotionAuthenticatedAPIBehaviorTests: XCTestCase {
+    func testUnauthorizedRequestRefreshesOnceAndReplaysWithRotatedAccessToken() async throws {
+        let store = AuthCredentialStore(connection: connection(access: "expired"))
+        let recorder = TokenRecorder()
+        let refresh = RefreshRecorder(store: store, result: connection(access: "rotated"))
+        let api = NotionRefreshingAPI(
+            credentialStore: store,
+            refresh: { try await refresh.run() },
+            apiFactory: { token in TokenAwareSyncAPI(token: token, recorder: recorder) }
+        )
+
+        let uploadID = try await api.uploadFile(
+            data: Data("file".utf8),
+            filename: "file.pdf",
+            contentType: "application/pdf"
+        )
+        let tokens = await recorder.tokens
+        let refreshCount = await refresh.count
+
+        XCTAssertEqual(uploadID, "11111111-1111-1111-1111-111111111111")
+        XCTAssertEqual(tokens, ["expired", "rotated"])
+        XCTAssertEqual(refreshCount, 1)
+    }
+
+    func testSecondUnauthorizedResponseDoesNotStartAnotherRefresh() async throws {
+        let store = AuthCredentialStore(connection: connection(access: "expired"))
+        let recorder = TokenRecorder(alwaysUnauthorized: true)
+        let refresh = RefreshRecorder(store: store, result: connection(access: "rotated"))
+        let api = NotionRefreshingAPI(
+            credentialStore: store,
+            refresh: { try await refresh.run() },
+            apiFactory: { token in TokenAwareSyncAPI(token: token, recorder: recorder) }
+        )
+
+        do {
+            _ = try await api.uploadFile(
+                data: Data("file".utf8),
+                filename: "file.pdf",
+                contentType: "application/pdf"
+            )
+            XCTFail("Expected the replay to remain unauthorized")
+        } catch {
+            XCTAssertEqual(error as? NotionAPIError, .httpStatus(401))
+        }
+        let tokens = await recorder.tokens
+        let refreshCount = await refresh.count
+        XCTAssertEqual(tokens, ["expired", "rotated"])
+        XCTAssertEqual(refreshCount, 1)
+    }
+
+    private func connection(access: String) -> NotionStoredConnection {
+        NotionStoredConnection(
+            credentials: NotionOAuthCredentials(
+                accessToken: access,
+                refreshToken: "refresh-\(access)",
+                workspaceID: "workspace",
+                workspaceName: "Workspace",
+                workspaceIcon: nil,
+                botID: "bot"
+            ),
+            connectedAt: DomainFixtures.fixedDate
+        )
+    }
+}
+
+private final class AuthCredentialStore: NotionCredentialStore, @unchecked Sendable {
+    private let lock = NSLock()
+    private var connection: NotionStoredConnection?
+
+    init(connection: NotionStoredConnection?) {
+        self.connection = connection
+    }
+
+    func load() throws -> NotionStoredConnection? {
+        lock.withLock { connection }
+    }
+
+    func save(_ connection: NotionStoredConnection) throws {
+        lock.withLock { self.connection = connection }
+    }
+
+    func delete() throws {
+        lock.withLock { connection = nil }
+    }
+}
+
+private actor RefreshRecorder {
+    private let store: AuthCredentialStore
+    private let result: NotionStoredConnection
+    private(set) var count = 0
+
+    init(store: AuthCredentialStore, result: NotionStoredConnection) {
+        self.store = store
+        self.result = result
+    }
+
+    func run() throws -> NotionStoredConnection {
+        count += 1
+        try store.save(result)
+        return result
+    }
+}
+
+private actor TokenRecorder {
+    private(set) var tokens: [String] = []
+    let alwaysUnauthorized: Bool
+
+    init(alwaysUnauthorized: Bool = false) {
+        self.alwaysUnauthorized = alwaysUnauthorized
+    }
+
+    func record(_ token: String) throws {
+        tokens.append(token)
+        if alwaysUnauthorized || token == "expired" {
+            throw NotionAPIError.httpStatus(401)
+        }
+    }
+}
+
+private struct TokenAwareSyncAPI: NotionSyncAPI {
+    let token: String
+    let recorder: TokenRecorder
+
+    func uploadFile(data: Data, filename: String, contentType: String) async throws -> String {
+        try await recorder.record(token)
+        return "11111111-1111-1111-1111-111111111111"
+    }
+
+    func findNotebookPage(dataSourceID: String, notebookID: String) async throws -> NotionPageBinding? {
+        try await recorder.record(token)
+        return nil
+    }
+
+    func createNotebookPage(
+        dataSourceID: String,
+        snapshot: NotionNotebookSnapshot,
+        files: NotionNotebookRemoteFiles
+    ) async throws -> NotionPageBinding {
+        try await recorder.record(token)
+        return NotionPageBinding(pageID: "22222222-2222-2222-2222-222222222222", url: nil)
+    }
+
+    func updateNotebookPage(
+        pageID: String,
+        snapshot: NotionNotebookSnapshot,
+        files: NotionNotebookRemoteFiles
+    ) async throws -> NotionPageBinding {
+        try await recorder.record(token)
+        return NotionPageBinding(pageID: pageID, url: nil)
+    }
+
+    func findManagedRootBlock(pageID: String, notebookID: String) async throws -> String? {
+        try await recorder.record(token)
+        return nil
+    }
+
+    func replaceManagedPage(
+        pageID: String,
+        oldRootID: String?,
+        plan: NotionManagedPagePlan
+    ) async throws -> String {
+        try await recorder.record(token)
+        return "33333333-3333-3333-3333-333333333333"
+    }
+}

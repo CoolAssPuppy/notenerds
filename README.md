@@ -67,6 +67,9 @@ Build and App Store release instructions are in [the deployment guide](docs/depl
 - Local snapshots and an operation journal for recovery after an interrupted write.
 - Local-first autosave. Drawing and editing continue when iCloud is unavailable.
 - Private CloudKit synchronization with incremental changes, retry state, assets, cursors, tombstones, and deterministic conflict handling.
+- Optional Notion OAuth connection using a device-only localhost callback.
+- One Notion database row per notebook, with canvas previews, searchable text, PDF output, and a restorable native archive.
+- Manual and automatic Notion publishing, folder-manifest preservation, conflict review, and exact restore.
 - A provider protocol that keeps CloudKit types out of the domain model.
 
 ### iPad integration and accessibility
@@ -236,7 +239,7 @@ Notebook.notenerds/
     └── <asset UUID files>
 ```
 
-`Document.json` contains the versioned canonical notebook model. `Manifest.json` maps asset identifiers to their files. The current document schema is version 3.
+`Document.json` contains the versioned canonical notebook model. `Manifest.json` maps asset identifiers to their files. The current document schema is version 4.
 
 Serialization uses sorted JSON keys and millisecond timestamps for deterministic output. Newer unsupported schema versions are rejected before document data is changed. Older supported documents are migrated to the current schema. Archive reads validate asset names, constrain file sizes, and reject paths outside the package asset directory.
 
@@ -258,6 +261,20 @@ The sync path supports:
 - User-facing account, quota, service, and persistent failure states.
 
 Local files remain authoritative for immediate interaction. Search, drawing, opening notebooks, and undo continue offline.
+
+## Notion integration
+
+Notion is an optional publish and restore destination. CloudKit remains the device sync provider. After OAuth, the user chooses a Notion page and Note Nerds creates a database plus a companion library-manifest page there.
+
+Release builds read `NOTION_CLIENT_ID` and `NOTION_CLIENT_SECRET` from Doppler through the release command. The Notion integration must use this exact redirect URI:
+
+```text
+http://localhost:53117/oauth/notion
+```
+
+The app binds its one-use callback listener to `127.0.0.1`. User access and refresh tokens stay in device-only Keychain items. The Notion client secret is part of the distributed application because Notion's public OAuth flow does not provide PKCE. Treat that client value as public application configuration rather than user authorization.
+
+Implementation details, database properties, restore rules, security limits, and tests are in [the Notion integration plan](docs/notion-integration-plan.md).
 
 ## Privacy and security
 

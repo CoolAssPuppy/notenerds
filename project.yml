@@ -45,6 +45,10 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         UTExportedTypeDeclarations:
           - UTTypeIdentifier: com.strategicnerds.notenerds.notebook
             UTTypeDescription: Note Nerds editable notebook
@@ -74,7 +78,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.strategicnerds.notenerds
-        TARGETED_DEVICE_FAMILY: "2"
+        TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
         CODE_SIGN_STYLE: Automatic

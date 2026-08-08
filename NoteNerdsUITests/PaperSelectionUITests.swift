@@ -4,7 +4,8 @@ import XCTest
 final class PaperSelectionUITests: XCTestCase {
     private let paperNames = [
         "Blank white", "Blank cream", "Grid large", "Grid small",
-        "Dot large", "Dot small", "Yellow legal pad", "White legal pad"
+        "Dot large", "Dot small", "Hexagon small", "Hexagon large",
+        "Yellow legal pad", "White legal pad", "Daily planner", "Weekly planner"
     ]
 
     func testDefaultNewCanvasAndExistingCanvasUseThePaperGallery() {
@@ -54,7 +55,11 @@ final class PaperSelectionUITests: XCTestCase {
 
     private func assertPaperGallery(in application: XCUIApplication) {
         XCTAssertTrue(application.navigationBars["Paper"].waitForExistence(timeout: 2))
+        let gallery = application.scrollViews.firstMatch
         for paperName in paperNames {
+            for _ in 0..<4 where !application.buttons["Paper, \(paperName)"].exists {
+                gallery.swipeUp()
+            }
             XCTAssertTrue(application.buttons["Paper, \(paperName)"].exists)
         }
     }

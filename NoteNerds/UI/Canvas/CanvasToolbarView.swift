@@ -2,17 +2,12 @@ import SwiftUI
 
 struct CanvasToolbarView: View {
     let editor: NotebookEditorView
-    @State private var layerToRename: Layer?
-    @State private var proposedLayerName = ""
     @State private var presentedInspector: CanvasToolbarInspector?
     @AppStorage("isCanvasToolbarExpanded") private var isExpanded = false
     @Environment(\.accessibilityReduceMotion) private var isReduceMotionEnabled
     @Environment(\.accessibilityReduceTransparency) private var isReduceTransparencyEnabled
 
-    private let drawingTools: [CanvasTool] = [
-        .ballpoint, .fineliner, .mechanicalPencil, .pencil,
-        .marker, .highlighter, .brush, .calligraphyPen, .handwritingToText
-    ]
+    private let drawingTools = CanvasToolbarPresentation.specializedDrawingTools
 
     var body: some View {
         toolbarContainer
@@ -24,14 +19,6 @@ struct CanvasToolbarView: View {
         }
         .shadow(color: .black.opacity(0.09), radius: 18, y: 6)
         .animation(toolbarAnimation, value: isExpanded)
-        .alert("Rename layer", isPresented: renamePresentation) {
-            TextField("Layer name", text: $proposedLayerName)
-            Button("Rename") {
-                if let layerToRename { editor.renameLayer(layerToRename, to: proposedLayerName) }
-                layerToRename = nil
-            }
-            Button("Cancel", role: .cancel) { layerToRename = nil }
-        }
     }
 
     @ViewBuilder
@@ -69,6 +56,12 @@ struct CanvasToolbarView: View {
     @ViewBuilder
     private var toolbarActionItems: some View {
         drawingToolInspectorButton
+        if isExpanded {
+            ForEach(drawingTools, id: \.self) { tool in
+                directDrawingToolButton(tool)
+            }
+            chromeDivider
+        }
         widthInspectorButton
         colorInspectorButton
         eraserInspectorButton
@@ -152,6 +145,18 @@ struct CanvasToolbarView: View {
         }
     }
 
+    private func directDrawingToolButton(_ tool: CanvasTool) -> some View {
+        chromeButton(
+            tool.label,
+            symbol: tool.symbol,
+            isSelected: editor.configuration.tool == tool
+        ) {
+            editor.selectTool(tool)
+        }
+        .accessibilityValue(editor.configuration.tool == tool ? "Selected" : "Not selected")
+        .keyboardShortcut(tool.keyboardShortcut, modifiers: [])
+    }
+
     private var widthInspectorButton: some View {
         Button { presentedInspector = .width } label: {
             CanvasChromeIcon(symbol: "lineweight")
@@ -224,36 +229,23 @@ struct CanvasToolbarView: View {
     }
 
     private var layersButton: some View {
-        Menu("Layers", systemImage: "square.3.layers.3d") {
-            ForEach(editor.currentCanvas.layers) { layer in
-                Button(layer.isVisible ? "Hide \(layer.name)" : "Show \(layer.name)") {
-                    editor.toggleLayer(layer)
-                }
-                Button("Rename \(layer.name)", systemImage: "pencil") {
-                    proposedLayerName = layer.name
-                    layerToRename = layer
-                }
-                if layer.id != editor.currentCanvas.layers.first?.id {
-                    Button("Move \(layer.name) down", systemImage: "arrow.down") {
-                        editor.moveLayer(layer, by: -1)
-                    }
-                }
-                if layer.id != editor.currentCanvas.layers.last?.id {
-                    Button("Move \(layer.name) up", systemImage: "arrow.up") {
-                        editor.moveLayer(layer, by: 1)
-                    }
-                }
-                if editor.currentCanvas.layers.count > 1 {
-                    Button("Delete \(layer.name)", role: .destructive) { editor.deleteLayer(layer) }
-                }
-            }
-            Divider()
-            Button("New layer", systemImage: "plus", action: editor.addLayer)
+        Button { presentedInspector = .layers } label: {
+            CanvasChromeIcon(symbol: "square.3.layers.3d", isSelected: false)
         }
-        .labelStyle(.iconOnly)
-        .frame(width: 44, height: 44)
         .accessibilityLabel("Layers")
         .help("Layers")
+        .popover(isPresented: inspectorBinding(.layers)) {
+            CanvasLayersPanel(
+                canvas: editor.currentCanvas,
+                selectedLayerID: editor.activeLayer.id,
+                onSelect: editor.selectLayer,
+                onCreate: editor.addLayer,
+                onToggleVisibility: editor.toggleLayer,
+                onRename: editor.renameLayer,
+                onMove: editor.moveLayer,
+                onDelete: editor.deleteLayer
+            )
+        }
     }
 
     @ViewBuilder
@@ -288,13 +280,6 @@ struct CanvasToolbarView: View {
             .padding(editor.toolbarOrientation == .vertical ? .vertical : .horizontal, 3)
     }
 
-    private var renamePresentation: Binding<Bool> {
-        Binding(
-            get: { layerToRename != nil },
-            set: { if !$0 { layerToRename = nil } }
-        )
-    }
-
     private func inspectorBinding(_ inspector: CanvasToolbarInspector) -> Binding<Bool> {
         Binding(
             get: { presentedInspector == inspector },
@@ -325,6 +310,7 @@ private enum CanvasToolbarInspector {
     case color
     case eraser
     case shapes
+    case layers
 }
 
 private struct CanvasChromeIcon: View {
@@ -339,23 +325,5 @@ private struct CanvasChromeIcon: View {
             .frame(width: 44, height: 44)
             .background(isSelected ? Color.accentColor : Color.clear, in: Circle())
             .contentShape(Rectangle())
-    }
-}
-
-extension CanvasTool {
-    var keyboardShortcut: KeyEquivalent {
-        switch self {
-        case .ballpoint: "b"
-        case .fineliner: "f"
-        case .mechanicalPencil: "m"
-        case .pencil: "p"
-        case .marker: "k"
-        case .highlighter: "h"
-        case .brush: "r"
-        case .calligraphyPen: "g"
-        case .eraser: "e"
-        case .lasso: "l"
-        case .handwritingToText: "t"
-        }
     }
 }

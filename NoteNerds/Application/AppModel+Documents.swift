@@ -128,11 +128,21 @@ extension AppModel {
         execute(.moveCanvas(sourceIndex: source, destinationIndex: destination), on: notebookID)
     }
 
-    func addLayer(to canvasID: CanvasID, in notebookID: NotebookID) {
+    @discardableResult
+    func addLayer(
+        to canvasID: CanvasID,
+        in notebookID: NotebookID,
+        at insertionIndex: Int? = nil
+    ) -> LayerID? {
         guard let notebook = library.notebook(id: notebookID),
-              let canvas = notebook.canvases.first(where: { $0.id == canvasID }) else { return }
-        let layer = Layer(name: "Layer \(canvas.layers.count + 1)")
-        execute(.insertLayer(canvasID: canvasID, layer: layer, index: canvas.layers.count), on: notebookID)
+              let canvas = notebook.canvases.first(where: { $0.id == canvasID }) else { return nil }
+        let index = insertionIndex ?? canvas.layers.count
+        guard (0...canvas.layers.count).contains(index) else { return nil }
+        let usedNames = Set(canvas.layers.map(\.name))
+        let number = (1...).first(where: { !usedNames.contains("Layer \($0)") }) ?? canvas.layers.count + 1
+        let layer = Layer(name: "Layer \(number)")
+        execute(.insertLayer(canvasID: canvasID, layer: layer, index: index), on: notebookID)
+        return layer.id
     }
 
     func deleteLayer(_ layerID: LayerID, from canvasID: CanvasID, in notebookID: NotebookID) {

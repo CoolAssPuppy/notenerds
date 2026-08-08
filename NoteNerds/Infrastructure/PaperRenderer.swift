@@ -41,8 +41,14 @@ enum PaperRenderer {
             drawGrid(spacing: paperType.spacing, in: context, bounds: bounds)
         case .dotLarge, .dotSmall:
             drawDots(spacing: paperType.spacing, in: context, bounds: bounds)
+        case .hexagonSmall, .hexagonLarge:
+            HexagonPaperRenderer.draw(sideLength: paperType.spacing, in: context, bounds: bounds)
         case .yellowLegalPad, .whiteLegalPad:
             drawLegalPad(spacing: paperType.spacing, in: context, bounds: bounds)
+        case .dailyPlanner:
+            PlannerPaperRenderer.drawDaily(in: context, bounds: bounds)
+        case .weeklyPlanner:
+            PlannerPaperRenderer.drawWeekly(in: context, bounds: bounds)
         }
         context.restoreGState()
     }
@@ -96,8 +102,12 @@ extension PaperType {
         case .gridSmall: "Grid small"
         case .dotLarge: "Dot large"
         case .dotSmall: "Dot small"
+        case .hexagonSmall: "Hexagon small"
+        case .hexagonLarge: "Hexagon large"
         case .yellowLegalPad: "Yellow legal pad"
         case .whiteLegalPad: "White legal pad"
+        case .dailyPlanner: "Daily planner"
+        case .weeklyPlanner: "Weekly planner"
         }
     }
 
@@ -105,7 +115,9 @@ extension PaperType {
         switch self {
         case .blankCream: UIColor(red: 0.98, green: 0.955, blue: 0.875, alpha: 1)
         case .yellowLegalPad: UIColor(red: 1, green: 0.965, blue: 0.69, alpha: 1)
-        case .blankWhite, .gridLarge, .gridSmall, .dotLarge, .dotSmall, .whiteLegalPad: .white
+        case .blankWhite, .gridLarge, .gridSmall, .dotLarge, .dotSmall,
+             .hexagonSmall, .hexagonLarge, .whiteLegalPad, .dailyPlanner, .weeklyPlanner:
+            .white
         }
     }
 
@@ -113,9 +125,9 @@ extension PaperType {
         switch self {
         case .yellowLegalPad, .whiteLegalPad:
             UIColor(red: 0.25, green: 0.48, blue: 0.72, alpha: 0.32)
-        case .gridLarge, .gridSmall:
+        case .gridLarge, .gridSmall, .hexagonSmall, .hexagonLarge:
             UIColor(red: 0.38, green: 0.55, blue: 0.68, alpha: 0.28)
-        case .blankWhite, .blankCream, .dotLarge, .dotSmall:
+        case .blankWhite, .blankCream, .dotLarge, .dotSmall, .dailyPlanner, .weeklyPlanner:
             Self.dotColor
         }
     }
@@ -124,17 +136,35 @@ extension PaperType {
         switch self {
         case .gridLarge, .dotLarge: 48
         case .gridSmall, .dotSmall: 24
+        case .hexagonSmall: 12
+        case .hexagonLarge: 24
         case .yellowLegalPad: 36
         case .whiteLegalPad: 30
-        case .blankWhite, .blankCream: 32
+        case .blankWhite, .blankCream, .dailyPlanner, .weeklyPlanner: 32
         }
     }
 
     var tileSize: CGSize {
         switch self {
         case .yellowLegalPad, .whiteLegalPad: CGSize(width: 320, height: spacing)
+        case .hexagonSmall, .hexagonLarge:
+            CGSize(width: sqrt(3) * spacing * 2, height: spacing * 3)
+        case .dailyPlanner, .weeklyPlanner: PlannerPageLayout.pageSize
         default: CGSize(width: spacing, height: spacing)
         }
+    }
+
+    var previewAspectRatio: CGFloat {
+        switch self {
+        case .dailyPlanner, .weeklyPlanner:
+            PlannerPageLayout.pageSize.width / PlannerPageLayout.pageSize.height
+        default:
+            4 / 3
+        }
+    }
+
+    var isPlanner: Bool {
+        [.dailyPlanner, .weeklyPlanner].contains(self)
     }
 
     fileprivate var hasPattern: Bool {

@@ -13,7 +13,17 @@ final class CanvasToolbarBehaviorTests: XCTestCase {
         XCTAssertEqual(
             CanvasToolbarPresentation.actions(isExpanded: true),
             [
-                .drawing, .width, .color, .eraser,
+                .drawing,
+                .drawingTool(.ballpoint),
+                .drawingTool(.fineliner),
+                .drawingTool(.mechanicalPencil),
+                .drawingTool(.pencil),
+                .drawingTool(.marker),
+                .drawingTool(.highlighter),
+                .drawingTool(.brush),
+                .drawingTool(.calligraphyPen),
+                .drawingTool(.handwritingToText),
+                .width, .color, .eraser,
                 .lasso, .text, .shapes, .undo, .redo,
                 .zoomToContent, .minimap, .changePaper, .importContent, .layers, .home
             ]

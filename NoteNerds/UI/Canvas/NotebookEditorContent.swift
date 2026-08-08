@@ -1,12 +1,27 @@
 import Foundation
+import UIKit
 
 extension NotebookEditorView {
+    var toolbarOrientation: CanvasToolbarOrientation {
+        CanvasToolbarOrientation(rawValue: toolbarOrientationRawValue) ?? .vertical
+    }
+
+    var selectedDrawingTool: CanvasTool {
+        configuration.tool.instrument == nil ? previousDrawingTool : configuration.tool
+    }
+
     var currentCanvas: Canvas {
         notebook.canvases[min(canvasIndex, notebook.canvases.count - 1)]
     }
 
     var activeLayer: Layer {
-        currentCanvas.layers.last(where: \.isVisible) ?? currentCanvas.layers.last ?? Layer(name: "Layer 1")
+        let selectedID = LayerStackPresentation(
+            layers: currentCanvas.layers,
+            selectedLayerID: selectedLayerIDs[currentCanvas.id]
+        ).activeLayerID
+        return currentCanvas.layers.first(where: { $0.id == selectedID })
+            ?? currentCanvas.layers.last
+            ?? Layer(name: "Layer 1")
     }
 
     var currentStrokes: [Stroke] {
@@ -49,7 +64,17 @@ extension NotebookEditorView {
     }
 
     func addLayer() {
-        model.addLayer(to: currentCanvas.id, in: notebook.id)
+        let presentation = LayerStackPresentation(
+            layers: currentCanvas.layers,
+            selectedLayerID: activeLayer.id
+        )
+        guard let layerID = model.addLayer(
+            to: currentCanvas.id,
+            in: notebook.id,
+            at: presentation.newLayerInsertionIndex
+        ) else { return }
+        selectedLayerIDs[currentCanvas.id] = layerID
+        UISelectionFeedbackGenerator().selectionChanged()
     }
 
     func activateTextTool() {

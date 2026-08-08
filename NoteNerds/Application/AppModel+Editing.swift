@@ -142,9 +142,14 @@ extension AppModel {
         execute(operation, on: notebookID)
     }
 
-    func pasteObjects(_ objects: [CanvasObject], notebookID: NotebookID, canvasID: CanvasID) {
-        let placements = objects.map {
-            ObjectPlacement(layerID: $0.layerID, index: Int.max, object: $0)
+    func pasteObjects(
+        _ objects: [CanvasObject],
+        notebookID: NotebookID,
+        canvasID: CanvasID,
+        layerID: LayerID
+    ) {
+        let placements = objects.map { object in
+            ObjectPlacement(layerID: layerID, index: Int.max, object: object.moved(to: layerID))
         }
         execute(.replaceObjects(canvasID: canvasID, before: [], after: placements), on: notebookID)
     }
@@ -169,17 +174,23 @@ extension AppModel {
         execute(operation, on: notebookID)
     }
 
-    func replaceVisibleStrokes(_ strokes: [Stroke], in notebookID: NotebookID, canvasID: CanvasID) {
+    func replaceVisibleStrokes(
+        _ strokes: [Stroke],
+        in notebookID: NotebookID,
+        canvasID: CanvasID,
+        layerID: LayerID
+    ) {
         guard let notebook = library.notebook(id: notebookID),
-              let canvas = notebook.canvases.first(where: { $0.id == canvasID }) else { return }
-        let visibleStrokeIDs = Set(
-            canvas.layers.filter(\.isVisible).flatMap(\.objects).compactMap(\.strokeValue).map(\.objectID)
-        )
+              let canvas = notebook.canvases.first(where: { $0.id == canvasID }),
+              let activeLayer = canvas.layers.first(where: { $0.id == layerID }) else { return }
+        let activeStrokeIDs = Set(activeLayer.objects.compactMap(\.strokeValue).map(\.objectID))
+        let activeStrokes = strokes.filter { $0.layerID == layerID }
+        guard activeLayer.objects.compactMap(\.strokeValue) != activeStrokes else { return }
         guard let operation = try? DocumentOperation.replacingObjects(
             in: notebook,
             canvasID: canvasID,
-            objectIDs: visibleStrokeIDs,
-            with: strokes.map(CanvasObject.stroke)
+            objectIDs: activeStrokeIDs,
+            with: activeStrokes.map(CanvasObject.stroke)
         ) else { return }
         execute(operation, on: notebookID)
     }

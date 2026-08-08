@@ -10,7 +10,12 @@ struct PencilCanvasView: UIViewRepresentable {
     let highlightedStrokeIDs: Set<StrokeID>
     let recognizedText: [String]
     let configuration: ToolConfiguration
+    let canvasID: CanvasID
     let template: CanvasTemplate
+    let plannerRegions: [CanvasRegion]
+    let selectedPlannerRegionID: String?
+    let isPlannerRegionPagingEnabled: Bool
+    let shouldAnimatePlannerRegionChanges: Bool
     let isFingerDrawingEnabled: Bool
     let textEditingSession: CanvasTextEditingSession?
     let isTextToolActive: Bool
@@ -31,6 +36,7 @@ struct PencilCanvasView: UIViewRepresentable {
     let onViewportChanged: @MainActor (CanvasRect) -> Void
     let onPencilSqueeze: @MainActor (PencilSqueezeResponse, CGPoint?) -> Void
     let onPencilDoubleTap: @MainActor () -> Void
+    let onPlannerRegionPageRequested: @MainActor (Int) -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(
@@ -39,12 +45,14 @@ struct PencilCanvasView: UIViewRepresentable {
             onConvertStrokesToText: onConvertStrokesToText,
             onViewportChanged: onViewportChanged,
             onPencilSqueeze: onPencilSqueeze,
-            onPencilDoubleTap: onPencilDoubleTap
+            onPencilDoubleTap: onPencilDoubleTap,
+            onPlannerRegionPageRequested: onPlannerRegionPageRequested
         )
     }
 
     func makeUIView(context: Context) -> PKCanvasView {
         let canvasView = PKCanvasView()
+        let coordinator = context.coordinator
         let pencilInteraction = UIPencilInteraction()
         pencilInteraction.delegate = context.coordinator
         canvasView.addInteraction(pencilInteraction)
@@ -62,10 +70,9 @@ struct PencilCanvasView: UIViewRepresentable {
         hoverPreview.layer.borderWidth = 1
         canvasView.addSubview(hoverPreview)
         context.coordinator.hoverPreview = hoverPreview
-        canvasView.minimumZoomScale = CanvasViewport.minimumZoom
-        canvasView.maximumZoomScale = CanvasViewport.maximumZoom
-        canvasView.contentSize = CGSize(width: 20_000, height: 20_000)
-        canvasView.contentOffset = CGPoint(x: 9_500, y: 9_500)
+        configureViewport(canvasView)
+        addPlannerSwipeRecognizers(to: canvasView, coordinator: context.coordinator)
+        updatePlannerContext(context.coordinator)
         applyPaper(to: canvasView, coordinator: context.coordinator)
         canvasView.isOpaque = true
         canvasView.alwaysBounceHorizontal = true
@@ -77,9 +84,10 @@ struct PencilCanvasView: UIViewRepresentable {
         context.coordinator.isApplyingModelDrawing = false
         updateObjectOverlays(in: canvasView, coordinator: context.coordinator)
         updateAccessibility(for: canvasView)
-        let coordinator = context.coordinator
         DispatchQueue.main.async { [weak canvasView, weak coordinator] in
             guard let canvasView, let coordinator else { return }
+            coordinator.focusPlannerRegionIfNeeded(in: canvasView)
+            applyInitialPlannerViewport(to: canvasView, coordinator: coordinator)
             coordinator.reportViewport(canvasView)
         }
         apply(configuration, to: canvasView, coordinator: context.coordinator)
@@ -96,11 +104,17 @@ struct PencilCanvasView: UIViewRepresentable {
     func updateUIView(_ canvasView: PKCanvasView, context: Context) {
         context.coordinator.configuration = configuration
         context.coordinator.canonicalStrokes = strokes
+        updatePlannerContext(context.coordinator)
+        context.coordinator.configurePlannerSwipeRecognizers(
+            touchCount: isFingerDrawingEnabled ? 2 : 1
+        )
         canvasView.drawingPolicy = isFingerDrawingEnabled ? .anyInput : .pencilOnly
         canvasView.drawingGestureRecognizer.isEnabled = !isTextToolActive && shapePlacementKind == nil
         if context.coordinator.paperType != template {
             applyPaper(to: canvasView, coordinator: context.coordinator)
         }
+        context.coordinator.focusPlannerRegionIfNeeded(in: canvasView)
+        applyInitialPlannerViewport(to: canvasView, coordinator: context.coordinator)
         updateObjectOverlays(in: canvasView, coordinator: context.coordinator)
         updateInlineTextEditor(in: canvasView, coordinator: context.coordinator)
         bringCanvasOverlaysToFront(in: canvasView, coordinator: context.coordinator)
@@ -115,7 +129,7 @@ struct PencilCanvasView: UIViewRepresentable {
     }
 
     @MainActor
-    final class Coordinator: NSObject, PKCanvasViewDelegate, UIPencilInteractionDelegate {
+    final class Coordinator: NSObject, PKCanvasViewDelegate, UIPencilInteractionDelegate, UIGestureRecognizerDelegate {
         var knownStrokeCount = 0
         var canonicalStrokes: [Stroke] = []
         var isApplyingModelDrawing = false
@@ -134,12 +148,26 @@ struct PencilCanvasView: UIViewRepresentable {
         var latestPencilRoll = 0.0
         var latestPencilLocation: CGPoint?
         var paperType: PaperType?
+        var hasAppliedInitialPlannerViewport = false
+        var canvasID: CanvasID?
+        var plannerRegions: [CanvasRegion] = []
+        var selectedPlannerRegionID: String?
+        var isPlannerRegionPagingEnabled = false
+        var shouldAnimatePlannerRegionChanges = true
+        var lastFocusedCanvasID: CanvasID?
+        var lastFocusedRegionID: String?
+        var lastPlannerViewportSize = CGSize.zero
+        var isApplyingPlannerViewport = false
+        var hasRequestedRegionForCurrentPan = false
+        weak var previousRegionSwipeRecognizer: UISwipeGestureRecognizer?
+        weak var nextRegionSwipeRecognizer: UISwipeGestureRecognizer?
         private let onStrokesCompleted: @MainActor ([Stroke]) -> Void
         private let onDrawingChanged: @MainActor ([Stroke]) -> Void
         private let onConvertStrokesToText: @MainActor ([Stroke]) -> Void
         private let onViewportChanged: @MainActor (CanvasRect) -> Void
         private let onPencilSqueeze: @MainActor (PencilSqueezeResponse, CGPoint?) -> Void
         private let onPencilDoubleTap: @MainActor () -> Void
+        let onPlannerRegionPageRequested: @MainActor (Int) -> Void
 
         init(
             onStrokesCompleted: @escaping @MainActor ([Stroke]) -> Void,
@@ -147,7 +175,8 @@ struct PencilCanvasView: UIViewRepresentable {
             onConvertStrokesToText: @escaping @MainActor ([Stroke]) -> Void,
             onViewportChanged: @escaping @MainActor (CanvasRect) -> Void,
             onPencilSqueeze: @escaping @MainActor (PencilSqueezeResponse, CGPoint?) -> Void,
-            onPencilDoubleTap: @escaping @MainActor () -> Void
+            onPencilDoubleTap: @escaping @MainActor () -> Void,
+            onPlannerRegionPageRequested: @escaping @MainActor (Int) -> Void
         ) {
             self.onStrokesCompleted = onStrokesCompleted
             self.onDrawingChanged = onDrawingChanged
@@ -155,6 +184,7 @@ struct PencilCanvasView: UIViewRepresentable {
             self.onViewportChanged = onViewportChanged
             self.onPencilSqueeze = onPencilSqueeze
             self.onPencilDoubleTap = onPencilDoubleTap
+            self.onPlannerRegionPageRequested = onPlannerRegionPageRequested
         }
 
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
@@ -240,9 +270,10 @@ struct PencilCanvasView: UIViewRepresentable {
             UISelectionFeedbackGenerator().selectionChanged()
             onPencilSqueeze(
                 response,
-                PencilSqueezeBehavior.location(
+                PencilSqueezeBehavior.viewportLocation(
                     poseLocation: squeeze.hoverPose?.location,
-                    lastHoverLocation: latestPencilLocation
+                    lastHoverLocation: latestPencilLocation,
+                    visibleBounds: interaction.view?.bounds ?? .zero
                 )
             )
         }
@@ -275,11 +306,13 @@ struct PencilCanvasView: UIViewRepresentable {
 
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
             guard let canvasView = scrollView as? PKCanvasView else { return }
+            focusPlannerRegionIfNeeded(in: canvasView)
             reportViewport(canvasView)
         }
 
         func scrollViewDidZoom(_ scrollView: UIScrollView) {
             guard let canvasView = scrollView as? PKCanvasView else { return }
+            focusPlannerRegionIfNeeded(in: canvasView)
             reportViewport(canvasView)
         }
 
@@ -331,21 +364,6 @@ struct PencilCanvasView: UIViewRepresentable {
                 width: configuration.width.points
             )
         }
-    }
-
-    private func applyPaper(to canvasView: PKCanvasView, coordinator: Coordinator) {
-        let marginRuleTag = 8_421
-        canvasView.backgroundColor = PencilCanvasRenderer.patternColor(for: template)
-        canvasView.viewWithTag(marginRuleTag)?.removeFromSuperview()
-        if let frame = PencilCanvasRenderer.marginRuleFrame(for: template, contentSize: canvasView.contentSize) {
-            let marginRule = UIView(frame: frame)
-            marginRule.tag = marginRuleTag
-            marginRule.backgroundColor = PaperType.marginColor
-            marginRule.isUserInteractionEnabled = false
-            marginRule.isAccessibilityElement = false
-            canvasView.addSubview(marginRule)
-        }
-        coordinator.paperType = template
     }
 
     private func apply(

@@ -40,12 +40,16 @@ final class ShapeToolbarUITests: XCTestCase {
         XCTAssertTrue(chevron.exists)
         let chevronFrame = chevron.frame
 
-        tools.swipeUp()
+        for _ in 0..<6 where !application.buttons["Home"].isHittable {
+            tools.swipeUp()
+        }
 
         XCTAssertTrue(chevron.exists)
         XCTAssertEqual(chevron.frame.midX, chevronFrame.midX, accuracy: 1)
         XCTAssertEqual(chevron.frame.midY, chevronFrame.midY, accuracy: 1)
-        XCTAssertTrue(application.buttons["Home"].isHittable)
+        XCTAssertTrue(application.buttons["Home"].exists)
+        application.buttons["Home"].tap()
+        XCTAssertTrue(application.scrollViews["Infinite canvas"].exists)
     }
 
     private func makeApplication() -> XCUIApplication {

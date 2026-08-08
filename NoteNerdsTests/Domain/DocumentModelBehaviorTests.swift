@@ -7,7 +7,8 @@ final class DocumentModelBehaviorTests: XCTestCase {
             CanvasTemplate.allCases.map(\.rawValue),
             [
                 "blankWhite", "blankCream", "gridLarge", "gridSmall",
-                "dotLarge", "dotSmall", "yellowLegalPad", "whiteLegalPad"
+                "dotLarge", "dotSmall", "hexagonSmall", "hexagonLarge",
+                "yellowLegalPad", "whiteLegalPad", "dailyPlanner", "weeklyPlanner"
             ]
         )
     }

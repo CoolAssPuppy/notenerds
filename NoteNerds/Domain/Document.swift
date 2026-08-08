@@ -16,8 +16,12 @@ enum PaperType: String, CaseIterable, Sendable {
     case gridSmall
     case dotLarge
     case dotSmall
+    case hexagonSmall
+    case hexagonLarge
     case yellowLegalPad
     case whiteLegalPad
+    case dailyPlanner
+    case weeklyPlanner
 }
 
 extension PaperType: Codable {

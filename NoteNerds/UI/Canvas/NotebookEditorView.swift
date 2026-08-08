@@ -5,6 +5,7 @@ struct NotebookEditorView: View {
     @Environment(\.accessibilityReduceMotion) var isReduceMotionEnabled
     let notebook: Notebook
     @State var canvasIndex = 0
+    @State var selectedLayerIDs: [CanvasID: LayerID] = [:]
     @State var palette = ToolPaletteState()
     @State var favoriteOne = ToolConfiguration.favoriteOne
     @State var favoriteTwo = ToolConfiguration.favoriteTwo
@@ -25,6 +26,7 @@ struct NotebookEditorView: View {
     @State private var editingCommand: CanvasEditingCommand?
     @State private var isObjectSelectionActive = false
     @State private var highlightedStrokeIDs: Set<StrokeID> = []
+    @State var plannerRegionSelection = PlannerRegionSelection()
     @State private var isCanvasBrowserPresented = false
     @State private var paperPickerPurpose: PaperPickerPurpose?
     @State private var sharedFile: SharedFile?
@@ -43,14 +45,12 @@ struct NotebookEditorView: View {
         let targetCanvasID = model.pendingSearchNavigation?.canvasID
         let initialIndex = notebook.canvases.firstIndex { $0.id == targetCanvasID } ?? 0
         _canvasIndex = State(initialValue: initialIndex)
-    }
-
-    var toolbarOrientation: CanvasToolbarOrientation {
-        CanvasToolbarOrientation(rawValue: toolbarOrientationRawValue) ?? .vertical
-    }
-
-    var selectedDrawingTool: CanvasTool {
-        configuration.tool.instrument == nil ? previousDrawingTool : configuration.tool
+#if DEBUG
+        if let origin = PencilSqueezeBehavior.radialMenuTestOrigin(arguments: ProcessInfo.processInfo.arguments) {
+            _radialMenuOrigin = State(initialValue: origin)
+            _isRadialMenuVisible = State(initialValue: true)
+        }
+#endif
     }
 
     var body: some View {
@@ -64,10 +64,13 @@ struct NotebookEditorView: View {
                 highlightedStrokeIDs: highlightedStrokeIDs,
                 recognizedText: currentRecognizedText,
                 configuration: configuration,
+                canvasID: currentCanvas.id,
                 template: currentCanvas.template,
-                isFingerDrawingEnabled: DrawingInputPolicy.allowsFingerDrawingForCurrentBuild(
-                    userPreference: isFingerDrawingEnabled
-                ),
+                plannerRegions: plannerRegions,
+                selectedPlannerRegionID: selectedPlannerRegion?.id,
+                isPlannerRegionPagingEnabled: isPlannerRegionPagingPresented,
+                shouldAnimatePlannerRegionChanges: !isReduceMotionEnabled,
+                isFingerDrawingEnabled: allowsFingerDrawingOnCanvas,
                 textEditingSession: textEditingSession,
                 isTextToolActive: isTextToolActive,
                 shapePlacementKind: selectedShapeKind,
@@ -82,7 +85,12 @@ struct NotebookEditorView: View {
                     if didSnapShape { UINotificationFeedbackGenerator().notificationOccurred(.success) }
                 },
                 onDrawingChanged: { strokes in
-                    model.replaceVisibleStrokes(strokes, in: notebook.id, canvasID: currentCanvas.id)
+                    model.replaceVisibleStrokes(
+                        strokes,
+                        in: notebook.id,
+                        canvasID: currentCanvas.id,
+                        layerID: activeLayer.id
+                    )
                 },
                 onConvertStrokesToText: { strokes in
                     model.convertStrokesToText(Set(strokes.map(\.id)), in: notebook.id, canvasID: currentCanvas.id)
@@ -100,7 +108,12 @@ struct NotebookEditorView: View {
                     model.deleteObjects(objectIDs, notebookID: notebook.id, canvasID: currentCanvas.id)
                 },
                 onPasteObjects: { objects in
-                    model.pasteObjects(objects, notebookID: notebook.id, canvasID: currentCanvas.id)
+                    model.pasteObjects(
+                        objects,
+                        notebookID: notebook.id,
+                        canvasID: currentCanvas.id,
+                        layerID: activeLayer.id
+                    )
                 },
                 onMoveObjectsToLayer: { objectIDs, layerID in
                     model.moveObjects(
@@ -122,9 +135,22 @@ struct NotebookEditorView: View {
                 onPencilSqueeze: { response, location in
                     handlePencilSqueeze(response, location: location)
                 },
-                onPencilDoubleTap: switchDrawingToolAndEraser
+                onPencilDoubleTap: switchDrawingToolAndEraser,
+                onPlannerRegionPageRequested: selectPlannerRegion
             )
             floatingToolbar
+            if isPlannerRegionPagingPresented {
+                VStack {
+                    Spacer()
+                    PlannerRegionPageControl(
+                        regions: plannerRegions,
+                        selectedIndex: selectedPlannerRegionIndex,
+                        onSelect: selectPlannerRegion
+                    )
+                    .frame(width: 220, height: 44)
+                    .padding(.bottom, 18)
+                }
+            }
             if isRadialMenuVisible {
                 RadialToolMenu(
                     configuration: configuration,
@@ -134,8 +160,9 @@ struct NotebookEditorView: View {
                     onSelect: selectTool,
                     onUndo: { model.undo(notebook.id) },
                     onRedo: { model.redo(notebook.id) },
-                    onCycleWidth: cycleWidth,
-                    onCycleColor: cycleColor,
+                    onSetWidth: setWidth,
+                    onSetColor: setColor,
+                    onSelectEraser: selectEraser,
                     onSelectionAction: sendEditingCommand
                 )
             }
@@ -258,21 +285,12 @@ struct NotebookEditorView: View {
         canvasIndex = notebook.canvases.count
     }
 
-    private func deleteCanvas() {
-        model.deleteCanvas(currentCanvas.id, in: notebook.id)
-        canvasIndex = max(0, canvasIndex - 1)
-    }
-
     private func deleteCanvas(_ canvasID: CanvasID) {
         guard let index = notebook.canvases.firstIndex(where: { $0.id == canvasID }) else { return }
         model.deleteCanvas(canvasID, in: notebook.id)
         if index <= canvasIndex { canvasIndex = max(0, canvasIndex - 1) }
     }
 
-    private func moveCanvas(to destination: Int) {
-        model.moveCanvas(from: canvasIndex, to: destination, in: notebook.id)
-        canvasIndex = destination
-    }
     func select(_ toolConfiguration: ToolConfiguration) {
         isTextToolActive = false
         selectedShapeKind = nil
@@ -327,22 +345,6 @@ struct NotebookEditorView: View {
         palette.select(.eraser)
         palette.setEraserMode(mode)
     }
-    func cycleWidth() {
-        let widths = ToolWidth.allCases
-        let index = widths.firstIndex(of: configuration.width) ?? 0
-        palette.setWidth(widths[(index + 1) % widths.count])
-    }
-
-    func cycleColor() {
-        let colors: [InkColor] = [
-            .black,
-            InkColor(red: 0.18, green: 0.32, blue: 0.55, alpha: 1),
-            InkColor(red: 0.65, green: 0.2, blue: 0.18, alpha: 1)
-        ]
-        let index = colors.firstIndex(of: configuration.color) ?? 0
-        palette.setColor(colors[(index + 1) % colors.count])
-    }
-
     func toggleRadialMenu() {
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
         if isReduceMotionEnabled {
@@ -413,7 +415,6 @@ struct NotebookEditorView: View {
     func toggleMinimap() {
         isMinimapVisible.toggle()
     }
-
 }
 
 private extension NotebookEditorView {
@@ -487,7 +488,6 @@ private extension NotebookEditorView {
             highlightedStrokeIDs = []
         }
     }
-
 }
 
 extension NotebookEditorView {

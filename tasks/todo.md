@@ -1,5 +1,114 @@
 # Current work
 
+## iPhone planner region pager
+
+- [x] Add failing behavior tests for template-derived regions and swipe paging.
+- [x] Define stable Daily and Weekly region identifiers and document frames.
+- [x] Show one planner region at a time on iPhone without creating child documents.
+- [x] Add horizontal swipe navigation and tappable page dots.
+- [x] Preserve the selected region through rotation and reset it safely when canvases change.
+- [x] Verify iPhone behavior, accessibility, strict lint, and a warnings-as-errors build.
+
+### Review
+
+- Daily planner uses Freeform, Today, and Parking lot viewports. Weekly planner uses Monday through Friday and Weekend viewports. These are derived from the fixed paper geometry, so a canvas remains one document with one set of layers and objects.
+- iPhone shows one region at a time with the standard iOS page control. One-finger swipes change regions when finger drawing is off. Two-finger swipes change regions when finger drawing is on.
+- The selected region is stored per canvas for the current editing session. Rotation refits that region, and a missing region safely selects the first available one.
+- Corrected the app target from iPad-only to universal iPhone and iPad support.
+- Passed all 246 behavior tests, the focused iPhone page-control and rotation test on iPhone 17 Pro with iOS 26.5, and the warnings-as-errors simulator build.
+
+## Hexagon and planner paper types
+
+- [x] Add failing catalog and geometry tests for four new paper types.
+- [x] Add small and large hexagon paper patterns.
+- [x] Add a fixed-layout Daily planner with dotted freeform space, Today rows, and a gridded Parking lot.
+- [x] Add a fixed-layout Weekly planner with six equal day sections.
+- [x] Keep planner document geometry stable across rotation and fit it appropriately on iPhone.
+- [x] Verify gallery selection, rendering, strict lint, and a warnings-as-errors build.
+
+### Review
+
+- Added Hexagon small, Hexagon large, Daily planner, and Weekly planner to the paper catalog, default-paper picker, new-canvas picker, canvas paper changer, exports, and persistence.
+- Daily uses a dotted top third. The lower two thirds contain ten numbered Today rows and a small-grid Parking lot.
+- Weekly uses a stable two-column by three-row page with equal sections for Monday through Friday and Weekend.
+- Planner pages use fixed 768-by-1024 document coordinates. Rotation preserves writing positions. Compact portrait screens start fit-to-width, while later rotation preserves the user's zoom and canvas position.
+- The planner previews retain their portrait aspect ratio while the gallery grid remains adaptive.
+- Passed all 243 behavior tests and the complete paper gallery interaction test on iOS 26.5. Strict SwiftLint reports 0 violations, `git diff --check` passes, and the all-target simulator build passes with warnings treated as errors.
+
+## Specialized toolbar tools and radial choices
+
+- [x] Inventory every writing tool, inspector, and current Pencil radial action.
+- [x] Add failing behavior tests for visible specialized tools and nested radial pages.
+- [x] Add failing iPad interaction tests for color and width choices inside the radial menu.
+- [x] Restore every specialized writing tool to the expanded floating toolbar.
+- [x] Replace radial cycling with anchored writing-tool, color, width, and eraser choice pages.
+- [x] Support one, two, and three concentric option rings without changing the Pencil anchor.
+- [x] Run focused behavior and interface tests, strict lint, and a warnings-as-errors build.
+
+### Review
+
+- The expanded toolbar directly shows Ballpoint, Fineliner, Mechanical pencil, Pencil, Marker, Highlighter, Brush, Calligraphy pen, and Handwriting to text. Each tool has its own icon.
+- The Pencil radial now replaces itself with writing-tool, color, width, eraser-mode, and precision-width choices. Back returns to the previous radial page, while a final choice applies and closes the palette.
+- Color choices use three rings, writing tools use two, and smaller sets use one. The rings shrink on compact iPhone widths and remain inside every screen edge.
+- Restored Redo after the first nested-menu pass omitted it. The regression test now finds actions by stable label so a missing action reports an assertion instead of crashing the test process.
+- Passed 17 focused behavior tests and all 7 related interface tests on iOS 26.5. Strict SwiftLint reports 0 violations, and the all-target simulator build passes with warnings treated as errors.
+
+## Deploy current build to iPad
+
+- [x] Confirm the connected iPad and signing configuration.
+- [x] Build the signed Debug app with the development Notion configuration.
+- [x] Install Note Nerds on the connected iPad.
+- [x] Open the app and confirm that the device accepts the build.
+
+### Review
+
+- Built Note Nerds 1.0.0 (build 1) for the connected iPad mini with Apple Development signing and the `notenerds/dev` Notion configuration.
+- The signed app installed successfully through the wired connection.
+- Apple device services opened `com.strategicnerds.notenerds`, and the Note Nerds process remained active after launch.
+
+## Pencil-anchored radial menu
+
+- [x] Reproduce the bottom-right placement from the UIKit and SwiftUI coordinate spaces.
+- [x] Add a failing behavior test for a scrolled PencilKit canvas.
+- [x] Convert Pencil hover and squeeze locations into visible canvas coordinates.
+- [x] Add an iPad interaction check that verifies the radial ring center.
+- [x] Run focused tests, complete behavior tests, strict lint, static analysis, and warnings-as-errors builds.
+
+### Review
+
+- The `PKCanvasView` starts near content offset `(9500, 9500)`. Pencil hover locations arrived in that scrolled bounds space, then the radial layout treated them as visible coordinates and clamped them to the bottom-right corner.
+- The Pencil callback now subtracts the current visible bounds origin before passing the point to SwiftUI. The fallback hover point uses the same conversion.
+- A behavior test proves that `(10012, 10150)` becomes visible point `(512, 650)`. An iPad interface test measures the rendered radial center against its requested canvas point within two points.
+- Passed all 231 behavior tests, the focused iPad placement test, strict SwiftLint, Xcode static analysis, all-target compilation, and the release build with warnings treated as errors.
+
+## Classic layer editing
+
+- [x] Add failing behavior tests for active-layer selection, insertion, deletion fallback, and stack-order mapping.
+- [x] Add a failing iPad interface test for opening Layers, creating a layer, and switching the editing target.
+- [x] Replace the nested layer command menu with an anchored layer panel.
+- [x] Show the layer stack from front to back with thumbnails, names, object counts, visibility controls, and a clear active state.
+- [x] Add direct layer selection, inline rename, drag reordering, creation above the active layer, and safe deletion fallback.
+- [x] Route drawing, text, shapes, paste, and imports to the selected layer.
+- [x] Run focused and complete behavior, interface, performance, security, lint, analysis, and release checks.
+- [x] Prepare the verified layer redesign for review.
+
+### Research decisions
+
+- The row selects the editing target, matching Photoshop, Illustrator, and Procreate.
+- The panel displays the frontmost layer first while the document keeps its existing back-to-front storage order.
+- Visibility remains a separate eye control and never changes the active layer.
+- A new layer is inserted directly above the active layer and becomes active.
+- Rename edits the row itself. Reorder uses direct drag movement, with menu actions retained for accessibility.
+- Groups, masks, blend modes, and multi-layer selection remain outside this simplified first version.
+
+### Review
+
+- Replaced the nested command menu with an anchored layer panel that shows the frontmost layer first, gives every layer a paper preview, and keeps selection separate from visibility.
+- The selected row is the editing target for drawing, erasing, text, shapes, paste, and imports. New layers appear above it, deletion selects the nearest remaining layer, and inactive strokes cannot be changed through PencilKit.
+- Rows support direct selection, inline rename with Return and Escape, eye controls, drag reordering, forward and backward menu actions, and safe deletion.
+- Passed 230 behavior tests, 32 interface tests, and 7 performance tests on the iPad Pro 13-inch simulator running iOS 26.5. The final focused layer interaction test also passes.
+- Strict SwiftLint, all-target and release warnings-as-errors builds, Xcode static analysis, 13 release-tool tests, working-tree and Git-history secret scans, and the dependency check pass.
+
 ## Local persistence and Notion sync failures
 
 - [x] Reproduce notebook loss across app sessions through the production repository path.

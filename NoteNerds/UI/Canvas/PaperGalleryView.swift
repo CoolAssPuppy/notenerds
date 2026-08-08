@@ -68,7 +68,7 @@ struct PaperGalleryView: View {
         } label: {
             VStack(alignment: .leading, spacing: 12) {
                 PaperPreview(paperType: paperType)
-                    .aspectRatio(4 / 3, contentMode: .fit)
+                    .aspectRatio(paperType.previewAspectRatio, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .overlay(alignment: .topTrailing) {
                         if isSelected {

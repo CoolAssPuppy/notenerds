@@ -1,5 +1,8 @@
 # Lessons
 
+- An expanded drawing toolbar must show each specialized writing tool directly. A single writing-tools inspector is useful for settings and favorites, but it cannot replace the promised expanded controls.
+- A Pencil radial menu must keep option selection inside the radial interaction. Controls with inspectors should open anchored radial choice pages, including additional option levels when one choice needs more detail.
+
 - Keep the product name as “Note Nerds” in the app target, display name, document format, cloud configuration, accessibility copy, icons, and interface text.
 - Paper can be inspected and controlled through macOS accessibility when its window is open, even without a dedicated Paper connector.
 - When new icon or interface design is needed, use the open Paper document as the design workspace.
@@ -42,3 +45,8 @@
 - Keep an expanded floating toolbar bounded and scrollable along its dock axis. The expansion chevron stays fixed and visible while tool buttons scroll.
 - Read persisted files directly and treat only a true missing-file error as empty state. A file-existence preflight can report false while iOS changes protected-data availability and must never replace saved notes with a blank library.
 - Restore connected services from the app bootstrap after local data is ready. Settings presentation is too late for queued or automatic sync, and a newly selected remote destination must publish the current library immediately.
+- A layers panel needs an explicit editing target. Visibility and selection are separate states, the frontmost layer appears first, and every new or changed canvas object must remain within the selected layer.
+- Pencil hover locations from a scrolled `PKCanvasView` use that view's bounds coordinate space. Convert them to visible viewport coordinates before positioning a SwiftUI overlay, or the large content offset will clamp the menu to a corner.
+- Regression tests for collections must find items by stable identity or safely unwrap them. A missing item should produce an XCTest assertion failure, never an out-of-bounds trap.
+- Model planner sections as stable viewports derived from paper geometry. Keep one canvas, one object graph, and one layer stack so rotation and phone paging cannot split a notebook's data.
+- Confirm the target device families before building phone-specific behavior. An iPhone layout is incomplete while the app target still declares iPad-only support.

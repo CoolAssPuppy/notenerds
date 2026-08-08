@@ -24,7 +24,7 @@
 - [x] Export the approved glass-gradient lowercase `n` from Paper and replace the app icon asset.
 - [x] Run focused behavior and interface tests, full behavior tests, strict lint, and a warnings-as-errors build.
 - [x] Install the corrected build on the connected iPad.
-- [ ] Open the corrected build after the iPad is unlocked.
+- [x] Open the corrected build after the iPad is unlocked.
 
 ### Review
 
@@ -33,7 +33,7 @@
 - Interface tests measure the rendered centers, radii, angular spacing, circular frames, and Pencil anchor. Saved simulator screenshots were inspected after the tests passed.
 - The app icon asset is byte-for-byte identical to Paper's exported 1024 by 1024 `Frame` artboard.
 - The complete behavior suite, focused interface tests, strict SwiftLint, `git diff --check`, and a warnings-as-errors simulator build pass.
-- The signed Release build is installed on Prashant's iPad mini. iPadOS refused the automatic launch while the device was locked.
+- The signed Release build is installed and open on Prashant's iPad mini.
 
 ## Supabase backend and web application plan
 

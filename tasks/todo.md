@@ -1,5 +1,23 @@
 # Current work
 
+## Local persistence and Notion sync failures
+
+- [x] Reproduce notebook loss across app sessions through the production repository path.
+- [x] Reproduce the Notion publish failure from the connected settings and notebook actions.
+- [x] Add failing behavior and integration tests for each confirmed cause.
+- [x] Fix continuous local persistence and startup restore without blocking canvas editing.
+- [x] Fix Notion destination, queue, snapshot upload, binding, and status behavior as required.
+- [x] Run complete behavior, interface, performance, security, static-analysis, and release checks.
+- [x] Commit and push the verified fixes.
+
+### Review
+
+- Local library startup now reads the protected metadata file directly and treats only a true missing-file error as a new library.
+- App startup finishes local restore before Notion restore. Closing a notebook requests a document checkpoint, and the relaunch interface test confirms that notebook metadata and inline text remain available in a later process.
+- Creating a Notion destination now creates the database and manifest, stores both bindings, and immediately publishes the current library. Later launches reconcile the current library even when the durable retry queue is empty.
+- The manifest page request now uses the current Notion title-property write shape.
+- Passed 222 behavior tests, 7 performance tests, and 31 interface tests on the iPad Pro 13-inch simulator running iOS 26.5. Strict lint, release tooling, secret scanning, dependency checks, Xcode static analysis, and a release build with warnings treated as errors also pass.
+
 ## Shape tools and compact expanded toolbar
 
 - [x] Add failing behavior tests for classic shapes, shape placement, toolbar scrolling, and the fixed chevron.

@@ -27,7 +27,6 @@ struct AppSettingsView: View {
                     Button("Done", action: dismiss.callAsFunction)
                 }
             }
-            .task { await notion.restore(library: model.library) }
             .sheet(isPresented: $isPaperGalleryPresented) {
                 PaperGalleryView(initialSelection: defaultPaperType, confirmationTitle: "Done") {
                     defaultPaperTypeRawValue = $0.rawValue
@@ -84,7 +83,7 @@ struct AppSettingsView: View {
             case let .connected(workspaceName):
                 LabeledContent("Workspace", value: workspaceName)
                 NavigationLink {
-                    NotionDestinationPickerView(model: notion)
+                    NotionDestinationPickerView(model: notion, library: model.library)
                 } label: {
                     LabeledContent(
                         "Notebook database",

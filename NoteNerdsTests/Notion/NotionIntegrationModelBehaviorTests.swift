@@ -23,21 +23,28 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         XCTAssertEqual(connectionManager.connectCount, 1)
     }
 
-    func testSelectingParentCreatesDestinationAndPersistsWorkspaceBinding() async throws {
+    func testSelectingParentCreatesDestinationPersistsItAndPublishesCurrentLibrary() async throws {
         let connection = storedConnection()
         let connectionManager = StubConnectionManager(current: connection, connected: connection)
         let provider = StubDestinationProvider()
         let registry = NotionSyncRegistry(store: IntegrationStateStore())
+        let publisher = StubLibraryPublisher(report: NotionPublishReport(
+            uploadedNotebookCount: 1,
+            skippedNotebookCount: 0,
+            didUploadManifest: true
+        ))
         let model = NotionIntegrationModel(
             isConfigured: true,
             connectionManager: connectionManager,
             destinationProviderFactory: { _ in provider },
-            registry: registry
+            registry: registry,
+            publisher: publisher
         )
         await model.restore()
         let page = try XCTUnwrap(model.pages.first)
+        let library = LibraryState(notebooks: [DomainFixtures.notebook()])
 
-        await model.selectDestination(parentPage: page)
+        await model.selectDestination(parentPage: page, library: library)
         let state = try await registry.snapshot()
         let expectedDestination = provider.destination
         let createdParentIDs = await provider.createdParentIDs
@@ -48,6 +55,8 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         XCTAssertEqual(state.destination, expectedDestination)
         XCTAssertEqual(state.manifestPageID, provider.manifestPage.pageID)
         XCTAssertEqual(createdParentIDs, [page.id, page.id])
+        XCTAssertEqual(publisher.publishedLibraries, [library])
+        XCTAssertEqual(model.lastSyncSummary, "Sent 1 notebook to Notion.")
     }
 
     func testDisconnectRevokesConnectionAndClearsVisibleWorkspaceData() async {
@@ -72,6 +81,7 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
     func testSyncNowPublishesTheCurrentLibraryAndReportsCompletion() async throws {
         let connection = storedConnection()
         let provider = StubDestinationProvider()
+        let destination = provider.destination
         let publisher = StubLibraryPublisher(
             report: NotionPublishReport(
                 uploadedNotebookCount: 2,
@@ -83,11 +93,13 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
             isConfigured: true,
             connectionManager: StubConnectionManager(current: connection, connected: connection),
             destinationProviderFactory: { _ in provider },
-            registry: NotionSyncRegistry(store: IntegrationStateStore()),
+            registry: NotionSyncRegistry(store: IntegrationStateStore(state: NotionSyncState(
+                workspaceID: connection.credentials.workspaceID,
+                destination: destination
+            ))),
             publisher: publisher
         )
         await model.restore()
-        await model.selectDestination(parentPage: try XCTUnwrap(model.pages.first))
         let library = LibraryState(notebooks: [DomainFixtures.notebook()])
 
         await model.sync(library)
@@ -174,6 +186,37 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
                 workspaceID: connection.credentials.workspaceID,
                 destination: destination,
                 queue: [queueItem]
+            ))),
+            publisher: publisher,
+            automaticSyncDelay: .milliseconds(1)
+        )
+        let library = LibraryState(notebooks: [notebook])
+
+        await model.restore(library: library)
+        try await Task.sleep(for: .milliseconds(30))
+
+        XCTAssertEqual(publisher.publishedLibraries, [library])
+    }
+
+    func testRestoreReconcilesTheCurrentLibraryWhenDestinationHasNoQueue() async throws {
+        let connection = storedConnection()
+        let notebook = DomainFixtures.notebook()
+        let destination = NotionDestination(
+            databaseID: "11111111-1111-1111-1111-111111111111",
+            dataSourceID: "22222222-2222-2222-2222-222222222222"
+        )
+        let publisher = StubLibraryPublisher(report: NotionPublishReport(
+            uploadedNotebookCount: 1,
+            skippedNotebookCount: 0,
+            didUploadManifest: false
+        ))
+        let model = NotionIntegrationModel(
+            isConfigured: true,
+            connectionManager: StubConnectionManager(current: connection, connected: connection),
+            destinationProviderFactory: { _ in StubDestinationProvider() },
+            registry: NotionSyncRegistry(store: IntegrationStateStore(state: NotionSyncState(
+                workspaceID: connection.credentials.workspaceID,
+                destination: destination
             ))),
             publisher: publisher,
             automaticSyncDelay: .milliseconds(1)

@@ -25,7 +25,8 @@ struct NoteNerdsApp: App {
         _model = StateObject(wrappedValue: AppModel(
             documentStore: AppModel.defaultDocumentStore(),
             syncProvider: isUITesting || isUnitTesting ? nil : DefaultSyncProvider.make(),
-            syncStateStore: AppModel.defaultSyncStateStore()
+            syncStateStore: AppModel.defaultSyncStateStore(),
+            automaticallyRestore: false
         ))
         let notionConfiguration = Self.notionConfiguration(
             isUITesting: isUITesting,

@@ -19,7 +19,6 @@ extension NotionAPIClient {
                 ]),
                 "properties": .object([
                     "title": .object([
-                        "type": .string("title"),
                         "title": .array([title])
                     ])
                 ])

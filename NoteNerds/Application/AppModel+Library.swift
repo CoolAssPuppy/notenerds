@@ -45,7 +45,12 @@ extension AppModel {
         syncNotebookMetadata(notebookID)
     }
 
-    func closeNotebook() { selectedNotebookID = nil }
+    func closeNotebook() {
+        if let selectedNotebookID, let notebook = library.notebook(id: selectedNotebookID) {
+            persistCheckpoint(notebook)
+        }
+        selectedNotebookID = nil
+    }
     func openFolder(_ folderID: FolderID) { currentFolderID = folderID }
 
     func navigateUpFolder() {

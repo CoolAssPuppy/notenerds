@@ -19,6 +19,7 @@ final class AppModel: ObservableObject {
     @Published var presentedError: String?
     @Published var pendingSearchNavigation: LibrarySearchResult?
     @Published var syncIssue: String?
+    @Published private(set) var hasRestoredLibrary = false
 
     let repository: LocalLibraryRepository
     let documentStore: LocalDocumentStore?
@@ -36,6 +37,7 @@ final class AppModel: ObservableObject {
     var journalCounts: [NotebookID: Int] = [:]
     var libraryPersistenceTask: Task<Void, Never>?
     var documentPersistenceTask: Task<Void, Never>?
+    private var libraryRestoreTask: Task<Void, Never>?
 
     init(
         repository: LocalLibraryRepository = AppModel.defaultRepository(),
@@ -55,7 +57,12 @@ final class AppModel: ObservableObject {
         self.conversionDelay = conversionDelay
         syncEngine = syncProvider.map { SyncEngine(provider: $0, stateStore: syncStateStore) }
         syncChangeEncoder = SyncChangeEncoder(deviceID: deviceID)
-        if automaticallyRestore { Task { await restoreLibrary() } }
+        if automaticallyRestore {
+            libraryRestoreTask = Task { [weak self] in
+                guard let self else { return }
+                await performLibraryRestore()
+            }
+        }
     }
 
     var visibleNotebooks: [Notebook] {
@@ -103,6 +110,20 @@ final class AppModel: ObservableObject {
     }
 
     func restoreLibrary() async {
+        if let libraryRestoreTask {
+            await libraryRestoreTask.value
+            return
+        }
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await performLibraryRestore()
+        }
+        libraryRestoreTask = task
+        await task.value
+    }
+
+    private func performLibraryRestore() async {
+        defer { hasRestoredLibrary = true }
         do {
             library = try await repository.load()
             if let documentStore {

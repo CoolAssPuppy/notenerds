@@ -9,7 +9,10 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if let notebookID = model.selectedNotebookID, let notebook = model.notebook(notebookID) {
+            if !model.hasRestoredLibrary {
+                ProgressView("Opening library")
+                    .accessibilityIdentifier("Opening library")
+            } else if let notebookID = model.selectedNotebookID, let notebook = model.notebook(notebookID) {
                 NavigationStack {
                     NotebookEditorView(model: model, notebook: notebook)
                 }
@@ -38,6 +41,10 @@ struct RootView: View {
         }
         .onReceive(model.$library.dropFirst()) { library in
             notion.scheduleAutomaticSync(library)
+        }
+        .task {
+            await model.restoreLibrary()
+            await notion.restore(library: model.library)
         }
     }
 

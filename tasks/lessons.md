@@ -40,3 +40,5 @@
 - Canvas management belongs in the Canvases sheet. Give long press and the trailing ellipsis the same Rename canvas, Duplicate canvas, and Change paper actions, with rename performed in place on the canvas label.
 - Keep editor chrome task-specific. The note-view ellipsis opens the Canvases sheet, and Draw with finger belongs with Writing tools.
 - Keep an expanded floating toolbar bounded and scrollable along its dock axis. The expansion chevron stays fixed and visible while tool buttons scroll.
+- Read persisted files directly and treat only a true missing-file error as empty state. A file-existence preflight can report false while iOS changes protected-data availability and must never replace saved notes with a blank library.
+- Restore connected services from the app bootstrap after local data is ready. Settings presentation is too late for queued or automatic sync, and a newly selected remote destination must publish the current library immediately.

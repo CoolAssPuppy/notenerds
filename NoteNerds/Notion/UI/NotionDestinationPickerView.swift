@@ -2,6 +2,7 @@ import SwiftUI
 
 struct NotionDestinationPickerView: View {
     @ObservedObject var model: NotionIntegrationModel
+    let library: LibraryState
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
 
@@ -9,7 +10,7 @@ struct NotionDestinationPickerView: View {
         List(model.pages) { page in
             Button {
                 Task {
-                    await model.selectDestination(parentPage: page)
+                    await model.selectDestination(parentPage: page, library: library)
                     if model.destination != nil { dismiss() }
                 }
             } label: {

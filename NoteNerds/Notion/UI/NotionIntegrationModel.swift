@@ -88,6 +88,7 @@ final class NotionIntegrationModel: ObservableObject {
             try await applyConnection(stored)
             if let library {
                 try await resumeQueuedSync(library)
+                scheduleAutomaticSync(library)
             }
         } catch {
             showFailure("Your Notion connection could not be opened.")
@@ -120,7 +121,10 @@ final class NotionIntegrationModel: ObservableObject {
         }
     }
 
-    func selectDestination(parentPage: NotionPageSummary) async {
+    func selectDestination(
+        parentPage: NotionPageSummary,
+        library: LibraryState
+    ) async {
         guard let connection, let destinationProvider else { return }
         state = .selectingDestination
         failureMessage = nil
@@ -138,7 +142,9 @@ final class NotionIntegrationModel: ObservableObject {
             state = .connected(workspaceName: connection.credentials.workspaceName)
         } catch {
             showFailure("The Note Nerds database could not be created in Notion.")
+            return
         }
+        await sync(library)
     }
 
     func disconnect() async {

@@ -11,10 +11,15 @@ actor LocalLibraryRepository {
     }
 
     func load() throws -> LibraryState {
-        guard FileManager.default.fileExists(atPath: fileURL.path()) else { return LibraryState() }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .millisecondsSince1970
-        var library = try decoder.decode(LibraryState.self, from: Data(contentsOf: fileURL))
+        let encodedLibrary: Data
+        do {
+            encodedLibrary = try Data(contentsOf: fileURL)
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            return LibraryState()
+        }
+        var library = try decoder.decode(LibraryState.self, from: encodedLibrary)
         for asset in library.assets {
             let assetURL = assetFileURL(for: asset.id)
             if FileManager.default.fileExists(atPath: assetURL.path) {

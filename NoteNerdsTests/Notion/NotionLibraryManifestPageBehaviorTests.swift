@@ -24,6 +24,7 @@ final class NotionLibraryManifestPageBehaviorTests: XCTestCase {
         XCTAssertEqual(request.url?.path, "/v1/pages")
         XCTAssertEqual(parent, ["type": "page_id", "page_id": parentID])
         XCTAssertEqual(text["content"], "Note Nerds Library Manifest")
+        XCTAssertNil(titleProperty["type"])
     }
 
     func testManifestPlanContainsAStableMarkerAndUploadedManifestFile() throws {

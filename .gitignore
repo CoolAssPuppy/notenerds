@@ -7,6 +7,7 @@ xcuserdata/
 # Xcode build output and test results
 DerivedData*/
 build/
+dist/
 *.app
 *.dSYM
 *.dSYM.zip
@@ -29,6 +30,11 @@ build/
 .build/
 .swiftpm/
 
+# Python release tooling
+.venv/
+__pycache__/
+*.py[cod]
+
 # Local tools and editor settings
 .claude/settings.local.json
 CLAUDE.local.md
@@ -43,6 +49,11 @@ mcp.json
 .env
 .env.*
 !.env.example
+*.p8
+*.p12
+*.cer
+*.mobileprovision
+private_keys/
 
 # Operating system files
 .DS_Store

@@ -78,6 +78,7 @@
 		A9D0E1390FFA68692370A669 /* SyncBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B996C3B3A94B3B0366A2BE56 /* SyncBehaviorTests.swift */; };
 		B03D162FAA47E50E68242341 /* DocumentStructureHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB058C798ABB1675A6B3F71 /* DocumentStructureHistoryTests.swift */; };
 		B10648B8065BD34D45141343 /* RadialToolMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C3C7013D5E8CC0BE01B606 /* RadialToolMenu.swift */; };
+		B20584242F9394F8A46468BB /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F79D8597DB1B9F7BE6ADB5DA /* PrivacyInfo.xcprivacy */; };
 		B22559C8A37CDC10D6789C65 /* Content.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CB379125E9AD313B19B529A /* Content.swift */; };
 		B291F37DDF8F244DBBB20D74 /* ToolConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53640357D2761811D69F6227 /* ToolConfiguration.swift */; };
 		BC08A533F5922A659BA4BCAA /* LibrarySearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F928A3CAA386FE4447917114 /* LibrarySearchBar.swift */; };
@@ -234,6 +235,7 @@
 		F27BE3F7D492118817933436 /* CanvasToolInspectors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolInspectors.swift; sourceTree = "<group>"; };
 		F3E85E913EA62D5B971CD272 /* Clipboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clipboard.swift; sourceTree = "<group>"; };
 		F5E16C35BC6348493A49B8E9 /* DocumentHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentHistory.swift; sourceTree = "<group>"; };
+		F79D8597DB1B9F7BE6ADB5DA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		F928A3CAA386FE4447917114 /* LibrarySearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySearchBar.swift; sourceTree = "<group>"; };
 		FB5F7F02BAD71FA8FFEC737F /* CanvasSearchHighlightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSearchHighlightView.swift; sourceTree = "<group>"; };
 		FBE3E94D35ACBB56DBD48A28 /* PencilCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilCanvasView.swift; sourceTree = "<group>"; };
@@ -466,6 +468,7 @@
 			isa = PBXGroup;
 			children = (
 				28396265C1E00DC01ECC7EBA /* Assets.xcassets */,
+				F79D8597DB1B9F7BE6ADB5DA /* PrivacyInfo.xcprivacy */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -603,10 +606,18 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					28F783F5F0A8E9F108EDB56B = {
+						DevelopmentTeam = 955GSY56UT;
 						TestTargetID = 9387D81FAD749A8FA93D6F0A;
 					};
 					9387D81FAD749A8FA93D6F0A = {
+						DevelopmentTeam = 955GSY56UT;
 						ProvisioningStyle = Automatic;
+					};
+					9689FF62577AE7AA8A71231B = {
+						DevelopmentTeam = 955GSY56UT;
+					};
+					DDC1C960D1A38A0BC16FCE2B = {
+						DevelopmentTeam = 955GSY56UT;
 					};
 				};
 			};
@@ -638,6 +649,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				08CDD1292741663973BA2108 /* Assets.xcassets in Resources */,
+				B20584242F9394F8A46468BB /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -861,7 +873,9 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 955GSY56UT;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -881,6 +895,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1019,7 +1034,9 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 955GSY56UT;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -1033,6 +1050,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

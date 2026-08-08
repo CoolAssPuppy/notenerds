@@ -1,0 +1,28 @@
+[project]
+name = "NoteNerds"
+display_name = "Note Nerds"
+bundle_id = "com.prashant.notenerds"
+team_id = "955GSY56UT"
+scheme = "NoteNerds"
+ios_root = "."
+xcodeproj = "NoteNerds.xcodeproj"
+project_yml = "project.yml"
+dist_dir = "dist"
+min_ios = "18.0"
+device_family = "2"
+
+[asc]
+key_dir = "~/.private_keys"
+
+[doppler]
+project = "notenerds"
+config = "prd"
+secrets = ["ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_APP_ID", "ASC_PRIVATE_KEY"]
+
+[release]
+release_type = "MANUAL"
+locale = "en-US"
+default_notes = "Bug fixes and performance improvements."
+
+[env_files]
+paths = [".env"]

@@ -10,6 +10,8 @@ The app is written in Swift 6 with SwiftUI, UIKit, PencilKit, Vision, PDFKit, an
 
 Note Nerds is under active development. The complete product direction and engineering requirements are in [the product specification](docs/full-specification.md).
 
+Build and App Store release instructions are in [the deployment guide](docs/deployment.md). Finished App Store copy is in [the App Store listing](docs/app-store-listing.md), and the release command is documented in [scripts/README.md](scripts/README.md).
+
 ## Current capabilities
 
 ### Library and organization

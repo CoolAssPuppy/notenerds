@@ -1,5 +1,26 @@
 # Current work
 
+## Build and deployment pipeline
+
+- [x] Add failing behavior tests for configuration, versions, signing exports, and secret precedence.
+- [x] Port the Tripmaster ship command for simulator, TestFlight, and App Store releases.
+- [x] Add XcodeGen version and signing configuration.
+- [x] Add pull request CI and manual release workflows.
+- [x] Add Doppler configuration and create the `notenerds` project with a production config.
+- [x] Document local setup, App Store Connect setup, signing, TestFlight, and releases.
+- [x] Write the full App Store listing, screenshot plan, privacy answers, and review notes.
+- [x] Run pipeline tests, strict lint, app tests, and release preflight.
+- [x] Commit the completed pipeline.
+
+### Review
+
+- The release command supports simulator launches, TestFlight uploads, App Store uploads, optional review submission, version changes, and local preflight checks.
+- GitHub Actions checks generated project files, strict Swift lint, behavior tests, and the app launch flow on an available iPad simulator.
+- Manual releases use a protected GitHub environment and read App Store Connect credentials from Doppler.
+- Doppler project `notenerds` and locked production config `prd` exist, and this repository is scoped to them.
+- App Store metadata, screenshot direction, privacy answers, review notes, public privacy terms, and release instructions are documented in `docs/`.
+- Release tool tests, YAML parsing, shell validation, strict lint, behavior tests, the UI launch check, and a warnings-as-errors build pass.
+
 ## Rename the application to Note Nerds
 
 - [x] Add a failing launch assertion for the new product name.

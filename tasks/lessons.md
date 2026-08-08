@@ -24,3 +24,4 @@
 - A legal-pad paper background has one red margin rule near the left edge. Repeat the blue horizontal rules only; a tiled red margin produces several false margins across an infinite canvas.
 - Place creation actions beside the collection they change: folder creation in the Folders heading and notebook creation in the active notebook-list toolbar.
 - Keep library search compact until requested. Expand the search icon into a focused field, then collapse it when the user taps outside.
+- Give release jobs a build number derived from the CI run. A clean checkout otherwise repeats the build number stored in the repository.

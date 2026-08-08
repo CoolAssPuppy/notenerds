@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install build tools
+        run: brew install xcodegen swiftlint
+
+      - name: Test release tooling
+        run: PYTHONPATH=scripts python3 -m unittest discover -s scripts/tests -v
+
+      - name: Regenerate Xcode project
+        run: xcodegen generate
+
+      - name: Check generated project is committed
+        run: git diff --exit-code
+
+      - name: Lint Swift
+        run: swiftlint lint --strict --cache-path "$RUNNER_TEMP/swiftlint-cache"
+
+      - name: Select iPad simulator
+        run: |
+          simulator_id="$(xcrun simctl list devices available --json | python3 -c '
+          import json, sys
+          data = json.load(sys.stdin)
+          candidates = []
+          for runtime, devices in data.get("devices", {}).items():
+              if ".iOS-" not in runtime:
+                  continue
+              for device in devices:
+                  if device.get("isAvailable", True) and device.get("name", "").startswith("iPad"):
+                      candidates.append((runtime, device["name"], device["udid"]))
+          if not candidates:
+              raise SystemExit("No available iPad simulator")
+          print(sorted(candidates)[-1][2])
+          ')"
+          echo "SIMULATOR_ID=$simulator_id" >> "$GITHUB_ENV"
+
+      - name: Run behavior tests
+        run: |
+          xcodebuild test -quiet \
+            -project NoteNerds.xcodeproj \
+            -scheme NoteNerds \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/BehaviorTests.xcresult" \
+            -only-testing:NoteNerdsTests \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Run launch check
+        run: |
+          xcodebuild test -quiet \
+            -project NoteNerds.xcodeproj \
+            -scheme NoteNerds \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/LaunchTests.xcresult" \
+            -only-testing:NoteNerdsUITests/NoteNerdsLaunchTests/testApplicationLaunchesIntoLibrary \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test results after failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ${{ runner.temp }}/*.xcresult
+          retention-days: 7

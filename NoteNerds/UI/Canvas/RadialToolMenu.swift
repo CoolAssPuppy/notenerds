@@ -76,14 +76,14 @@ struct RadialToolMenu: View {
         ZStack {
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                 itemControl(item)
-                    .font(.system(size: 19, weight: .medium))
+                    .font(.system(size: 18, weight: .medium))
                     .foregroundStyle(isSelected(item.action) ? Color.white : Color.primary)
-                    .frame(width: 52, height: 52)
+                    .frame(width: 50, height: 50)
                     .background(buttonBackground(for: item.action))
-                    .clipShape(RoundedRectangle(cornerRadius: 19, style: .continuous))
+                    .clipShape(Circle())
                     .overlay {
-                        RoundedRectangle(cornerRadius: 19, style: .continuous)
-                            .stroke(.white.opacity(0.8), lineWidth: 1)
+                        Circle()
+                            .stroke(.white.opacity(0.86), lineWidth: 1)
                     }
                     .shadow(
                         color: isSelected(item.action)
@@ -115,14 +115,14 @@ struct RadialToolMenu: View {
             .labelsHidden()
             .accessibilityLabel("Custom color")
             .accessibilityIdentifier("Radial custom color")
-            .frame(width: 52, height: 52)
+            .frame(width: 50, height: 50)
             .contentShape(Rectangle())
         } else {
             Button {
                 perform(item.action)
             } label: {
                 itemLabel(item)
-                    .frame(width: 52, height: 52)
+                    .frame(width: 50, height: 50)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

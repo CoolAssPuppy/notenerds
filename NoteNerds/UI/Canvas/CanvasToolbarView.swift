@@ -56,12 +56,6 @@ struct CanvasToolbarView: View {
     @ViewBuilder
     private var toolbarActionItems: some View {
         drawingToolInspectorButton
-        if isExpanded {
-            ForEach(drawingTools, id: \.self) { tool in
-                directDrawingToolButton(tool)
-            }
-            chromeDivider
-        }
         widthInspectorButton
         colorInspectorButton
         eraserInspectorButton
@@ -81,14 +75,7 @@ struct CanvasToolbarView: View {
             chromeButton("Redo", symbol: "arrow.uturn.forward") { editor.model.redo(editor.notebook.id) }
                 .keyboardShortcut("z", modifiers: [.command, .shift])
             chromeDivider
-            chromeButton("Zoom to content", symbol: "arrow.up.left.and.arrow.down.right") {
-                editor.zoomToContent()
-            }
-            chromeButton("Minimap", symbol: "map") { editor.toggleMinimap() }
-            chromeButton("Change paper", symbol: "doc.text.image") { editor.showPaperGallery() }
-            chromeButton("Import", symbol: "square.and.arrow.down") { editor.importContent() }
             layersButton
-            chromeButton("Home", symbol: "house") { editor.returnHome() }
         }
     }
 
@@ -143,18 +130,6 @@ struct CanvasToolbarView: View {
                 presentedInspector = nil
             }
         }
-    }
-
-    private func directDrawingToolButton(_ tool: CanvasTool) -> some View {
-        chromeButton(
-            tool.label,
-            symbol: tool.symbol,
-            isSelected: editor.configuration.tool == tool
-        ) {
-            editor.selectTool(tool)
-        }
-        .accessibilityValue(editor.configuration.tool == tool ? "Selected" : "Not selected")
-        .keyboardShortcut(tool.keyboardShortcut, modifiers: [])
     }
 
     private var widthInspectorButton: some View {

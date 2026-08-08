@@ -56,11 +56,12 @@ struct RadialPaletteItemPlacement: Equatable {
     let indexInRing: Int
     let itemCountInRing: Int
     let radius: Double
+    let angleDegrees: Double
 }
 
 enum RadialPalettePresentation {
     static let maximumItemCount = CanvasInkChoice.allCases.count + 1
-    private static let maximumItemsPerRing = 6
+    private static let maximumItemsPerRing = 10
 
     static func items(for page: RadialPalettePage) -> [RadialPaletteItem] {
         switch page {
@@ -84,19 +85,33 @@ enum RadialPalettePresentation {
 
     static func placement(for index: Int, itemCount: Int) -> RadialPaletteItemPlacement {
         let counts = itemCountsByRing(for: itemCount)
+        let ringCount = counts.count
         var remainingIndex = index
         for (ringIndex, count) in counts.enumerated() {
             if remainingIndex < count {
+                let angleStep = 360 / Double(count)
+                let phase = angularPhaseDegrees(
+                    ringIndex: ringIndex,
+                    ringCount: ringCount,
+                    angleStep: angleStep
+                )
                 return RadialPaletteItemPlacement(
                     ringIndex: ringIndex,
                     indexInRing: remainingIndex,
                     itemCountInRing: count,
-                    radius: radii(for: counts.count)[ringIndex]
+                    radius: radii(for: ringCount)[ringIndex],
+                    angleDegrees: -90 + phase + Double(remainingIndex) * angleStep
                 )
             }
             remainingIndex -= count
         }
-        return RadialPaletteItemPlacement(ringIndex: 0, indexInRing: 0, itemCountInRing: 1, radius: 80)
+        return RadialPaletteItemPlacement(
+            ringIndex: 0,
+            indexInRing: 0,
+            itemCountInRing: 1,
+            radius: 96,
+            angleDegrees: -90
+        )
     }
 
     static func maximumRadius(for itemCount: Int) -> Double {
@@ -193,11 +208,22 @@ enum RadialPalettePresentation {
         return (0..<count).map { baseCount + ($0 < remainder ? 1 : 0) }
     }
 
+    private static func angularPhaseDegrees(
+        ringIndex: Int,
+        ringCount: Int,
+        angleStep: Double
+    ) -> Double {
+        guard ringCount > 1 else { return 0 }
+        guard ringIndex > 0 else { return 0 }
+        let evenStagger = angleStep * Double(ringIndex) / Double(ringCount)
+        return evenStagger + Double(ringIndex) * 7.5
+    }
+
     private static func radii(for ringCount: Int) -> [Double] {
         switch ringCount {
-        case 1: [80]
-        case 2: [70, 124]
-        case 3: [60, 112, 164]
+        case 1: [96]
+        case 2: [82, 144]
+        case 3: [72, 132, 192]
         default: []
         }
     }

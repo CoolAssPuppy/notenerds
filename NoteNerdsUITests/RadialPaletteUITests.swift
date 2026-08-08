@@ -2,23 +2,31 @@ import XCTest
 
 @MainActor
 final class RadialPaletteUITests: XCTestCase {
-    func testExpandedToolbarShowsEverySpecializedWritingToolDirectly() {
+    func testExpandedToolbarShowsOnlyCoreEditingCategories() {
         XCUIDevice.shared.orientation = .portrait
         let application = XCUIApplication()
         application.launchArguments = ["-ui-testing", "-reset-library"]
         application.launch()
         application.buttons["New notebook"].tap()
+        attachScreenshot(from: application, named: "Collapsed core toolbar")
         application.buttons["Show more tools"].tap()
 
-        for tool in [
+        for category in [
+            "Drawing tools", "Stroke width", "Ink color", "Eraser",
+            "Lasso", "Add text", "Shapes", "Undo", "Redo", "Layers"
+        ] {
+            XCTAssertTrue(application.buttons[category].exists)
+        }
+        for choice in [
             "Ballpoint", "Fineliner", "Mechanical pencil", "Pencil", "Marker",
             "Highlighter", "Brush", "Calligraphy pen", "Handwriting to text"
         ] {
-            XCTAssertTrue(application.buttons[tool].exists)
+            XCTAssertFalse(application.buttons[choice].exists)
         }
+        attachScreenshot(from: application, named: "Expanded core toolbar")
     }
 
-    func testLastSpecializedToolCanBeReachedAndSelectedInBothToolbarPositions() {
+    func testWritingToolChoicesStayInsideTheirInspectorInBothToolbarPositions() {
         for orientation in ["vertical", "horizontal"] {
             let application = XCUIApplication()
             application.launchArguments = [
@@ -26,20 +34,9 @@ final class RadialPaletteUITests: XCTestCase {
             ]
             application.launch()
             application.buttons["New notebook"].tap()
-            application.buttons["Show more tools"].tap()
-
-            let tools = application.scrollViews["Expanded tools"]
+            application.buttons["Drawing tools"].tap()
             let handwriting = application.buttons["Handwriting to text"]
-            XCTAssertTrue(tools.waitForExistence(timeout: 2))
-            for _ in 0..<4 where !handwriting.isHittable {
-                if orientation == "vertical" {
-                    tools.swipeUp()
-                } else {
-                    tools.swipeLeft()
-                }
-            }
-
-            XCTAssertTrue(handwriting.exists)
+            XCTAssertTrue(handwriting.waitForExistence(timeout: 2))
             handwriting.tap()
             XCTAssertEqual(
                 application.buttons["Drawing tools"].value as? String,
@@ -120,5 +117,12 @@ final class RadialPaletteUITests: XCTestCase {
             "500"
         ]
         return application
+    }
+
+    private func attachScreenshot(from application: XCUIApplication, named name: String) {
+        let attachment = XCTAttachment(screenshot: application.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 }

@@ -80,9 +80,7 @@ struct PencilRadialMenuLayout {
     func offset(itemAt index: Int, itemCount: Int) -> CGSize {
         guard itemCount > 0 else { return .zero }
         let placement = RadialPalettePresentation.placement(for: index, itemCount: itemCount)
-        let angle = (
-            -90 + (Double(placement.indexInRing) / Double(placement.itemCountInRing)) * 360
-        ) * Double.pi / 180
+        let angle = placement.angleDegrees * Double.pi / 180
         return CGSize(
             width: cos(angle) * placement.radius * radiusScale,
             height: sin(angle) * placement.radius * radiusScale

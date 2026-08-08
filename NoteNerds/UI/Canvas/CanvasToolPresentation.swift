@@ -23,7 +23,7 @@ extension CanvasTool {
         case .fineliner: "pencil.tip.crop.circle"
         case .mechanicalPencil: "pencil.circle"
         case .pencil: "pencil"
-        case .marker: "highlighter.fill"
+        case .marker: "pencil.line"
         case .highlighter: "highlighter"
         case .brush: "paintbrush.pointed"
         case .calligraphyPen: "paintbrush.pointed.fill"

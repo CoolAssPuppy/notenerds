@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 @testable import NoteNerds
 
@@ -34,17 +35,17 @@ final class RadialPaletteBehaviorTests: XCTestCase {
                 "Highlighter", "Brush", "Calligraphy pen", "Handwriting to text"
             ]
         )
-        XCTAssertEqual(RadialPalettePresentation.ringCount(for: items.count), 2)
+        XCTAssertEqual(RadialPalettePresentation.ringCount(for: items.count), 1)
     }
 
-    func testColorPageContainsAllPresetsAndCustomColorAcrossThreeRings() {
+    func testColorPageContainsAllPresetsAndCustomColorAcrossTwoRings() {
         let items = RadialPalettePresentation.items(for: .colors)
 
         XCTAssertEqual(
             items.map(\.label),
             CanvasInkChoice.allCases.map(\.label) + ["Custom color"]
         )
-        XCTAssertEqual(RadialPalettePresentation.ringCount(for: items.count), 3)
+        XCTAssertEqual(RadialPalettePresentation.ringCount(for: items.count), 2)
     }
 
     func testWidthAndEraserPagesExposeTheirCompleteChoices() {
@@ -67,13 +68,63 @@ final class RadialPaletteBehaviorTests: XCTestCase {
         XCTAssertNil(RadialPaletteAction.eraserMode(.stroke).destination)
     }
 
-    func testRingCountGrowsAtSixItemBoundariesAndStopsAtThree() {
+    func testRootActionsUseOneCompleteRing() {
+        let items = RadialPalettePresentation.items(for: .root)
+
+        XCTAssertEqual(RadialPalettePresentation.ringCount(for: items.count), 1)
+        XCTAssertEqual(Set(items.indices.map {
+            RadialPalettePresentation.placement(for: $0, itemCount: items.count).radius
+        }).count, 1)
+    }
+
+    func testRingCountGrowsAtTenItemBoundariesAndStopsAtThree() {
         XCTAssertEqual(RadialPalettePresentation.ringCount(for: 0), 0)
-        XCTAssertEqual(RadialPalettePresentation.ringCount(for: 6), 1)
-        XCTAssertEqual(RadialPalettePresentation.ringCount(for: 7), 2)
-        XCTAssertEqual(RadialPalettePresentation.ringCount(for: 12), 2)
-        XCTAssertEqual(RadialPalettePresentation.ringCount(for: 13), 3)
-        XCTAssertEqual(RadialPalettePresentation.ringCount(for: 18), 3)
+        XCTAssertEqual(RadialPalettePresentation.ringCount(for: 10), 1)
+        XCTAssertEqual(RadialPalettePresentation.ringCount(for: 11), 2)
+        XCTAssertEqual(RadialPalettePresentation.ringCount(for: 20), 2)
+        XCTAssertEqual(RadialPalettePresentation.ringCount(for: 21), 3)
+        XCTAssertEqual(RadialPalettePresentation.ringCount(for: 30), 3)
+    }
+
+    func testEveryRingUsesEqualAngularSpacing() {
+        for itemCount in [7, 9, 15, 24] {
+            let placements = (0..<itemCount).map {
+                RadialPalettePresentation.placement(for: $0, itemCount: itemCount)
+            }
+            for ringIndex in 0..<RadialPalettePresentation.ringCount(for: itemCount) {
+                let ring = placements.filter { $0.ringIndex == ringIndex }
+                let expectedStep = 360 / Double(ring.count)
+                let angles = ring.map(\.angleDegrees).sorted()
+                let wrapped = angles + [angles[0] + 360]
+                for index in 0..<angles.count {
+                    XCTAssertEqual(wrapped[index + 1] - wrapped[index], expectedStep, accuracy: 0.001)
+                }
+            }
+        }
+    }
+
+    func testConcentricRingsUseDifferentAngularPhases() {
+        let placements = (0..<15).map {
+            RadialPalettePresentation.placement(for: $0, itemCount: 15)
+        }
+        let firstAngles = Set(placements.filter { $0.ringIndex == 0 }.map(\.angleDegrees))
+        let secondAngles = Set(placements.filter { $0.ringIndex == 1 }.map(\.angleDegrees))
+
+        XCTAssertTrue(firstAngles.isDisjoint(with: secondAngles))
+    }
+
+    func testEveryRadialItemUsesAnAvailableSystemSymbol() {
+        for page in [
+            RadialPalettePage.root,
+            .drawingTools,
+            .widths,
+            .eraserModes,
+            .precisionEraserWidths
+        ] {
+            for item in RadialPalettePresentation.items(for: page) where item.action != .customColor {
+                XCTAssertNotNil(UIImage(systemName: item.symbol), "Missing symbol for \(item.label)")
+            }
+        }
     }
 
     private func item(

@@ -1,6 +1,8 @@
 # Lessons
 
-- An expanded drawing toolbar must show each specialized writing tool directly. A single writing-tools inspector is useful for settings and favorites, but it cannot replace the promised expanded controls.
+- A radial menu needs complete circles with equal radius and equal angular spacing. Multiple rings need different angular phases so they read as rings instead of spokes or branches. Verify the rendered button centers, not only the item count.
+- When the user approves artwork in Paper, export that exact node into the asset catalog before deployment. Do not substitute an older or recreated icon.
+- Keep the persistent and expanded canvas toolbar limited to core editing categories. Pen variants, width choices, colors, eraser modes, and shape choices belong inside their category inspector or radial submenu.
 - A Pencil radial menu must keep option selection inside the radial interaction. Controls with inspectors should open anchored radial choice pages, including additional option levels when one choice needs more detail.
 
 - Keep the product name as “Note Nerds” in the app target, display name, document format, cloud configuration, accessibility copy, icons, and interface text.

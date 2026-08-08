@@ -34,16 +34,16 @@ final class PencilSqueezeBehaviorTests: XCTestCase {
     func testRadialRingIsCenteredOnThePencilWithATightRadius() {
         let canvasSize = CGSize(width: 1_024, height: 768)
 
-        let center = PencilRadialMenuLayout(size: canvasSize, requestedOrigin: CGPoint(x: 512, y: 650))
+        let center = PencilRadialMenuLayout(size: canvasSize, requestedOrigin: CGPoint(x: 512, y: 600))
         let edge = PencilRadialMenuLayout(size: canvasSize, requestedOrigin: CGPoint(x: 12, y: 80))
 
-        XCTAssertEqual(center.anchor, CGPoint(x: 512, y: 650))
+        XCTAssertEqual(center.anchor, CGPoint(x: 512, y: 600))
         for index in 0..<6 {
             let offset = center.offset(itemAt: index, itemCount: 6)
-            XCTAssertEqual(hypot(offset.width, offset.height), 80, accuracy: 0.001)
+            XCTAssertEqual(hypot(offset.width, offset.height), 96, accuracy: 0.001)
         }
-        XCTAssertGreaterThanOrEqual(edge.anchor.x, 107)
-        XCTAssertGreaterThanOrEqual(edge.anchor.y, 107)
+        XCTAssertGreaterThanOrEqual(edge.anchor.x, 123)
+        XCTAssertGreaterThanOrEqual(edge.anchor.y, 123)
         for index in 0..<6 {
             let position = edge.position(itemAt: index, itemCount: 6)
             XCTAssertTrue((27...(canvasSize.width - 27)).contains(position.x))

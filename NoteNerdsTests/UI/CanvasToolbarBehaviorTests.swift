@@ -9,23 +9,24 @@ final class CanvasToolbarBehaviorTests: XCTestCase {
         )
     }
 
-    func testExpandedToolbarAddsEveryFormerOverflowActionInline() {
+    func testExpandedToolbarAddsOnlyCoreEditingCategories() {
         XCTAssertEqual(
             CanvasToolbarPresentation.actions(isExpanded: true),
             [
                 .drawing,
-                .drawingTool(.ballpoint),
-                .drawingTool(.fineliner),
-                .drawingTool(.mechanicalPencil),
-                .drawingTool(.pencil),
-                .drawingTool(.marker),
-                .drawingTool(.highlighter),
-                .drawingTool(.brush),
-                .drawingTool(.calligraphyPen),
-                .drawingTool(.handwritingToText),
                 .width, .color, .eraser,
                 .lasso, .text, .shapes, .undo, .redo,
-                .zoomToContent, .minimap, .changePaper, .importContent, .layers, .home
+                .layers
+            ]
+        )
+    }
+
+    func testSpecializedWritingToolsRemainChoicesInsideDrawingTools() {
+        XCTAssertEqual(
+            CanvasToolbarPresentation.specializedDrawingTools,
+            [
+                .ballpoint, .fineliner, .mechanicalPencil, .pencil,
+                .marker, .highlighter, .brush, .calligraphyPen, .handwritingToText
             ]
         )
     }

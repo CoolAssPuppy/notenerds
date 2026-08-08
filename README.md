@@ -145,8 +145,8 @@ The project enables Swift 6 strict concurrency and treats Swift, Clang, and GCC 
 The project currently uses these identifiers:
 
 ```text
-Bundle identifier: com.prashant.notenerds
-CloudKit container: iCloud.com.prashant.notenerds
+Bundle identifier: com.strategicnerds.notenerds
+CloudKit container: iCloud.com.strategicnerds.notenerds
 ```
 
 Contributors who need device sync must use identifiers owned by their Apple Developer team:

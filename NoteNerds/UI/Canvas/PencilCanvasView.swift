@@ -383,7 +383,7 @@ struct PencilCanvasView: UIViewRepresentable {
     }
 
     private func performPaste(on canvasView: PKCanvasView, coordinator: Coordinator) {
-        if UIPasteboard.general.data(forPasteboardType: "com.prashant.notenerds.selection") != nil {
+        if UIPasteboard.general.data(forPasteboardType: "com.strategicnerds.notenerds.selection") != nil {
             coordinator.objectSelectionOverlay?.pasteSelection()
         } else {
             canvasView.paste(nil)

@@ -80,7 +80,7 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
         let selectedObjects = objects.filter { selectedIDs.contains($0.id) }
         guard !selectedObjects.isEmpty,
               let data = try? JSONEncoder().encode(SelectionClipboardPayload(objects: selectedObjects)) else { return }
-        var item: [String: Any] = ["com.prashant.notenerds.selection": data]
+        var item: [String: Any] = ["com.strategicnerds.notenerds.selection": data]
         let text = selectedObjects.compactMap(\.textValue).map(\.text).joined(separator: "\n")
         if !text.isEmpty { item["public.utf8-plain-text"] = text }
         UIPasteboard.general.items = [item]
@@ -92,7 +92,7 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
     }
 
     func pasteSelection() {
-        guard let data = UIPasteboard.general.data(forPasteboardType: "com.prashant.notenerds.selection"),
+        guard let data = UIPasteboard.general.data(forPasteboardType: "com.strategicnerds.notenerds.selection"),
               data.count <= 100 * 1_024 * 1_024,
               let payload = try? JSONDecoder().decode(SelectionClipboardPayload.self, from: data) else { return }
         onPaste(payload.pasted(offset: CanvasPoint(x: 24, y: 24)))

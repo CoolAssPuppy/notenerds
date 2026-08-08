@@ -8,8 +8,8 @@ Note Nerds ships through a Python command patterned after Tripmaster. XcodeGen r
 - Platform: iPadOS
 - Minimum version: iPadOS 18.0
 - Device family: iPad only
-- Bundle identifier: `com.prashant.notenerds`
-- CloudKit container: `iCloud.com.prashant.notenerds`
+- Bundle identifier: `com.strategicnerds.notenerds`
+- CloudKit container: `iCloud.com.strategicnerds.notenerds`
 - Apple Developer team: `955GSY56UT`
 - Initial marketing version: `1.0.0`
 - Initial build number: `1`
@@ -39,9 +39,9 @@ Complete these steps after creating the app in App Store Connect.
 ### Register the App ID
 
 1. Open Certificates, Identifiers & Profiles in the Apple Developer portal.
-2. Register `com.prashant.notenerds` as an explicit App ID.
+2. Confirm `com.strategicnerds.notenerds` is registered as an explicit App ID.
 3. Enable iCloud and CloudKit.
-4. Select or create `iCloud.com.prashant.notenerds`.
+4. Select or create `iCloud.com.strategicnerds.notenerds`.
 5. Confirm the container is assigned to the App ID for development and distribution.
 
 The entitlement file is `NoteNerds/NoteNerds.entitlements`.
@@ -55,7 +55,7 @@ Use these values:
 | Platform | iOS |
 | Name | Note Nerds |
 | Primary language | English (U.S.) |
-| Bundle ID | `com.prashant.notenerds` |
+| Bundle ID | `com.strategicnerds.notenerds` |
 | SKU | `NOTENERDS-IOS-001` |
 | User access | Full Access |
 

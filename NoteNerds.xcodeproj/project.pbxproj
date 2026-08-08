@@ -815,7 +815,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.prashant.notenerds.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.strategicnerds.notenerds.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NoteNerds.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NoteNerds";
@@ -832,7 +832,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.prashant.notenerds.performance-tests";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.strategicnerds.notenerds.performance-tests";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NoteNerds.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NoteNerds";
@@ -919,7 +919,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.prashant.notenerds.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.strategicnerds.notenerds.uitests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = NoteNerds;
@@ -938,7 +938,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.prashant.notenerds;
+				PRODUCT_BUNDLE_IDENTIFIER = com.strategicnerds.notenerds;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -956,7 +956,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.prashant.notenerds.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.strategicnerds.notenerds.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NoteNerds.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NoteNerds";
@@ -975,7 +975,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.prashant.notenerds;
+				PRODUCT_BUNDLE_IDENTIFIER = com.strategicnerds.notenerds;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -993,7 +993,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.prashant.notenerds.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.strategicnerds.notenerds.uitests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = NoteNerds;
@@ -1073,7 +1073,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.prashant.notenerds.performance-tests";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.strategicnerds.notenerds.performance-tests";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NoteNerds.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NoteNerds";

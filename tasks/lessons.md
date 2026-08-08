@@ -25,3 +25,4 @@
 - Place creation actions beside the collection they change: folder creation in the Folders heading and notebook creation in the active notebook-list toolbar.
 - Keep library search compact until requested. Expand the search icon into a focused field, then collapse it when the user taps outside.
 - Give release jobs a build number derived from the CI run. A clean checkout otherwise repeats the build number stored in the repository.
+- Read the registered App Store Connect record before finalizing identifiers. The Apple ID, product name, and bundle identifier must agree before signing and upload checks begin.

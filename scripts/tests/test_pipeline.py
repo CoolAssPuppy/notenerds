@@ -16,7 +16,7 @@ class PipelineBehaviorTests(unittest.TestCase):
         ship_config = config.load(Path(__file__).resolve().parents[2])
 
         self.assertEqual(ship_config.project.name, "NoteNerds")
-        self.assertEqual(ship_config.project.bundle_id, "com.prashant.notenerds")
+        self.assertEqual(ship_config.project.bundle_id, "com.strategicnerds.notenerds")
         self.assertEqual(ship_config.project.team_id, "955GSY56UT")
         self.assertEqual(ship_config.project.device_family, "2")
         self.assertEqual(ship_config.doppler.project, "notenerds")

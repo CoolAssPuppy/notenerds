@@ -1,7 +1,7 @@
 [project]
 name = "NoteNerds"
 display_name = "Note Nerds"
-bundle_id = "com.prashant.notenerds"
+bundle_id = "com.strategicnerds.notenerds"
 team_id = "955GSY56UT"
 scheme = "NoteNerds"
 ios_root = "."

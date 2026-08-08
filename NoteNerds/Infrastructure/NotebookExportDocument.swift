@@ -2,7 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct NotebookExportDocument: @unchecked Sendable, FileDocument {
-    static let nativeType = UTType(exportedAs: "com.prashant.notenerds.notebook")
+    static let nativeType = UTType(exportedAs: "com.strategicnerds.notenerds.notebook")
     static let readableContentTypes: [UTType] = [.pdf, .png, nativeType]
 
     let wrapper: FileWrapper

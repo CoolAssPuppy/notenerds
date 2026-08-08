@@ -1,5 +1,19 @@
 # Current work
 
+## Match the App Store Connect application record
+
+- [x] Add a failing release-configuration assertion for the registered bundle identifier.
+- [x] Update application, test, document, pasteboard, and CloudKit identifiers.
+- [x] Regenerate the Xcode project and Info.plist.
+- [ ] Verify the App Store record, release credentials, tests, lint, and warnings-as-errors build.
+- [x] Commit the identifier correction.
+
+### Review
+
+- App Store Connect ID `6799369721` is Note Nerds and uses `com.strategicnerds.notenerds`.
+- Release credentials authenticate with Apple, release tests pass, strict lint reports no violations, and the complete behavior suite builds with warnings treated as errors.
+- A signed archive requires the iCloud capability and `iCloud.com.strategicnerds.notenerds` container to be enabled and assigned to the App ID in Apple Developer.
+
 ## Build and deployment pipeline
 
 - [x] Add failing behavior tests for configuration, versions, signing exports, and secret precedence.
@@ -35,7 +49,7 @@
 ### Review
 
 - The product display name is Note Nerds, while Swift modules, targets, schemes, and tracked paths use NoteNerds.
-- Bundle, CloudKit, document, pasteboard, and test identifiers use `com.prashant.notenerds`.
+- Bundle, CloudKit, document, pasteboard, and test identifiers use the registered `com.strategicnerds.notenerds` namespace.
 - Native notebook packages use the `.notenerds` extension.
 - Repository content and tracked filenames contain no references to the previous product name.
 - The full behavior suite, product-name and library UI checks, strict lint, and warnings-as-errors build pass on the iPad Pro 13-inch simulator.

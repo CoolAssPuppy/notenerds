@@ -11,7 +11,7 @@ This is the English (U.S.) listing for Note Nerds 1.0.0. The shipping build supp
 | Primary category | Productivity |
 | Secondary category | Graphics & Design |
 | SKU | `NOTENERDS-IOS-001` |
-| Bundle ID | `com.prashant.notenerds` |
+| Bundle ID | `com.strategicnerds.notenerds` |
 | Primary language | English (U.S.) |
 | Copyright | 2026 Prashant Sridharan |
 

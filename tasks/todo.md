@@ -1,5 +1,56 @@
 # Current work
 
+## Separate toolbar categories from their choices
+
+- [x] Record the correction in `tasks/lessons.md`.
+- [x] Add a failing behavior test that permits only core editing categories in the expanded toolbar.
+- [x] Remove pen variants and document commands from the expanded toolbar.
+- [x] Keep specialized writing tools inside Writing tools and Pencil radial choices.
+- [x] Verify collapsed and expanded toolbar behavior on the simulator.
+
+### Review
+
+- Collapsed contains Writing tools, Stroke width, Ink color, Eraser, and the chevron.
+- Expanded adds only Lasso, Text, Shapes, Undo, Redo, and Layers. Choice-level controls remain in their inspectors and Pencil radial submenus.
+- Focused behavior and interface tests pass. Saved simulator screenshots confirm both toolbar states.
+
+## True radial Pencil menus and approved Paper icon
+
+- [x] Add failing behavior tests for one-ring root and tool menus, concentric color rings, angular spacing, and phase staggering.
+- [x] Add an interface test that measures rendered button centers against the Pencil anchor.
+- [x] Replace the branching placement with complete concentric rings.
+- [x] Replace rounded-square tiles with compact circular glass controls.
+- [x] Remove empty visual tiles and keep Back at the submenu center.
+- [x] Export the approved glass-gradient lowercase `n` from Paper and replace the app icon asset.
+- [x] Run focused behavior and interface tests, full behavior tests, strict lint, and a warnings-as-errors build.
+- [x] Install the corrected build on the connected iPad.
+- [ ] Open the corrected build after the iPad is unlocked.
+
+### Review
+
+- Root choices use one complete seven-item circle centered on the Pencil anchor.
+- Color choices use two staggered concentric circles. The same placement code gives Writing tools, Width, and Eraser complete circles.
+- Interface tests measure the rendered centers, radii, angular spacing, circular frames, and Pencil anchor. Saved simulator screenshots were inspected after the tests passed.
+- The app icon asset is byte-for-byte identical to Paper's exported 1024 by 1024 `Frame` artboard.
+- The complete behavior suite, focused interface tests, strict SwiftLint, `git diff --check`, and a warnings-as-errors simulator build pass.
+- The signed Release build is installed on Prashant's iPad mini. iPadOS refused the automatic launch while the device was locked.
+
+## Supabase backend and web application plan
+
+- [x] Inspect the canonical library, notebook, canvas, object, asset, and sync models.
+- [x] Inspect the current CloudKit provider, local persistence, native archive, Notion publisher, and deployment setup.
+- [x] Verify current Supabase and Apple authentication, RLS, Storage, upload, Realtime, and server guidance from primary documentation.
+- [x] Define the backend, authentication, storage, sync, migration, web viewer, security, performance, testing, and deployment plan.
+- [x] Write the complete plan in `tasks/web-app.md`.
+
+### Review
+
+- The plan keeps the native `.notenerds` schema canonical and uses Supabase for accounts, cross-platform sync, web projections, search, and private files.
+- The first web release is a private read-only viewer. Web editing waits for a versioned cross-platform operation contract.
+- The CloudKit transition uses a shadow-upload stage and enforces one active remote merge provider per device.
+- The plan defines the database tables, database functions, RLS tests, Storage paths, Apple sign-in setup, native work, Next.js application, CI, phased delivery, and release criteria.
+- The signed app build from commit `c349782` was installed and opened on Prashant's iPad mini before the plan was written.
+
 ## iPhone planner region pager
 
 - [x] Add failing behavior tests for template-derived regions and swipe paging.

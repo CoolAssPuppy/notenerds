@@ -126,17 +126,35 @@ final class AppModel: ObservableObject {
         defer { hasRestoredLibrary = true }
         do {
             library = try await repository.load()
+            var didRepairLibrary = false
             if let documentStore {
                 for notebook in library.notebooks {
                     do {
-                        let recovered = try await documentStore.recover(notebookID: notebook.id)
+                        var recovered = try await documentStore.recover(notebookID: notebook.id)
+                        if recovered.notebook.repairDuplicateCanvasIdentifiers() {
+                            try await documentStore.save(recovered)
+                            didRepairLibrary = true
+                        }
                         library.updateNotebook(recovered.notebook)
                     } catch LocalDocumentStoreError.notebookNotFound {
+                        var repairedNotebook = notebook
+                        didRepairLibrary = repairedNotebook.repairDuplicateCanvasIdentifiers() || didRepairLibrary
+                        library.updateNotebook(repairedNotebook)
                         try await documentStore.save(
-                            NativeNotebookPackage(schemaVersion: .current, notebook: notebook)
+                            NativeNotebookPackage(schemaVersion: .current, notebook: repairedNotebook)
                         )
                     }
                 }
+            } else {
+                for notebook in library.notebooks {
+                    var repairedNotebook = notebook
+                    guard repairedNotebook.repairDuplicateCanvasIdentifiers() else { continue }
+                    library.updateNotebook(repairedNotebook)
+                    didRepairLibrary = true
+                }
+            }
+            if didRepairLibrary {
+                try await repository.save(library)
             }
             for notebook in library.notebooks { searchIndex.update(notebook) }
             await synchronize()

@@ -54,3 +54,5 @@
 - Regression tests for collections must find items by stable identity or safely unwrap them. A missing item should produce an XCTest assertion failure, never an out-of-bounds trap.
 - Model planner sections as stable viewports derived from paper geometry. Keep one canvas, one object graph, and one layer stack so rotation and phone paging cannot split a notebook's data.
 - Confirm the target device families before building phone-specific behavior. An iPhone layout is incomplete while the app target still declares iPad-only support.
+- Device builds must use the project build-setting names `NOTION_CLIENT_ID_B64` and `NOTION_CLIENT_SECRET_B64`. Verify the built Info.plist contains two nonempty decoded configuration values before installing it. A signed build can still omit service configuration.
+- Never build a dictionary from persisted user identifiers with a trapping initializer. Validate duplicates, repair legacy data during restore, and return typed sync errors for any invalid data that remains.

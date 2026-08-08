@@ -2,6 +2,7 @@ import Foundation
 
 enum NotionNotebookPayloadError: Error, Equatable, Sendable {
     case missingAsset(AssetID)
+    case duplicateCanvasIdentifier(CanvasID)
 }
 
 struct NotionNotebookPayloadBuilder: Sendable {
@@ -52,23 +53,32 @@ struct NotionNotebookPayloadBuilder: Sendable {
         snapshot: NotionNotebookSnapshot
     ) throws -> NotionNotebookPayload {
         let pngExporter = CanvasPNGExporter()
-        let previews = try Dictionary(
-            uniqueKeysWithValues: notebook.canvases.map { canvas in
-                let bounds = canvas.exportBounds
-                let longestSide = max(bounds.size.width, bounds.size.height)
-                let scale = min(1, maximumPreviewDimension / max(longestSide, 1))
-                return (
-                    canvas.id.rawValue.uuidString.lowercased(),
-                    try pngExporter.export(canvas, region: bounds, scale: scale)
-                )
-            }
-        )
+        let previews = try renderPreviews(notebook: notebook, exporter: pngExporter)
         return NotionNotebookPayload(
             snapshot: snapshot,
             nativeArchive: nativeArchive,
             pdf: try NotebookPDFExporter().export(notebook, assets: assets),
             previews: previews
         )
+    }
+
+    @MainActor
+    private func renderPreviews(
+        notebook: Notebook,
+        exporter: CanvasPNGExporter
+    ) throws -> [String: Data] {
+        var previews: [String: Data] = [:]
+        for canvas in notebook.canvases {
+            let identifier = canvas.id.rawValue.uuidString.lowercased()
+            guard previews[identifier] == nil else {
+                throw NotionNotebookPayloadError.duplicateCanvasIdentifier(canvas.id)
+            }
+            let bounds = canvas.exportBounds
+            let longestSide = max(bounds.size.width, bounds.size.height)
+            let scale = min(1, maximumPreviewDimension / max(longestSide, 1))
+            previews[identifier] = try exporter.export(canvas, region: bounds, scale: scale)
+        }
+        return previews
     }
 
     private func referencedAssets(

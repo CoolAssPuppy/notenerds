@@ -202,6 +202,28 @@ struct Notebook: Codable, Hashable, Identifiable, Sendable {
         canvases.insert(canvas, at: destinationIndex)
     }
 
+    @discardableResult
+    mutating func repairDuplicateCanvasIdentifiers() -> Bool {
+        var seenIdentifiers: Set<CanvasID> = []
+        var didRepair = false
+
+        for index in canvases.indices {
+            let canvas = canvases[index]
+            guard !seenIdentifiers.insert(canvas.id).inserted else { continue }
+
+            var replacementIdentifier = CanvasID()
+            while seenIdentifiers.contains(replacementIdentifier) {
+                replacementIdentifier = CanvasID()
+            }
+            seenIdentifiers.insert(replacementIdentifier)
+            canvases[index] = canvas.replacingIdentifier(with: replacementIdentifier)
+            recognitionByCanvas[replacementIdentifier] = recognitionByCanvas[canvas.id]
+            didRepair = true
+        }
+
+        return didRepair
+    }
+
     func duplicated(at date: Date) -> Notebook {
         Notebook(
             title: "\(title) copy",
@@ -266,6 +288,17 @@ extension Notebook {
 }
 
 extension Canvas {
+    fileprivate func replacingIdentifier(with identifier: CanvasID) -> Canvas {
+        Canvas(
+            id: identifier,
+            title: title,
+            template: template,
+            layers: layers,
+            createdAt: createdAt,
+            modifiedAt: modifiedAt
+        )
+    }
+
     func duplicated(at date: Date) -> Canvas {
         let duplicatedLayers = layers.map { layer -> Layer in
             let newLayerID = LayerID()

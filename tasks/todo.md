@@ -460,3 +460,21 @@
 - The Pencil squeeze menu uses an 80-point ring centered on the current Pencil position, falls back to the latest hover position, and has no center tool.
 - The complete behavior and performance suites pass on the 13-inch iPad Pro simulator running iOS 26.5. Strict lint, warnings-as-errors compilation, and Xcode static analysis pass.
 - The final signed build is installed and open on the connected iPad mini. The Pencil and toolbar gestures still need a manual device check.
+
+## Automatic Notion sync crash
+
+- [x] Pull and inspect the physical-device crash report.
+- [x] Add a failing regression for duplicate saved canvas identifiers during payload creation.
+- [x] Replace the trapping dictionary creation with a typed sync error.
+- [x] Add a failing session test for legacy duplicate canvas identifiers.
+- [x] Repair duplicate identifiers during restore and persist the repaired notebook.
+- [x] Run both crash regressions, strict lint, and a signed warnings-as-errors device build.
+- [x] Install the repaired build with verified Notion configuration.
+- [ ] Open the build on the unlocked iPad and confirm that no newer crash report appears.
+
+### Review
+
+- The device crash report identifies `Dictionary.init(uniqueKeysWithValues:)` in automatic Notion payload creation. A saved notebook contained two canvases with the same identifier.
+- Payload creation now returns a typed error for invalid identifiers. Startup repairs legacy notebooks, preserves every canvas, saves fresh identifiers once, and keeps those identifiers in later sessions.
+- Both focused regressions pass. Strict SwiftLint reports 0 violations. The signed device build compiles with warnings treated as errors and contains the expected Notion configuration.
+- The repaired build is installed. iPadOS denied the automated launch while the device was locked, so the final crash-log check remains pending.

@@ -3,6 +3,38 @@ import XCTest
 
 @MainActor
 final class AppSessionPersistenceBehaviorTests: XCTestCase {
+    func testRestoreRepairsAndPersistsDuplicateCanvasIdentifiers() async throws {
+        let directoryURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+        let repository = LocalLibraryRepository(fileURL: directoryURL.appending(path: "library.json"))
+        let documentStore = LocalDocumentStore(rootURL: directoryURL.appending(path: "Documents"))
+        let original = Canvas(title: "Preserved canvas")
+        let notebook = Notebook(title: "Legacy notebook", canvases: [original, original])
+        try await repository.save(LibraryState(notebooks: [notebook]))
+        try await documentStore.save(NativeNotebookPackage(schemaVersion: .current, notebook: notebook))
+
+        let repairedSession = AppModel(
+            repository: repository,
+            documentStore: documentStore,
+            automaticallyRestore: false
+        )
+        await repairedSession.restoreLibrary()
+
+        let repaired = try XCTUnwrap(repairedSession.notebook(notebook.id))
+        XCTAssertEqual(repaired.canvases.map(\.title), ["Preserved canvas", "Preserved canvas"])
+        XCTAssertEqual(Set(repaired.canvases.map(\.id)).count, 2)
+
+        let nextSession = AppModel(
+            repository: repository,
+            documentStore: documentStore,
+            automaticallyRestore: false
+        )
+        await nextSession.restoreLibrary()
+
+        let persisted = try XCTUnwrap(nextSession.notebook(notebook.id))
+        XCTAssertEqual(persisted.canvases.map(\.id), repaired.canvases.map(\.id))
+    }
+
     func testNotebookAndCanvasTextRestoreInANewApplicationModel() async throws {
         let directoryURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directoryURL) }

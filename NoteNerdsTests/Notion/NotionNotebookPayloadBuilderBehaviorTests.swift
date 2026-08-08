@@ -48,6 +48,25 @@ final class NotionPayloadBuilderTests: XCTestCase {
         XCTAssertEqual(first.snapshot.row.contentHash, second.snapshot.row.contentHash)
     }
 
+    func testDuplicateCanvasIdentifiersStopSyncWithoutCrashingTheApp() async {
+        var notebook = DomainFixtures.notebook()
+        notebook.canvases.append(notebook.canvases[0])
+
+        do {
+            _ = try await NotionNotebookPayloadBuilder().build(
+                notebook: notebook,
+                library: LibraryState(notebooks: [notebook]),
+                exportedAt: DomainFixtures.fixedDate
+            )
+            XCTFail("Expected duplicate canvas identifiers to stop the payload")
+        } catch {
+            XCTAssertEqual(
+                error as? NotionNotebookPayloadError,
+                .duplicateCanvasIdentifier(notebook.canvases[0].id)
+            )
+        }
+    }
+
     func testArchiveIncludesReferencedAssetsAndExcludesUnrelatedAssets() async throws {
         let referencedID = AssetID(rawValue: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!)
         let unrelatedID = AssetID(rawValue: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!)

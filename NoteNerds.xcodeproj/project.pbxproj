@@ -1,0 +1,1116 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0492B62B2285A5CB4E2F64DB /* PaperSelectionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 729C5C69697CF6C71D5439F4 /* PaperSelectionUITests.swift */; };
+		08610E8011B10CAE17C6393C /* LibraryFolderSidebarRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A63687859DC4861FC6ACA6 /* LibraryFolderSidebarRow.swift */; };
+		08CDD1292741663973BA2108 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 28396265C1E00DC01ECC7EBA /* Assets.xcassets */; };
+		099C93E64D97D95311F251F1 /* EditingBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA8BD87A0FC842CF2C17033 /* EditingBehaviorTests.swift */; };
+		0D7951D1A33FE62FF6D1DC21 /* CanvasTextPlacementOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B59E0354ED02D080CAC071 /* CanvasTextPlacementOverlayView.swift */; };
+		10A4E058C85A37A3ED7FF84C /* ToolInspectorBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D365DEC6CA5B3B7C060EA482 /* ToolInspectorBehaviorTests.swift */; };
+		10E730F14915B3040CD05099 /* ImportExportBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C6528B8032EF606CA09118 /* ImportExportBehaviorTests.swift */; };
+		13BCFC9B1EEEB8C195B56B92 /* NotebookTitleToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA0BDF971D5CAB85D50670B /* NotebookTitleToolbarView.swift */; };
+		14CFF39D376DF578720E940B /* LibraryBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80502B993BADA665B8C5FD87 /* LibraryBehaviorTests.swift */; };
+		1567A5EB4286B9C214380715 /* CanvasTextEditingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72768733A741582CBAE86449 /* CanvasTextEditingSession.swift */; };
+		19C2823785AA610E7765D3F7 /* LocalDocumentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4B6B2419B3550A7A5A8DC01 /* LocalDocumentStore.swift */; };
+		1C6152FB9F5184399FBA3634 /* HandwritingRecognitionBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC454EA0EDE7D79A105BF2C /* HandwritingRecognitionBehaviorTests.swift */; };
+		230F1BD74BF22DE9B08840B7 /* PaperRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E3E99589221D6E8FD346B5 /* PaperRenderer.swift */; };
+		26E92CC635C145A4ADD059C7 /* ActivityShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1802D43991C50106A28A91E /* ActivityShareSheet.swift */; };
+		29BF80C106A5350278B6A974 /* NotebookEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 626A246CD0CCC545BC704A59 /* NotebookEditorView.swift */; };
+		29C8BA60F17DC07C00D206B5 /* PaperGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEDB88B23D94B8E00669BB1B /* PaperGalleryView.swift */; };
+		325980567CA6076D1C63B982 /* TypographyBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 253C76E5F05602C1559423D6 /* TypographyBehaviorTests.swift */; };
+		32BE0633931CF5C898F579B9 /* PencilCanvasRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C8EE4EC96BEB638E3E195A0 /* PencilCanvasRenderer.swift */; };
+		3563252A417A136CE40EAFB1 /* DocumentHistoryBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9771C65D7819D2360C176779 /* DocumentHistoryBehaviorTests.swift */; };
+		38D5657D45C8E321AA08D60E /* LibraryCreationPlacementUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 094F7F51C4540C9B014146B5 /* LibraryCreationPlacementUITests.swift */; };
+		3C0A9B24DED51F143E7DA42A /* CanvasToolInspectors.swift in Sources */ = {isa = PBXBuildFile; fileRef = F27BE3F7D492118817933436 /* CanvasToolInspectors.swift */; };
+		3CBE0277C1FCB3E858327FB3 /* LibrarySynchronization.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6D303796DD166C2B6476A2D /* LibrarySynchronization.swift */; };
+		3E580782D61AF5D780FC7DBF /* NativeNotebookArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 342F229B9A205C167461A029 /* NativeNotebookArchive.swift */; };
+		4A5726E4D5CBF554E209D16A /* SelectionAndShapeBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC08DC359144E3CEE961C6C1 /* SelectionAndShapeBehaviorTests.swift */; };
+		4A72EF76B48A9CDFCAB47D8E /* Search.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE15AF6C016BDE7548BC97C /* Search.swift */; };
+		4C225A27EDBEDD1031C63B1D /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90E0F4E43B8C7AE695904548 /* Document.swift */; };
+		546C6B30417A763A20D12AC8 /* NotebookEditorToolbarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58BEF9EF64CAA12B5A73E7EE /* NotebookEditorToolbarLayout.swift */; };
+		56747D43C1D2ADDC5E43D01E /* InMemorySyncProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0B9FA460544B213AA530BD /* InMemorySyncProvider.swift */; };
+		5A356DBA3D5783A7B6F68A6A /* CanvasPNGExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FAF65C49A2AB6B12EB437A0 /* CanvasPNGExporter.swift */; };
+		5B8BEA8A23223E8C477A27C9 /* HandwritingGrouping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 396068D8D63F6F44EC72DA94 /* HandwritingGrouping.swift */; };
+		5BA1BA9D7DBDEED7985AF6D0 /* CanvasToolbarOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126B0A1AABC812B50FB9CB0F /* CanvasToolbarOrientation.swift */; };
+		5C4FAB2F14470692BF2362E7 /* DomainFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC6498E2FAD0ED227F5E99A /* DomainFixtures.swift */; };
+		631A8F8D0AC884C07B2CC159 /* NotebookEditorContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2ACC802EA6BAF4A0E604393 /* NotebookEditorContent.swift */; };
+		63F859DB877AD4D64006574E /* DocumentHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5E16C35BC6348493A49B8E9 /* DocumentHistory.swift */; };
+		6684EEC4A891F92876A9CCB7 /* SyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CC15788FAB8F1B5C7FCF380 /* SyncEngine.swift */; };
+		67BE141155C4D6E4E85B66ED /* TextBlock+Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF052B050A86CA20C3C73123 /* TextBlock+Typography.swift */; };
+		68537BE6A3163B8A9E00CB45 /* CanvasDrawingToolInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 767C6793F51A8BD1BF00FF7F /* CanvasDrawingToolInspector.swift */; };
+		690487598DF78CA2C539D84D /* AppleInterfaceBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CB81FF5BB75643DEFDD94A2 /* AppleInterfaceBehaviorTests.swift */; };
+		6B33237340FDE2C796822EC7 /* PDFImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95FA6DFC225002491F8DB20F /* PDFImporter.swift */; };
+		6D86412415A9F1F145D8E7A8 /* CanvasSystems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40F473CD16423C3368892E9F /* CanvasSystems.swift */; };
+		6E1E4A79882CB7814DC546E8 /* PencilCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE3E94D35ACBB56DBD48A28 /* PencilCanvasView.swift */; };
+		7122539D4DEE7C625552BD1F /* Selection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DADD8A2C41C324243843EF0D /* Selection.swift */; };
+		7939482E3CABB47443B415B7 /* CanvasObjectOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93379E7A35F9E89ADFED564E /* CanvasObjectOverlayView.swift */; };
+		811EC8499EC8BDD97926BBC9 /* AppSymbol.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9791AF728535349D8067A6B /* AppSymbol.swift */; };
+		81AA7C42E6E9D9740EDAAFFE /* CanvasContentThumbnail.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E2B40C362F5718EA2284E0 /* CanvasContentThumbnail.swift */; };
+		846D9CA1DFD0405FA3E4316F /* AdvancedOrganizationBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC90E6C8AF219444D4B1A81 /* AdvancedOrganizationBehaviorTests.swift */; };
+		84C75B9B069C2B07CB044588 /* Synchronization.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81318412EEBA9FA48CFCD58 /* Synchronization.swift */; };
+		855EBC947621937198DA7929 /* CanvasSearchHighlightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB5F7F02BAD71FA8FFEC737F /* CanvasSearchHighlightView.swift */; };
+		87B31D2E1FAE239E0F62395F /* AppModel+Documents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B04160B25BA411939BE7BC /* AppModel+Documents.swift */; };
+		87E309B454387E0782C996F0 /* SystemFontCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A076580D525A487EDC2B7595 /* SystemFontCatalog.swift */; };
+		885A29F16674527585529D21 /* LocalLibraryRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79289856F226D18A053567E1 /* LocalLibraryRepository.swift */; };
+		8A01D870714448E933246AE6 /* Clipboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3E85E913EA62D5B971CD272 /* Clipboard.swift */; };
+		8A70E10576CEEFD3E2AB476C /* AppModel+Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A2430E487AD857ECD8C2B6 /* AppModel+Library.swift */; };
+		8C7B3AAE1F75B094824319A5 /* LibraryAssetBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127D61A2A199D33915A8A2F1 /* LibraryAssetBehaviorTests.swift */; };
+		8FC0F5AC24FFBA18987C3E1A /* CanvasSystemsBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFB6B45061DDBFF19E7C4DE7 /* CanvasSystemsBehaviorTests.swift */; };
+		9163E6BCFFA39DB94A1F92A6 /* CanvasToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 278F8EAD0941C043649BC55C /* CanvasToolbarView.swift */; };
+		91D686C6BD6C2F423ABA1294 /* SyncChangeEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376127333FE73FD4A9D3F6E2 /* SyncChangeEncoder.swift */; };
+		920A81E7C2E26CA67A7EA6D8 /* AppleHandwritingRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46A96891915DD707B1FD5E6D /* AppleHandwritingRecognizer.swift */; };
+		9464405F3028390F36AE20F8 /* SearchIndexBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25B164522B41432948EA3B15 /* SearchIndexBehaviorTests.swift */; };
+		96FC01A182432B979FEAD5A9 /* LocalSyncStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9986D74DEB878C663AEF0D63 /* LocalSyncStateStore.swift */; };
+		97AC0ECBE7E8B608B1F34E41 /* PencilKitMappings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F81BBD57522E83C4057F5A7 /* PencilKitMappings.swift */; };
+		9A41432EEECE40AD7F46F177 /* CanvasSelectionOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54175B0146804F079F2CE6A3 /* CanvasSelectionOverlayView.swift */; };
+		9C8AC1A39C30BFE192E085C6 /* NotebookEditorLayerActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E35EB2C2F188E167E1AABDB4 /* NotebookEditorLayerActions.swift */; };
+		9F918A380C5AEDFBC817B5AF /* AppModel+Recognition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1369A486CDB231CA907EEE /* AppModel+Recognition.swift */; };
+		A6DE979DCEBE0160AA4F5F98 /* CanvasMinimapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B157EC5AA38C6D63875D759 /* CanvasMinimapView.swift */; };
+		A73DEF04E175AF5DB7E1DFD3 /* Identifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7104D752F001CC3F3958B047 /* Identifiers.swift */; };
+		A7A1C2AF481FA6A3E95C7FBB /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35CE901E2EF18BDA2CD2FEAD /* AppModel.swift */; };
+		A8421E3D37B30E566E6204C3 /* HandwritingTextLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9C95CEFFECB358E07BCD40 /* HandwritingTextLayout.swift */; };
+		A9D0E1390FFA68692370A669 /* SyncBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B996C3B3A94B3B0366A2BE56 /* SyncBehaviorTests.swift */; };
+		B03D162FAA47E50E68242341 /* DocumentStructureHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB058C798ABB1675A6B3F71 /* DocumentStructureHistoryTests.swift */; };
+		B10648B8065BD34D45141343 /* RadialToolMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C3C7013D5E8CC0BE01B606 /* RadialToolMenu.swift */; };
+		B22559C8A37CDC10D6789C65 /* Content.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CB379125E9AD313B19B529A /* Content.swift */; };
+		B291F37DDF8F244DBBB20D74 /* ToolConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53640357D2761811D69F6227 /* ToolConfiguration.swift */; };
+		BC08A533F5922A659BA4BCAA /* LibrarySearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F928A3CAA386FE4447917114 /* LibrarySearchBar.swift */; };
+		BE4D74ED2365268561A9A070 /* DocumentModelBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DBFF262927397B40AF061BC /* DocumentModelBehaviorTests.swift */; };
+		C1227228EFE39F93189D3956 /* NoteNerdsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE8BF59512C4CA34E80AF003 /* NoteNerdsLaunchTests.swift */; };
+		C3ABE42854849D1DBDE94038 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 542D90679C1A4FB4545E036C /* RootView.swift */; };
+		C3EB2AC008254ADB5E89752E /* ShapeRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69B83A66B06430C9EC8BCFFB /* ShapeRecognizer.swift */; };
+		C56C623261FD5888F757CB0E /* BoundedFileReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF2532B93A1B252A7DCF48B4 /* BoundedFileReader.swift */; };
+		C5B0B408EE2FBB089026ED7B /* ImageImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD12F5C626F1BEFF57B61729 /* ImageImporter.swift */; };
+		C65F3DA3EC2C8581BC4DD1DA /* LocalDocumentStoreBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60D4D9C48BD56DBA2A636A1 /* LocalDocumentStoreBehaviorTests.swift */; };
+		C88A3A2F37B79BB01DD3CC6D /* PencilCanvasView+Overlays.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DA1D780A74CDA492B700E2 /* PencilCanvasView+Overlays.swift */; };
+		C8B8296B101A398CADC7A21D /* AppModel+Editing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FA69301493F74C68182218D /* AppModel+Editing.swift */; };
+		CBB7F9D3B78D4C35611EC3E7 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 973D163EA269A8C37576965A /* LibraryView.swift */; };
+		CBE831B2D2C61B9E75F22E1D /* NotebookExportDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90EA3D3E13BCF16BB1A16976 /* NotebookExportDocument.swift */; };
+		CCABC6B90775DA18417F9AA8 /* Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D6F0E69A21DC713EA795B0 /* Geometry.swift */; };
+		CD2C6024392173659E0F2B6A /* NotebookPDFExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BF613D9CC1F1C20D5123026 /* NotebookPDFExporter.swift */; };
+		CE41FAAFEBC4C4253C0AA1AF /* CanvasPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0B7530E86329AD339CA4B3 /* CanvasPerformanceTests.swift */; };
+		D5835AEA189903AD30B2C4B6 /* SerializationBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49D013634CF77CE1D94967AA /* SerializationBehaviorTests.swift */; };
+		D5A3C91C858885986849D90E /* InlineCanvasTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3867AC699833D85ACCDD24FE /* InlineCanvasTextEditor.swift */; };
+		D9695ABB2E20E06CFDB1A891 /* LocalLibraryRepositoryBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E58C88D6FE3BC739D6547F /* LocalLibraryRepositoryBehaviorTests.swift */; };
+		DF9181D40C47F7ABF7C23B62 /* CloudKitSyncProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B45FCE3E6D9FF50292F61257 /* CloudKitSyncProvider.swift */; };
+		DFF5D5ECD752C8E10F29B7A5 /* NativeDocumentSerializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABE58739DCC1D21AAE42CCBC /* NativeDocumentSerializer.swift */; };
+		E1B22E21D62D938ED97AFA2E /* LibrarySidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6E5F63CA16253EC3572D81 /* LibrarySidebarView.swift */; };
+		E1CB87263375713F5666BEB3 /* NoteNerdsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C353FA77172BE0675A9E5B /* NoteNerdsApp.swift */; };
+		E90C61348B0D49E7C55FD7D5 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7215772E477B818C39C2DA /* Library.swift */; };
+		F1D8CBAFDA69313DF0CC3071 /* CanvasBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CCB6CD1881F31CA0B50E60A /* CanvasBrowserView.swift */; };
+		F2C34AE8C7BAA4B28904D3A7 /* HandwritingRecognition.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3427B7AEE35A47EDC1568D /* HandwritingRecognition.swift */; };
+		F46C02362866E0785F769B91 /* DocumentOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04E50B50F424591A5A00AF88 /* DocumentOperation.swift */; };
+		FC3931712AC3423AD5FA9049 /* CanvasHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABC2264268EECE066E88E68 /* CanvasHeaderView.swift */; };
+		FC47A5C620CF1BD9DB3CCFDA /* VectorEraser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEB13920DA24632E0120DF87 /* VectorEraser.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		92E5BEE9A746DBD3C082EEDE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AE6B84E49C2AF5EA331DF3C8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9387D81FAD749A8FA93D6F0A;
+			remoteInfo = NoteNerds;
+		};
+		B1EC1CA29BA81B27CA1E06D2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AE6B84E49C2AF5EA331DF3C8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9387D81FAD749A8FA93D6F0A;
+			remoteInfo = NoteNerds;
+		};
+		E7999762BF657568B2187019 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AE6B84E49C2AF5EA331DF3C8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9387D81FAD749A8FA93D6F0A;
+			remoteInfo = NoteNerds;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		011343DA7B8985EB17117451 /* NoteNerds.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = NoteNerds.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		04E50B50F424591A5A00AF88 /* DocumentOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentOperation.swift; sourceTree = "<group>"; };
+		07DA1D780A74CDA492B700E2 /* PencilCanvasView+Overlays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PencilCanvasView+Overlays.swift"; sourceTree = "<group>"; };
+		094F7F51C4540C9B014146B5 /* LibraryCreationPlacementUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryCreationPlacementUITests.swift; sourceTree = "<group>"; };
+		0CCB6CD1881F31CA0B50E60A /* CanvasBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasBrowserView.swift; sourceTree = "<group>"; };
+		0D6E5F63CA16253EC3572D81 /* LibrarySidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySidebarView.swift; sourceTree = "<group>"; };
+		126B0A1AABC812B50FB9CB0F /* CanvasToolbarOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolbarOrientation.swift; sourceTree = "<group>"; };
+		127D61A2A199D33915A8A2F1 /* LibraryAssetBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryAssetBehaviorTests.swift; sourceTree = "<group>"; };
+		1FAF65C49A2AB6B12EB437A0 /* CanvasPNGExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPNGExporter.swift; sourceTree = "<group>"; };
+		1FC454EA0EDE7D79A105BF2C /* HandwritingRecognitionBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingRecognitionBehaviorTests.swift; sourceTree = "<group>"; };
+		253C76E5F05602C1559423D6 /* TypographyBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypographyBehaviorTests.swift; sourceTree = "<group>"; };
+		25B164522B41432948EA3B15 /* SearchIndexBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchIndexBehaviorTests.swift; sourceTree = "<group>"; };
+		278F8EAD0941C043649BC55C /* CanvasToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolbarView.swift; sourceTree = "<group>"; };
+		28396265C1E00DC01ECC7EBA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2CA8BD87A0FC842CF2C17033 /* EditingBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditingBehaviorTests.swift; sourceTree = "<group>"; };
+		2DBFF262927397B40AF061BC /* DocumentModelBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentModelBehaviorTests.swift; sourceTree = "<group>"; };
+		2EB058C798ABB1675A6B3F71 /* DocumentStructureHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentStructureHistoryTests.swift; sourceTree = "<group>"; };
+		33B04160B25BA411939BE7BC /* AppModel+Documents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Documents.swift"; sourceTree = "<group>"; };
+		342F229B9A205C167461A029 /* NativeNotebookArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeNotebookArchive.swift; sourceTree = "<group>"; };
+		35CE901E2EF18BDA2CD2FEAD /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		376127333FE73FD4A9D3F6E2 /* SyncChangeEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncChangeEncoder.swift; sourceTree = "<group>"; };
+		3867AC699833D85ACCDD24FE /* InlineCanvasTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineCanvasTextEditor.swift; sourceTree = "<group>"; };
+		396068D8D63F6F44EC72DA94 /* HandwritingGrouping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingGrouping.swift; sourceTree = "<group>"; };
+		3CB379125E9AD313B19B529A /* Content.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Content.swift; sourceTree = "<group>"; };
+		40F473CD16423C3368892E9F /* CanvasSystems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSystems.swift; sourceTree = "<group>"; };
+		46A96891915DD707B1FD5E6D /* AppleHandwritingRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleHandwritingRecognizer.swift; sourceTree = "<group>"; };
+		49D013634CF77CE1D94967AA /* SerializationBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerializationBehaviorTests.swift; sourceTree = "<group>"; };
+		4CC15788FAB8F1B5C7FCF380 /* SyncEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncEngine.swift; sourceTree = "<group>"; };
+		4EA0BDF971D5CAB85D50670B /* NotebookTitleToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookTitleToolbarView.swift; sourceTree = "<group>"; };
+		53640357D2761811D69F6227 /* ToolConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolConfiguration.swift; sourceTree = "<group>"; };
+		54175B0146804F079F2CE6A3 /* CanvasSelectionOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSelectionOverlayView.swift; sourceTree = "<group>"; };
+		542D90679C1A4FB4545E036C /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		58A63687859DC4861FC6ACA6 /* LibraryFolderSidebarRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryFolderSidebarRow.swift; sourceTree = "<group>"; };
+		58BEF9EF64CAA12B5A73E7EE /* NotebookEditorToolbarLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookEditorToolbarLayout.swift; sourceTree = "<group>"; };
+		5B157EC5AA38C6D63875D759 /* CanvasMinimapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasMinimapView.swift; sourceTree = "<group>"; };
+		5FA69301493F74C68182218D /* AppModel+Editing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Editing.swift"; sourceTree = "<group>"; };
+		626A246CD0CCC545BC704A59 /* NotebookEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookEditorView.swift; sourceTree = "<group>"; };
+		65E3E99589221D6E8FD346B5 /* PaperRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperRenderer.swift; sourceTree = "<group>"; };
+		69B83A66B06430C9EC8BCFFB /* ShapeRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeRecognizer.swift; sourceTree = "<group>"; };
+		6C8EE4EC96BEB638E3E195A0 /* PencilCanvasRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilCanvasRenderer.swift; sourceTree = "<group>"; };
+		7104D752F001CC3F3958B047 /* Identifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Identifiers.swift; sourceTree = "<group>"; };
+		72768733A741582CBAE86449 /* CanvasTextEditingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasTextEditingSession.swift; sourceTree = "<group>"; };
+		729C5C69697CF6C71D5439F4 /* PaperSelectionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperSelectionUITests.swift; sourceTree = "<group>"; };
+		765305DD99AAB5C99F0B2A68 /* NoteNerdsUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NoteNerdsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		767C6793F51A8BD1BF00FF7F /* CanvasDrawingToolInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasDrawingToolInspector.swift; sourceTree = "<group>"; };
+		79289856F226D18A053567E1 /* LocalLibraryRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLibraryRepository.swift; sourceTree = "<group>"; };
+		80502B993BADA665B8C5FD87 /* LibraryBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryBehaviorTests.swift; sourceTree = "<group>"; };
+		84C6528B8032EF606CA09118 /* ImportExportBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportExportBehaviorTests.swift; sourceTree = "<group>"; };
+		86BB8D0B77A2163389405C01 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		8BF613D9CC1F1C20D5123026 /* NotebookPDFExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookPDFExporter.swift; sourceTree = "<group>"; };
+		8CB81FF5BB75643DEFDD94A2 /* AppleInterfaceBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleInterfaceBehaviorTests.swift; sourceTree = "<group>"; };
+		8F81BBD57522E83C4057F5A7 /* PencilKitMappings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilKitMappings.swift; sourceTree = "<group>"; };
+		90E0F4E43B8C7AE695904548 /* Document.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Document.swift; sourceTree = "<group>"; };
+		90EA3D3E13BCF16BB1A16976 /* NotebookExportDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookExportDocument.swift; sourceTree = "<group>"; };
+		93379E7A35F9E89ADFED564E /* CanvasObjectOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasObjectOverlayView.swift; sourceTree = "<group>"; };
+		95FA6DFC225002491F8DB20F /* PDFImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFImporter.swift; sourceTree = "<group>"; };
+		973D163EA269A8C37576965A /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		9771C65D7819D2360C176779 /* DocumentHistoryBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentHistoryBehaviorTests.swift; sourceTree = "<group>"; };
+		98A2430E487AD857ECD8C2B6 /* AppModel+Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Library.swift"; sourceTree = "<group>"; };
+		9986D74DEB878C663AEF0D63 /* LocalSyncStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSyncStateStore.swift; sourceTree = "<group>"; };
+		9C1369A486CDB231CA907EEE /* AppModel+Recognition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Recognition.swift"; sourceTree = "<group>"; };
+		9E0B7530E86329AD339CA4B3 /* CanvasPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPerformanceTests.swift; sourceTree = "<group>"; };
+		A076580D525A487EDC2B7595 /* SystemFontCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemFontCatalog.swift; sourceTree = "<group>"; };
+		A1C353FA77172BE0675A9E5B /* NoteNerdsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteNerdsApp.swift; sourceTree = "<group>"; };
+		A7D6F0E69A21DC713EA795B0 /* Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geometry.swift; sourceTree = "<group>"; };
+		A81318412EEBA9FA48CFCD58 /* Synchronization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Synchronization.swift; sourceTree = "<group>"; };
+		AABC2264268EECE066E88E68 /* CanvasHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasHeaderView.swift; sourceTree = "<group>"; };
+		ABE58739DCC1D21AAE42CCBC /* NativeDocumentSerializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDocumentSerializer.swift; sourceTree = "<group>"; };
+		AC7215772E477B818C39C2DA /* Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Library.swift; sourceTree = "<group>"; };
+		B09CB8764F7BD8F1375F6BB3 /* NoteNerdsTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NoteNerdsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B45FCE3E6D9FF50292F61257 /* CloudKitSyncProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSyncProvider.swift; sourceTree = "<group>"; };
+		B4B59E0354ED02D080CAC071 /* CanvasTextPlacementOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasTextPlacementOverlayView.swift; sourceTree = "<group>"; };
+		B996C3B3A94B3B0366A2BE56 /* SyncBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncBehaviorTests.swift; sourceTree = "<group>"; };
+		BB9C95CEFFECB358E07BCD40 /* HandwritingTextLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingTextLayout.swift; sourceTree = "<group>"; };
+		BC08DC359144E3CEE961C6C1 /* SelectionAndShapeBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionAndShapeBehaviorTests.swift; sourceTree = "<group>"; };
+		BE8BF59512C4CA34E80AF003 /* NoteNerdsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteNerdsLaunchTests.swift; sourceTree = "<group>"; };
+		BEB13920DA24632E0120DF87 /* VectorEraser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VectorEraser.swift; sourceTree = "<group>"; };
+		C2ACC802EA6BAF4A0E604393 /* NotebookEditorContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookEditorContent.swift; sourceTree = "<group>"; };
+		C4E2B40C362F5718EA2284E0 /* CanvasContentThumbnail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasContentThumbnail.swift; sourceTree = "<group>"; };
+		CF052B050A86CA20C3C73123 /* TextBlock+Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TextBlock+Typography.swift"; sourceTree = "<group>"; };
+		CF2532B93A1B252A7DCF48B4 /* BoundedFileReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundedFileReader.swift; sourceTree = "<group>"; };
+		D1802D43991C50106A28A91E /* ActivityShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityShareSheet.swift; sourceTree = "<group>"; };
+		D365DEC6CA5B3B7C060EA482 /* ToolInspectorBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolInspectorBehaviorTests.swift; sourceTree = "<group>"; };
+		D3FAD5FE08B247A6CA049EDF /* NoteNerdsPerformanceTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NoteNerdsPerformanceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D60D4D9C48BD56DBA2A636A1 /* LocalDocumentStoreBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDocumentStoreBehaviorTests.swift; sourceTree = "<group>"; };
+		D8E58C88D6FE3BC739D6547F /* LocalLibraryRepositoryBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLibraryRepositoryBehaviorTests.swift; sourceTree = "<group>"; };
+		D9791AF728535349D8067A6B /* AppSymbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSymbol.swift; sourceTree = "<group>"; };
+		DADD8A2C41C324243843EF0D /* Selection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Selection.swift; sourceTree = "<group>"; };
+		DB3427B7AEE35A47EDC1568D /* HandwritingRecognition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingRecognition.swift; sourceTree = "<group>"; };
+		E0592730164BC44733B86BDE /* NoteNerds.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NoteNerds.entitlements; sourceTree = "<group>"; };
+		E1C3C7013D5E8CC0BE01B606 /* RadialToolMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialToolMenu.swift; sourceTree = "<group>"; };
+		E35EB2C2F188E167E1AABDB4 /* NotebookEditorLayerActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookEditorLayerActions.swift; sourceTree = "<group>"; };
+		E4B6B2419B3550A7A5A8DC01 /* LocalDocumentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDocumentStore.swift; sourceTree = "<group>"; };
+		E6D303796DD166C2B6476A2D /* LibrarySynchronization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySynchronization.swift; sourceTree = "<group>"; };
+		EDC90E6C8AF219444D4B1A81 /* AdvancedOrganizationBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedOrganizationBehaviorTests.swift; sourceTree = "<group>"; };
+		EF0B9FA460544B213AA530BD /* InMemorySyncProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemorySyncProvider.swift; sourceTree = "<group>"; };
+		F27BE3F7D492118817933436 /* CanvasToolInspectors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolInspectors.swift; sourceTree = "<group>"; };
+		F3E85E913EA62D5B971CD272 /* Clipboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clipboard.swift; sourceTree = "<group>"; };
+		F5E16C35BC6348493A49B8E9 /* DocumentHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentHistory.swift; sourceTree = "<group>"; };
+		F928A3CAA386FE4447917114 /* LibrarySearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySearchBar.swift; sourceTree = "<group>"; };
+		FB5F7F02BAD71FA8FFEC737F /* CanvasSearchHighlightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSearchHighlightView.swift; sourceTree = "<group>"; };
+		FBE3E94D35ACBB56DBD48A28 /* PencilCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilCanvasView.swift; sourceTree = "<group>"; };
+		FCC6498E2FAD0ED227F5E99A /* DomainFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainFixtures.swift; sourceTree = "<group>"; };
+		FD12F5C626F1BEFF57B61729 /* ImageImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageImporter.swift; sourceTree = "<group>"; };
+		FEDB88B23D94B8E00669BB1B /* PaperGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperGalleryView.swift; sourceTree = "<group>"; };
+		FEE15AF6C016BDE7548BC97C /* Search.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Search.swift; sourceTree = "<group>"; };
+		FFB6B45061DDBFF19E7C4DE7 /* CanvasSystemsBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSystemsBehaviorTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		097A55132A74CF932AE61DCC /* NoteNerdsPerformanceTests */ = {
+			isa = PBXGroup;
+			children = (
+				9E0B7530E86329AD339CA4B3 /* CanvasPerformanceTests.swift */,
+			);
+			path = NoteNerdsPerformanceTests;
+			sourceTree = "<group>";
+		};
+		2760F11A679A046EDCA14E12 /* Infrastructure */ = {
+			isa = PBXGroup;
+			children = (
+				46A96891915DD707B1FD5E6D /* AppleHandwritingRecognizer.swift */,
+				CF2532B93A1B252A7DCF48B4 /* BoundedFileReader.swift */,
+				1FAF65C49A2AB6B12EB437A0 /* CanvasPNGExporter.swift */,
+				B45FCE3E6D9FF50292F61257 /* CloudKitSyncProvider.swift */,
+				FD12F5C626F1BEFF57B61729 /* ImageImporter.swift */,
+				EF0B9FA460544B213AA530BD /* InMemorySyncProvider.swift */,
+				E4B6B2419B3550A7A5A8DC01 /* LocalDocumentStore.swift */,
+				79289856F226D18A053567E1 /* LocalLibraryRepository.swift */,
+				9986D74DEB878C663AEF0D63 /* LocalSyncStateStore.swift */,
+				ABE58739DCC1D21AAE42CCBC /* NativeDocumentSerializer.swift */,
+				342F229B9A205C167461A029 /* NativeNotebookArchive.swift */,
+				90EA3D3E13BCF16BB1A16976 /* NotebookExportDocument.swift */,
+				8BF613D9CC1F1C20D5123026 /* NotebookPDFExporter.swift */,
+				65E3E99589221D6E8FD346B5 /* PaperRenderer.swift */,
+				95FA6DFC225002491F8DB20F /* PDFImporter.swift */,
+			);
+			path = Infrastructure;
+			sourceTree = "<group>";
+		};
+		2BDB4FA881F9289132D2CA3B /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				25B164522B41432948EA3B15 /* SearchIndexBehaviorTests.swift */,
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
+		30AA10DD6DEC6186A8BEAC79 /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				58A63687859DC4861FC6ACA6 /* LibraryFolderSidebarRow.swift */,
+				F928A3CAA386FE4447917114 /* LibrarySearchBar.swift */,
+				0D6E5F63CA16253EC3572D81 /* LibrarySidebarView.swift */,
+				973D163EA269A8C37576965A /* LibraryView.swift */,
+			);
+			path = Library;
+			sourceTree = "<group>";
+		};
+		36E28817181B8A6B059224F3 /* Infrastructure */ = {
+			isa = PBXGroup;
+			children = (
+				84C6528B8032EF606CA09118 /* ImportExportBehaviorTests.swift */,
+				D60D4D9C48BD56DBA2A636A1 /* LocalDocumentStoreBehaviorTests.swift */,
+				D8E58C88D6FE3BC739D6547F /* LocalLibraryRepositoryBehaviorTests.swift */,
+			);
+			path = Infrastructure;
+			sourceTree = "<group>";
+		};
+		51CA4EE94D1F0D43ECB9BBC5 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				40F473CD16423C3368892E9F /* CanvasSystems.swift */,
+				72768733A741582CBAE86449 /* CanvasTextEditingSession.swift */,
+				F3E85E913EA62D5B971CD272 /* Clipboard.swift */,
+				3CB379125E9AD313B19B529A /* Content.swift */,
+				90E0F4E43B8C7AE695904548 /* Document.swift */,
+				F5E16C35BC6348493A49B8E9 /* DocumentHistory.swift */,
+				04E50B50F424591A5A00AF88 /* DocumentOperation.swift */,
+				A7D6F0E69A21DC713EA795B0 /* Geometry.swift */,
+				396068D8D63F6F44EC72DA94 /* HandwritingGrouping.swift */,
+				DB3427B7AEE35A47EDC1568D /* HandwritingRecognition.swift */,
+				BB9C95CEFFECB358E07BCD40 /* HandwritingTextLayout.swift */,
+				7104D752F001CC3F3958B047 /* Identifiers.swift */,
+				AC7215772E477B818C39C2DA /* Library.swift */,
+				E6D303796DD166C2B6476A2D /* LibrarySynchronization.swift */,
+				FEE15AF6C016BDE7548BC97C /* Search.swift */,
+				DADD8A2C41C324243843EF0D /* Selection.swift */,
+				69B83A66B06430C9EC8BCFFB /* ShapeRecognizer.swift */,
+				A81318412EEBA9FA48CFCD58 /* Synchronization.swift */,
+				53640357D2761811D69F6227 /* ToolConfiguration.swift */,
+				BEB13920DA24632E0120DF87 /* VectorEraser.swift */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		54EE7C784AF9B492419E604A /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A1C353FA77172BE0675A9E5B /* NoteNerdsApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		58F523C10AD8EA7E5177AB2F /* Application */ = {
+			isa = PBXGroup;
+			children = (
+				35CE901E2EF18BDA2CD2FEAD /* AppModel.swift */,
+				33B04160B25BA411939BE7BC /* AppModel+Documents.swift */,
+				5FA69301493F74C68182218D /* AppModel+Editing.swift */,
+				98A2430E487AD857ECD8C2B6 /* AppModel+Library.swift */,
+				9C1369A486CDB231CA907EEE /* AppModel+Recognition.swift */,
+				376127333FE73FD4A9D3F6E2 /* SyncChangeEncoder.swift */,
+				4CC15788FAB8F1B5C7FCF380 /* SyncEngine.swift */,
+			);
+			path = Application;
+			sourceTree = "<group>";
+		};
+		65BFABD88430C05C9E8047B2 /* NoteNerdsUITests */ = {
+			isa = PBXGroup;
+			children = (
+				094F7F51C4540C9B014146B5 /* LibraryCreationPlacementUITests.swift */,
+				BE8BF59512C4CA34E80AF003 /* NoteNerdsLaunchTests.swift */,
+				729C5C69697CF6C71D5439F4 /* PaperSelectionUITests.swift */,
+			);
+			path = NoteNerdsUITests;
+			sourceTree = "<group>";
+		};
+		6891B44A2A52ECB8B3F8BE72 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				011343DA7B8985EB17117451 /* NoteNerds.app */,
+				D3FAD5FE08B247A6CA049EDF /* NoteNerdsPerformanceTests.xctest */,
+				B09CB8764F7BD8F1375F6BB3 /* NoteNerdsTests.xctest */,
+				765305DD99AAB5C99F0B2A68 /* NoteNerdsUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7BE2BBCA4EC98AE7D1720EC4 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				EDC90E6C8AF219444D4B1A81 /* AdvancedOrganizationBehaviorTests.swift */,
+				8CB81FF5BB75643DEFDD94A2 /* AppleInterfaceBehaviorTests.swift */,
+				FFB6B45061DDBFF19E7C4DE7 /* CanvasSystemsBehaviorTests.swift */,
+				9771C65D7819D2360C176779 /* DocumentHistoryBehaviorTests.swift */,
+				2DBFF262927397B40AF061BC /* DocumentModelBehaviorTests.swift */,
+				2EB058C798ABB1675A6B3F71 /* DocumentStructureHistoryTests.swift */,
+				2CA8BD87A0FC842CF2C17033 /* EditingBehaviorTests.swift */,
+				127D61A2A199D33915A8A2F1 /* LibraryAssetBehaviorTests.swift */,
+				80502B993BADA665B8C5FD87 /* LibraryBehaviorTests.swift */,
+				BC08DC359144E3CEE961C6C1 /* SelectionAndShapeBehaviorTests.swift */,
+				49D013634CF77CE1D94967AA /* SerializationBehaviorTests.swift */,
+				D365DEC6CA5B3B7C060EA482 /* ToolInspectorBehaviorTests.swift */,
+				253C76E5F05602C1559423D6 /* TypographyBehaviorTests.swift */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		83DCF179EAB4193E0D3F539A /* NoteNerdsTests */ = {
+			isa = PBXGroup;
+			children = (
+				7BE2BBCA4EC98AE7D1720EC4 /* Domain */,
+				A1EE9D5635A10F56CB97F2F4 /* Fixtures */,
+				36E28817181B8A6B059224F3 /* Infrastructure */,
+				9E8D3A66D6CBF09D09DB0E7B /* Recognition */,
+				2BDB4FA881F9289132D2CA3B /* Search */,
+				86C3551B062BE9C0B55E0DA9 /* Sync */,
+			);
+			path = NoteNerdsTests;
+			sourceTree = "<group>";
+		};
+		86C3551B062BE9C0B55E0DA9 /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				B996C3B3A94B3B0366A2BE56 /* SyncBehaviorTests.swift */,
+			);
+			path = Sync;
+			sourceTree = "<group>";
+		};
+		935465C2D112012CEEE0A115 /* Typography */ = {
+			isa = PBXGroup;
+			children = (
+				A076580D525A487EDC2B7595 /* SystemFontCatalog.swift */,
+				CF052B050A86CA20C3C73123 /* TextBlock+Typography.swift */,
+			);
+			path = Typography;
+			sourceTree = "<group>";
+		};
+		9E8D3A66D6CBF09D09DB0E7B /* Recognition */ = {
+			isa = PBXGroup;
+			children = (
+				1FC454EA0EDE7D79A105BF2C /* HandwritingRecognitionBehaviorTests.swift */,
+			);
+			path = Recognition;
+			sourceTree = "<group>";
+		};
+		9E8DDFB6D965A20E371A59E5 /* Canvas */ = {
+			isa = PBXGroup;
+			children = (
+				0CCB6CD1881F31CA0B50E60A /* CanvasBrowserView.swift */,
+				767C6793F51A8BD1BF00FF7F /* CanvasDrawingToolInspector.swift */,
+				AABC2264268EECE066E88E68 /* CanvasHeaderView.swift */,
+				5B157EC5AA38C6D63875D759 /* CanvasMinimapView.swift */,
+				93379E7A35F9E89ADFED564E /* CanvasObjectOverlayView.swift */,
+				FB5F7F02BAD71FA8FFEC737F /* CanvasSearchHighlightView.swift */,
+				54175B0146804F079F2CE6A3 /* CanvasSelectionOverlayView.swift */,
+				B4B59E0354ED02D080CAC071 /* CanvasTextPlacementOverlayView.swift */,
+				126B0A1AABC812B50FB9CB0F /* CanvasToolbarOrientation.swift */,
+				278F8EAD0941C043649BC55C /* CanvasToolbarView.swift */,
+				F27BE3F7D492118817933436 /* CanvasToolInspectors.swift */,
+				3867AC699833D85ACCDD24FE /* InlineCanvasTextEditor.swift */,
+				C2ACC802EA6BAF4A0E604393 /* NotebookEditorContent.swift */,
+				E35EB2C2F188E167E1AABDB4 /* NotebookEditorLayerActions.swift */,
+				58BEF9EF64CAA12B5A73E7EE /* NotebookEditorToolbarLayout.swift */,
+				626A246CD0CCC545BC704A59 /* NotebookEditorView.swift */,
+				4EA0BDF971D5CAB85D50670B /* NotebookTitleToolbarView.swift */,
+				FEDB88B23D94B8E00669BB1B /* PaperGalleryView.swift */,
+				6C8EE4EC96BEB638E3E195A0 /* PencilCanvasRenderer.swift */,
+				FBE3E94D35ACBB56DBD48A28 /* PencilCanvasView.swift */,
+				07DA1D780A74CDA492B700E2 /* PencilCanvasView+Overlays.swift */,
+				8F81BBD57522E83C4057F5A7 /* PencilKitMappings.swift */,
+				E1C3C7013D5E8CC0BE01B606 /* RadialToolMenu.swift */,
+			);
+			path = Canvas;
+			sourceTree = "<group>";
+		};
+		9F655C2925D13008FF71B9BA /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				28396265C1E00DC01ECC7EBA /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A1EE9D5635A10F56CB97F2F4 /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				FCC6498E2FAD0ED227F5E99A /* DomainFixtures.swift */,
+			);
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
+		B343F0793464629D79264FA3 = {
+			isa = PBXGroup;
+			children = (
+				DE14346D1225AD3018E376F8 /* NoteNerds */,
+				097A55132A74CF932AE61DCC /* NoteNerdsPerformanceTests */,
+				83DCF179EAB4193E0D3F539A /* NoteNerdsTests */,
+				65BFABD88430C05C9E8047B2 /* NoteNerdsUITests */,
+				6891B44A2A52ECB8B3F8BE72 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B6E8AE69DEC64C38D4A89DB8 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				D1802D43991C50106A28A91E /* ActivityShareSheet.swift */,
+				D9791AF728535349D8067A6B /* AppSymbol.swift */,
+				C4E2B40C362F5718EA2284E0 /* CanvasContentThumbnail.swift */,
+				542D90679C1A4FB4545E036C /* RootView.swift */,
+				9E8DDFB6D965A20E371A59E5 /* Canvas */,
+				30AA10DD6DEC6186A8BEAC79 /* Library */,
+				935465C2D112012CEEE0A115 /* Typography */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		DE14346D1225AD3018E376F8 /* NoteNerds */ = {
+			isa = PBXGroup;
+			children = (
+				86BB8D0B77A2163389405C01 /* Info.plist */,
+				E0592730164BC44733B86BDE /* NoteNerds.entitlements */,
+				54EE7C784AF9B492419E604A /* App */,
+				58F523C10AD8EA7E5177AB2F /* Application */,
+				51CA4EE94D1F0D43ECB9BBC5 /* Domain */,
+				2760F11A679A046EDCA14E12 /* Infrastructure */,
+				9F655C2925D13008FF71B9BA /* Resources */,
+				B6E8AE69DEC64C38D4A89DB8 /* UI */,
+			);
+			path = NoteNerds;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		28F783F5F0A8E9F108EDB56B /* NoteNerdsUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C2A424C9874CA5F3958EB024 /* Build configuration list for PBXNativeTarget "NoteNerdsUITests" */;
+			buildPhases = (
+				D171986BE9D978BC08C105D1 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5A0B879A1E749996E8D87F8C /* PBXTargetDependency */,
+			);
+			name = NoteNerdsUITests;
+			packageProductDependencies = (
+			);
+			productName = NoteNerdsUITests;
+			productReference = 765305DD99AAB5C99F0B2A68 /* NoteNerdsUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		9387D81FAD749A8FA93D6F0A /* NoteNerds */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8E45531885F11C672A0270AC /* Build configuration list for PBXNativeTarget "NoteNerds" */;
+			buildPhases = (
+				10B175CEC90153EDC81BBC37 /* Sources */,
+				B9E9F86AEFB50D2B641A17CD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NoteNerds;
+			packageProductDependencies = (
+			);
+			productName = NoteNerds;
+			productReference = 011343DA7B8985EB17117451 /* NoteNerds.app */;
+			productType = "com.apple.product-type.application";
+		};
+		9689FF62577AE7AA8A71231B /* NoteNerdsPerformanceTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A20D81575B17FBDD37C5819E /* Build configuration list for PBXNativeTarget "NoteNerdsPerformanceTests" */;
+			buildPhases = (
+				328EA981878E7115CE3447CD /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F11A3D42E3A19B8BA428BCF7 /* PBXTargetDependency */,
+			);
+			name = NoteNerdsPerformanceTests;
+			packageProductDependencies = (
+			);
+			productName = NoteNerdsPerformanceTests;
+			productReference = D3FAD5FE08B247A6CA049EDF /* NoteNerdsPerformanceTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		DDC1C960D1A38A0BC16FCE2B /* NoteNerdsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96032DF5DCC4B77F393BDFB5 /* Build configuration list for PBXNativeTarget "NoteNerdsTests" */;
+			buildPhases = (
+				B82EB19C8D4F6F7E63F994BD /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				33D89085E45882D9F69AE2EC /* PBXTargetDependency */,
+			);
+			name = NoteNerdsTests;
+			packageProductDependencies = (
+			);
+			productName = NoteNerdsTests;
+			productReference = B09CB8764F7BD8F1375F6BB3 /* NoteNerdsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AE6B84E49C2AF5EA331DF3C8 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					28F783F5F0A8E9F108EDB56B = {
+						TestTargetID = 9387D81FAD749A8FA93D6F0A;
+					};
+					9387D81FAD749A8FA93D6F0A = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 473CFC68205BEB5AE3404D0C /* Build configuration list for PBXProject "NoteNerds" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = B343F0793464629D79264FA3;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 6891B44A2A52ECB8B3F8BE72 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9387D81FAD749A8FA93D6F0A /* NoteNerds */,
+				9689FF62577AE7AA8A71231B /* NoteNerdsPerformanceTests */,
+				DDC1C960D1A38A0BC16FCE2B /* NoteNerdsTests */,
+				28F783F5F0A8E9F108EDB56B /* NoteNerdsUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B9E9F86AEFB50D2B641A17CD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				08CDD1292741663973BA2108 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		10B175CEC90153EDC81BBC37 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				26E92CC635C145A4ADD059C7 /* ActivityShareSheet.swift in Sources */,
+				87B31D2E1FAE239E0F62395F /* AppModel+Documents.swift in Sources */,
+				C8B8296B101A398CADC7A21D /* AppModel+Editing.swift in Sources */,
+				8A70E10576CEEFD3E2AB476C /* AppModel+Library.swift in Sources */,
+				9F918A380C5AEDFBC817B5AF /* AppModel+Recognition.swift in Sources */,
+				A7A1C2AF481FA6A3E95C7FBB /* AppModel.swift in Sources */,
+				811EC8499EC8BDD97926BBC9 /* AppSymbol.swift in Sources */,
+				920A81E7C2E26CA67A7EA6D8 /* AppleHandwritingRecognizer.swift in Sources */,
+				C56C623261FD5888F757CB0E /* BoundedFileReader.swift in Sources */,
+				F1D8CBAFDA69313DF0CC3071 /* CanvasBrowserView.swift in Sources */,
+				81AA7C42E6E9D9740EDAAFFE /* CanvasContentThumbnail.swift in Sources */,
+				68537BE6A3163B8A9E00CB45 /* CanvasDrawingToolInspector.swift in Sources */,
+				FC3931712AC3423AD5FA9049 /* CanvasHeaderView.swift in Sources */,
+				A6DE979DCEBE0160AA4F5F98 /* CanvasMinimapView.swift in Sources */,
+				7939482E3CABB47443B415B7 /* CanvasObjectOverlayView.swift in Sources */,
+				5A356DBA3D5783A7B6F68A6A /* CanvasPNGExporter.swift in Sources */,
+				855EBC947621937198DA7929 /* CanvasSearchHighlightView.swift in Sources */,
+				9A41432EEECE40AD7F46F177 /* CanvasSelectionOverlayView.swift in Sources */,
+				6D86412415A9F1F145D8E7A8 /* CanvasSystems.swift in Sources */,
+				1567A5EB4286B9C214380715 /* CanvasTextEditingSession.swift in Sources */,
+				0D7951D1A33FE62FF6D1DC21 /* CanvasTextPlacementOverlayView.swift in Sources */,
+				3C0A9B24DED51F143E7DA42A /* CanvasToolInspectors.swift in Sources */,
+				5BA1BA9D7DBDEED7985AF6D0 /* CanvasToolbarOrientation.swift in Sources */,
+				9163E6BCFFA39DB94A1F92A6 /* CanvasToolbarView.swift in Sources */,
+				8A01D870714448E933246AE6 /* Clipboard.swift in Sources */,
+				DF9181D40C47F7ABF7C23B62 /* CloudKitSyncProvider.swift in Sources */,
+				B22559C8A37CDC10D6789C65 /* Content.swift in Sources */,
+				4C225A27EDBEDD1031C63B1D /* Document.swift in Sources */,
+				63F859DB877AD4D64006574E /* DocumentHistory.swift in Sources */,
+				F46C02362866E0785F769B91 /* DocumentOperation.swift in Sources */,
+				CCABC6B90775DA18417F9AA8 /* Geometry.swift in Sources */,
+				5B8BEA8A23223E8C477A27C9 /* HandwritingGrouping.swift in Sources */,
+				F2C34AE8C7BAA4B28904D3A7 /* HandwritingRecognition.swift in Sources */,
+				A8421E3D37B30E566E6204C3 /* HandwritingTextLayout.swift in Sources */,
+				A73DEF04E175AF5DB7E1DFD3 /* Identifiers.swift in Sources */,
+				C5B0B408EE2FBB089026ED7B /* ImageImporter.swift in Sources */,
+				56747D43C1D2ADDC5E43D01E /* InMemorySyncProvider.swift in Sources */,
+				D5A3C91C858885986849D90E /* InlineCanvasTextEditor.swift in Sources */,
+				E90C61348B0D49E7C55FD7D5 /* Library.swift in Sources */,
+				08610E8011B10CAE17C6393C /* LibraryFolderSidebarRow.swift in Sources */,
+				BC08A533F5922A659BA4BCAA /* LibrarySearchBar.swift in Sources */,
+				E1B22E21D62D938ED97AFA2E /* LibrarySidebarView.swift in Sources */,
+				3CBE0277C1FCB3E858327FB3 /* LibrarySynchronization.swift in Sources */,
+				CBB7F9D3B78D4C35611EC3E7 /* LibraryView.swift in Sources */,
+				19C2823785AA610E7765D3F7 /* LocalDocumentStore.swift in Sources */,
+				885A29F16674527585529D21 /* LocalLibraryRepository.swift in Sources */,
+				96FC01A182432B979FEAD5A9 /* LocalSyncStateStore.swift in Sources */,
+				DFF5D5ECD752C8E10F29B7A5 /* NativeDocumentSerializer.swift in Sources */,
+				3E580782D61AF5D780FC7DBF /* NativeNotebookArchive.swift in Sources */,
+				E1CB87263375713F5666BEB3 /* NoteNerdsApp.swift in Sources */,
+				631A8F8D0AC884C07B2CC159 /* NotebookEditorContent.swift in Sources */,
+				9C8AC1A39C30BFE192E085C6 /* NotebookEditorLayerActions.swift in Sources */,
+				546C6B30417A763A20D12AC8 /* NotebookEditorToolbarLayout.swift in Sources */,
+				29BF80C106A5350278B6A974 /* NotebookEditorView.swift in Sources */,
+				CBE831B2D2C61B9E75F22E1D /* NotebookExportDocument.swift in Sources */,
+				CD2C6024392173659E0F2B6A /* NotebookPDFExporter.swift in Sources */,
+				13BCFC9B1EEEB8C195B56B92 /* NotebookTitleToolbarView.swift in Sources */,
+				6B33237340FDE2C796822EC7 /* PDFImporter.swift in Sources */,
+				29C8BA60F17DC07C00D206B5 /* PaperGalleryView.swift in Sources */,
+				230F1BD74BF22DE9B08840B7 /* PaperRenderer.swift in Sources */,
+				32BE0633931CF5C898F579B9 /* PencilCanvasRenderer.swift in Sources */,
+				C88A3A2F37B79BB01DD3CC6D /* PencilCanvasView+Overlays.swift in Sources */,
+				6E1E4A79882CB7814DC546E8 /* PencilCanvasView.swift in Sources */,
+				97AC0ECBE7E8B608B1F34E41 /* PencilKitMappings.swift in Sources */,
+				B10648B8065BD34D45141343 /* RadialToolMenu.swift in Sources */,
+				C3ABE42854849D1DBDE94038 /* RootView.swift in Sources */,
+				4A72EF76B48A9CDFCAB47D8E /* Search.swift in Sources */,
+				7122539D4DEE7C625552BD1F /* Selection.swift in Sources */,
+				C3EB2AC008254ADB5E89752E /* ShapeRecognizer.swift in Sources */,
+				91D686C6BD6C2F423ABA1294 /* SyncChangeEncoder.swift in Sources */,
+				6684EEC4A891F92876A9CCB7 /* SyncEngine.swift in Sources */,
+				84C75B9B069C2B07CB044588 /* Synchronization.swift in Sources */,
+				87E309B454387E0782C996F0 /* SystemFontCatalog.swift in Sources */,
+				67BE141155C4D6E4E85B66ED /* TextBlock+Typography.swift in Sources */,
+				B291F37DDF8F244DBBB20D74 /* ToolConfiguration.swift in Sources */,
+				FC47A5C620CF1BD9DB3CCFDA /* VectorEraser.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		328EA981878E7115CE3447CD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CE41FAAFEBC4C4253C0AA1AF /* CanvasPerformanceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B82EB19C8D4F6F7E63F994BD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				846D9CA1DFD0405FA3E4316F /* AdvancedOrganizationBehaviorTests.swift in Sources */,
+				690487598DF78CA2C539D84D /* AppleInterfaceBehaviorTests.swift in Sources */,
+				8FC0F5AC24FFBA18987C3E1A /* CanvasSystemsBehaviorTests.swift in Sources */,
+				3563252A417A136CE40EAFB1 /* DocumentHistoryBehaviorTests.swift in Sources */,
+				BE4D74ED2365268561A9A070 /* DocumentModelBehaviorTests.swift in Sources */,
+				B03D162FAA47E50E68242341 /* DocumentStructureHistoryTests.swift in Sources */,
+				5C4FAB2F14470692BF2362E7 /* DomainFixtures.swift in Sources */,
+				099C93E64D97D95311F251F1 /* EditingBehaviorTests.swift in Sources */,
+				1C6152FB9F5184399FBA3634 /* HandwritingRecognitionBehaviorTests.swift in Sources */,
+				10E730F14915B3040CD05099 /* ImportExportBehaviorTests.swift in Sources */,
+				8C7B3AAE1F75B094824319A5 /* LibraryAssetBehaviorTests.swift in Sources */,
+				14CFF39D376DF578720E940B /* LibraryBehaviorTests.swift in Sources */,
+				C65F3DA3EC2C8581BC4DD1DA /* LocalDocumentStoreBehaviorTests.swift in Sources */,
+				D9695ABB2E20E06CFDB1A891 /* LocalLibraryRepositoryBehaviorTests.swift in Sources */,
+				9464405F3028390F36AE20F8 /* SearchIndexBehaviorTests.swift in Sources */,
+				4A5726E4D5CBF554E209D16A /* SelectionAndShapeBehaviorTests.swift in Sources */,
+				D5835AEA189903AD30B2C4B6 /* SerializationBehaviorTests.swift in Sources */,
+				A9D0E1390FFA68692370A669 /* SyncBehaviorTests.swift in Sources */,
+				10A4E058C85A37A3ED7FF84C /* ToolInspectorBehaviorTests.swift in Sources */,
+				325980567CA6076D1C63B982 /* TypographyBehaviorTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D171986BE9D978BC08C105D1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				38D5657D45C8E321AA08D60E /* LibraryCreationPlacementUITests.swift in Sources */,
+				C1227228EFE39F93189D3956 /* NoteNerdsLaunchTests.swift in Sources */,
+				0492B62B2285A5CB4E2F64DB /* PaperSelectionUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		33D89085E45882D9F69AE2EC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9387D81FAD749A8FA93D6F0A /* NoteNerds */;
+			targetProxy = E7999762BF657568B2187019 /* PBXContainerItemProxy */;
+		};
+		5A0B879A1E749996E8D87F8C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9387D81FAD749A8FA93D6F0A /* NoteNerds */;
+			targetProxy = 92E5BEE9A746DBD3C082EEDE /* PBXContainerItemProxy */;
+		};
+		F11A3D42E3A19B8BA428BCF7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9387D81FAD749A8FA93D6F0A /* NoteNerds */;
+			targetProxy = B1EC1CA29BA81B27CA1E06D2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		215579D7EC3EC066D1716DE4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.prashant.notenerds.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NoteNerds.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NoteNerds";
+			};
+			name = Release;
+		};
+		2A6F5FF1E3A74253E30CB47B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.prashant.notenerds.performance-tests";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NoteNerds.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NoteNerds";
+			};
+			name = Debug;
+		};
+		37717DCE9C03116885134A21 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		56493789A61546D1A1F2DD63 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.prashant.notenerds.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = NoteNerds;
+			};
+			name = Release;
+		};
+		82531607388B7DB3B47F8BF7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = NoteNerds/NoteNerds.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = NoteNerds/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.prashant.notenerds;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Release;
+		};
+		835DD89D6BD447A52DB83D9C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.prashant.notenerds.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NoteNerds.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NoteNerds";
+			};
+			name = Debug;
+		};
+		9B17B101D639BD7C8FE83AAB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = NoteNerds/NoteNerds.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = NoteNerds/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.prashant.notenerds;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+		B26E895A43DDF3C3BCAA7B08 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.prashant.notenerds.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = NoteNerds;
+			};
+			name = Debug;
+		};
+		BADE3A9420AB0B8670B18F8D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		BD9779210AB5E77C6ECA971E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.prashant.notenerds.performance-tests";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NoteNerds.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NoteNerds";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		473CFC68205BEB5AE3404D0C /* Build configuration list for PBXProject "NoteNerds" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				37717DCE9C03116885134A21 /* Debug */,
+				BADE3A9420AB0B8670B18F8D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8E45531885F11C672A0270AC /* Build configuration list for PBXNativeTarget "NoteNerds" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9B17B101D639BD7C8FE83AAB /* Debug */,
+				82531607388B7DB3B47F8BF7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		96032DF5DCC4B77F393BDFB5 /* Build configuration list for PBXNativeTarget "NoteNerdsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				835DD89D6BD447A52DB83D9C /* Debug */,
+				215579D7EC3EC066D1716DE4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A20D81575B17FBDD37C5819E /* Build configuration list for PBXNativeTarget "NoteNerdsPerformanceTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2A6F5FF1E3A74253E30CB47B /* Debug */,
+				BD9779210AB5E77C6ECA971E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C2A424C9874CA5F3958EB024 /* Build configuration list for PBXNativeTarget "NoteNerdsUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B26E895A43DDF3C3BCAA7B08 /* Debug */,
+				56493789A61546D1A1F2DD63 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AE6B84E49C2AF5EA331DF3C8 /* Project object */;
+}

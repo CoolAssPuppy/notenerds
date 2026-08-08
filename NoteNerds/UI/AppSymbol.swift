@@ -1,0 +1,19 @@
+enum AppSymbol {
+    static let allNotes = "note.text"
+    static let favorites = "star"
+    static let recents = "clock"
+    static let trash = "trash"
+    static let folder = "folder.fill"
+    static let notebook = "book.closed.fill"
+
+    static let newNotebook = "square.and.pencil"
+    static let newFolder = "folder.badge.plus"
+    static let search = "magnifyingglass"
+    static let share = "square.and.arrow.up"
+    static let more = "ellipsis.circle"
+    static let back = "chevron.backward"
+    static let add = "plus"
+    static let select = "checkmark.circle"
+    static let sort = "arrow.up.arrow.down"
+    static let settings = "gearshape"
+}

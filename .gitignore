@@ -1,0 +1,49 @@
+# Xcode user settings
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# Xcode build output and test results
+DerivedData*/
+build/
+*.app
+*.dSYM
+*.dSYM.zip
+*.hmap
+*.ipa
+*.xcarchive
+*.xcresult
+*.xccovarchive
+*.xccovreport
+*.profdata
+*.moved-aside
+
+# Legacy Xcode user files
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.perspectivev3
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Local tools and editor settings
+.claude/settings.local.json
+CLAUDE.local.md
+mcp.json
+.mcp.json
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Operating system files
+.DS_Store
+Thumbs.db

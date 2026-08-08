@@ -1,0 +1,26 @@
+# Lessons
+
+- Keep the product name as “Note Nerds” in the app target, display name, document format, cloud configuration, accessibility copy, icons, and interface text.
+- Paper can be inspected and controlled through macOS accessibility when its window is open, even without a dedicated Paper connector.
+- When new icon or interface design is needed, use the open Paper document as the design workspace.
+- Before constructing a default CloudKit container, keep simulator builds on local storage because unsigned simulator apps lack the application identifier entitlement.
+- Compare a supplied crash report's time and process identifier with the current build before changing code; reproduce against the installed build and check for newer reports.
+- Keep the drawing canvas visually dominant. Use symbols for frequent toolbar actions, group controls by purpose, and move names into accessibility labels and tooltips.
+- Verify drawing through a real selected-tool input path on the simulator before calling the notebook editor complete.
+- Keep text creation and editing directly on the canvas. A separate editor interrupts placement, selection, and writing flow.
+- Put library organization commands in the library sidebar. Keep the floating canvas controls limited to actions that change the open note.
+- Treat text as a persistent canvas tool: selecting it changes the next canvas tap into an insertion point, and a single tap on existing text edits it in place.
+- An inline text editor must look like text on paper: transparent canvas background, live caret, content-sized bounds, and a detached formatting strip. A bordered text panel is still a dialog pattern.
+- Use native iPad navigation and toolbar structures before styling controls. A custom bar with SF Symbols still feels custom when placement, grouping, selection, and menus differ from Apple apps.
+- Keep one tested semantic SF Symbol catalog for library sections, notebooks, folders, editing tools, sharing, and overflow actions. Choose symbols by Apple’s common meaning and reuse them everywhere.
+- A drawing toolbar cannot reduce color, thickness, and eraser settings to text menus. Use anchored visual inspectors with previews, familiar PencilKit terms, enough presets, and the system color picker for custom values.
+- Inline text editing needs keyboard equivalents for every visible completion control. Return should commit and Escape should cancel through the same actions as the checkmark and X.
+- A committed canvas object needs a visual assertion. Accessibility counts and storage checks can pass while a drawing view is behind PencilKit's internal content views.
+- Keep Xcode DerivedData outside the repository. Use `/tmp` for isolated verification output and keep generated build folders covered by the project `.gitignore`.
+- On iPad, folders are navigation destinations and belong in the persistent left sidebar. The detail pane is reserved for notebook previews from the selected location.
+- Keep the iPad folder sidebar collapsible. Folder placement and sidebar visibility are separate requirements: folders stay in the sidebar, and the user can hide or reveal that panel.
+- Notebook names in editing mode are direct content. Tapping the navigation title should replace it with a focused text field in the same position, with no rename dialog.
+- Notebook previews are draggable files. Sidebar folders and Trash must accept the same notebook payload, and Trash previews need a clear visual state beyond their location.
+- A legal-pad paper background has one red margin rule near the left edge. Repeat the blue horizontal rules only; a tiled red margin produces several false margins across an infinite canvas.
+- Place creation actions beside the collection they change: folder creation in the Folders heading and notebook creation in the active notebook-list toolbar.
+- Keep library search compact until requested. Expand the search icon into a focused field, then collapse it when the user taps outside.

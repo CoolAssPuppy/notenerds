@@ -1,0 +1,124 @@
+name: NoteNerds
+options:
+  bundleIdPrefix: com.prashant
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+    GCC_TREAT_WARNINGS_AS_ERRORS: YES
+    CLANG_WARN_DOCUMENTATION_COMMENTS: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+targets:
+  NoteNerds:
+    type: application
+    platform: iOS
+    info:
+      path: NoteNerds/Info.plist
+      properties:
+        CFBundleDisplayName: Note Nerds
+        LSApplicationCategoryType: public.app-category.productivity
+        LSSupportsOpeningDocumentsInPlace: true
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+        UIApplicationSupportsIndirectInputEvents: true
+        UILaunchScreen: {}
+        UIRequiresFullScreen: false
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: com.prashant.notenerds.notebook
+            UTTypeDescription: Note Nerds editable notebook
+            UTTypeConformsTo:
+              - com.apple.package
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - notenerds
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Note Nerds editable notebook
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Owner
+            LSItemContentTypes:
+              - com.prashant.notenerds.notebook
+          - CFBundleTypeName: PDF document
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - com.adobe.pdf
+          - CFBundleTypeName: Image
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - public.image
+    sources:
+      - path: NoteNerds
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.prashant.notenerds
+        TARGETED_DEVICE_FAMILY: "2"
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: NoteNerds/NoteNerds.entitlements
+  NoteNerdsTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: NoteNerdsTests
+    dependencies:
+      - target: NoteNerds
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.prashant.notenerds.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/NoteNerds.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NoteNerds"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+  NoteNerdsUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: NoteNerdsUITests
+    dependencies:
+      - target: NoteNerds
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.prashant.notenerds.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: NoteNerds
+  NoteNerdsPerformanceTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: NoteNerdsPerformanceTests
+    dependencies:
+      - target: NoteNerds
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.prashant.notenerds.performance-tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/NoteNerds.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NoteNerds"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+schemes:
+  NoteNerds:
+    build:
+      targets:
+        NoteNerds: all
+        NoteNerdsTests: [test]
+        NoteNerdsUITests: [test]
+    test:
+      gatherCoverageData: true
+      targets:
+        - name: NoteNerdsTests
+          parallelizable: true
+        - name: NoteNerdsUITests
+          parallelizable: false
+        - name: NoteNerdsPerformanceTests
+          parallelizable: false

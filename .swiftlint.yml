@@ -1,0 +1,55 @@
+included:
+  - NoteNerds
+  - NoteNerdsTests
+  - NoteNerdsUITests
+
+excluded:
+  - NoteNerds.xcodeproj
+
+disabled_rules:
+  - trailing_comma
+
+opt_in_rules:
+  - array_init
+  - closure_spacing
+  - contains_over_filter_count
+  - empty_count
+  - empty_string
+  - explicit_init
+  - first_where
+  - flatmap_over_map_reduce
+  - last_where
+  - implicitly_unwrapped_optional
+  - modifier_order
+  - overridden_super_call
+  - private_action
+  - private_outlet
+  - sorted_first_last
+  - toggle_bool
+  - unneeded_parentheses_in_closure_argument
+
+line_length:
+  warning: 120
+  error: 140
+
+file_length:
+  warning: 500
+  error: 600
+
+type_body_length:
+  warning: 420
+  error: 500
+
+function_body_length:
+  warning: 50
+  error: 80
+
+force_cast: error
+force_try: error
+implicitly_unwrapped_optional: error
+
+identifier_name:
+  excluded:
+    - id
+    - x
+    - y

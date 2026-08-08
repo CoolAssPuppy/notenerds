@@ -173,20 +173,20 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
             nextAttemptAt: Date(timeIntervalSince1970: 0),
             lastFailure: .serviceUnavailable
         )
-        let publisher = StubLibraryPublisher(report: NotionPublishReport(
-            uploadedNotebookCount: 1,
-            skippedNotebookCount: 0,
-            didUploadManifest: false
-        ))
+        let registry = NotionSyncRegistry(store: IntegrationStateStore(state: NotionSyncState(
+            workspaceID: connection.credentials.workspaceID,
+            destination: destination,
+            queue: [queueItem]
+        )))
+        let publisher = SuccessfulRegistryLibraryPublisher(
+            registry: registry,
+            notebookID: notebook.id
+        )
         let model = NotionIntegrationModel(
             isConfigured: true,
             connectionManager: StubConnectionManager(current: connection, connected: connection),
             destinationProviderFactory: { _ in StubDestinationProvider() },
-            registry: NotionSyncRegistry(store: IntegrationStateStore(state: NotionSyncState(
-                workspaceID: connection.credentials.workspaceID,
-                destination: destination,
-                queue: [queueItem]
-            ))),
+            registry: registry,
             publisher: publisher,
             automaticSyncDelay: .milliseconds(1)
         )
@@ -196,6 +196,8 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(30))
 
         XCTAssertEqual(publisher.publishedLibraries, [library])
+        let snapshot = try await registry.snapshot()
+        XCTAssertTrue(snapshot.queue.isEmpty)
     }
 
     func testRestoreReconcilesTheCurrentLibraryWhenDestinationHasNoQueue() async throws {
@@ -227,6 +229,40 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(30))
 
         XCTAssertEqual(publisher.publishedLibraries, [library])
+    }
+
+    func testAutomaticSyncRetriesDurableTransientFailureWithoutAnotherEdit() async throws {
+        let connection = storedConnection()
+        let notebook = DomainFixtures.notebook()
+        let destination = NotionDestination(
+            databaseID: "11111111-1111-1111-1111-111111111111",
+            dataSourceID: "22222222-2222-2222-2222-222222222222"
+        )
+        let registry = NotionSyncRegistry(store: IntegrationStateStore(state: NotionSyncState(
+            workspaceID: connection.credentials.workspaceID,
+            destination: destination
+        )))
+        let publisher = TransientFailureLibraryPublisher(
+            registry: registry,
+            notebookID: notebook.id
+        )
+        let model = NotionIntegrationModel(
+            isConfigured: true,
+            connectionManager: StubConnectionManager(current: connection, connected: connection),
+            destinationProviderFactory: { _ in StubDestinationProvider() },
+            registry: registry,
+            publisher: publisher,
+            automaticSyncDelay: .milliseconds(1)
+        )
+        let library = LibraryState(notebooks: [notebook])
+
+        await model.restore(library: library)
+        try await Task.sleep(for: .milliseconds(80))
+
+        XCTAssertEqual(publisher.attemptCount, 2)
+        let snapshot = try await registry.snapshot()
+        XCTAssertTrue(snapshot.queue.isEmpty)
+        XCTAssertEqual(model.state, .connected(workspaceName: "Strategic Nerds"))
     }
 
     private func storedConnection() -> NotionStoredConnection {
@@ -279,6 +315,80 @@ private final class CancellableLibraryPublisher: NotionLibraryPublishing {
         return NotionPublishReport(
             uploadedNotebookCount: 0,
             skippedNotebookCount: library.notebooks.count,
+            didUploadManifest: false
+        )
+    }
+}
+
+@MainActor
+private final class TransientFailureLibraryPublisher: NotionLibraryPublishing {
+    private let registry: NotionSyncRegistry
+    private let notebookID: NotebookID
+    private(set) var attemptCount = 0
+
+    init(registry: NotionSyncRegistry, notebookID: NotebookID) {
+        self.registry = registry
+        self.notebookID = notebookID
+    }
+
+    func publish(
+        _ library: LibraryState,
+        notebookID selectedNotebookID: NotebookID?
+    ) async throws -> NotionPublishReport {
+        attemptCount += 1
+        let identifier = notebookID.rawValue.uuidString.lowercased()
+        if attemptCount == 1 {
+            try await registry.enqueue(notebookID: identifier)
+            try await registry.recordFailure(
+                notebookID: identifier,
+                failure: .serviceUnavailable,
+                retryAt: Date()
+            )
+            throw NotionAPIError.httpStatus(503)
+        }
+        try await registry.recordSuccess(NotionNotebookBinding(
+            notebookID: identifier,
+            pageID: "33333333-3333-3333-3333-333333333333",
+            managedRootBlockID: "44444444-4444-4444-4444-444444444444",
+            contentHash: String(repeating: "a", count: 64),
+            syncedAt: Date(),
+            notionLastEditedAt: nil
+        ))
+        return NotionPublishReport(
+            uploadedNotebookCount: 1,
+            skippedNotebookCount: 0,
+            didUploadManifest: false
+        )
+    }
+}
+
+@MainActor
+private final class SuccessfulRegistryLibraryPublisher: NotionLibraryPublishing {
+    private let registry: NotionSyncRegistry
+    private let notebookID: NotebookID
+    private(set) var publishedLibraries: [LibraryState] = []
+
+    init(registry: NotionSyncRegistry, notebookID: NotebookID) {
+        self.registry = registry
+        self.notebookID = notebookID
+    }
+
+    func publish(
+        _ library: LibraryState,
+        notebookID selectedNotebookID: NotebookID?
+    ) async throws -> NotionPublishReport {
+        publishedLibraries.append(library)
+        try await registry.recordSuccess(NotionNotebookBinding(
+            notebookID: notebookID.rawValue.uuidString.lowercased(),
+            pageID: "33333333-3333-3333-3333-333333333333",
+            managedRootBlockID: nil,
+            contentHash: String(repeating: "a", count: 64),
+            syncedAt: Date(),
+            notionLastEditedAt: nil
+        ))
+        return NotionPublishReport(
+            uploadedNotebookCount: 1,
+            skippedNotebookCount: 0,
             didUploadManifest: false
         )
     }

@@ -128,12 +128,18 @@ private actor EndToEndStateStore: NotionSyncStateStoring {
 }
 
 private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
+    private struct NotebookFileRecord {
+        let pageID: String
+        let uploadID: String
+        let contentHash: String
+    }
+
     private let manifestPageID: String
     private var uploads: [String: Data] = [:]
     private var manifestUploadID: String?
     private var manifestUploadSequence = 0
     private var manifestRootID: String?
-    private var notebookFiles: [String: (pageID: String, uploadID: String)] = [:]
+    private var notebookFiles: [String: NotebookFileRecord] = [:]
     private var uploadSequence = 0
     private var rootSequence = 0
 
@@ -160,7 +166,11 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
         files: NotionNotebookRemoteFiles
     ) -> NotionPageBinding {
         let pageID = String(format: "BBBBBBBB-BBBB-BBBB-BBBB-%012d", notebookFiles.count + 1)
-        notebookFiles[snapshot.row.notebookID] = (pageID, files.nativeUploadID)
+        notebookFiles[snapshot.row.notebookID] = NotebookFileRecord(
+            pageID: pageID,
+            uploadID: files.nativeUploadID,
+            contentHash: snapshot.row.contentHash
+        )
         return NotionPageBinding(pageID: pageID, url: nil)
     }
 
@@ -169,7 +179,11 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
         snapshot: NotionNotebookSnapshot,
         files: NotionNotebookRemoteFiles
     ) -> NotionPageBinding {
-        notebookFiles[snapshot.row.notebookID] = (pageID, files.nativeUploadID)
+        notebookFiles[snapshot.row.notebookID] = NotebookFileRecord(
+            pageID: pageID,
+            uploadID: files.nativeUploadID,
+            contentHash: snapshot.row.contentHash
+        )
         return NotionPageBinding(pageID: pageID, url: nil)
     }
 
@@ -191,9 +205,22 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
             NotionRemoteNotebookFile(
                 pageID: value.pageID,
                 notebookID: notebookID,
+                contentHash: value.contentHash,
                 url: URL(string: "https://local.notion/notebook/\(notebookID)")!
             )
         }
+    }
+
+    func fetchNativeNotebookFile(pageID: String) throws -> NotionRemoteNotebookFile {
+        guard let entry = notebookFiles.first(where: { $0.value.pageID == pageID }) else {
+            throw NotionAPIError.invalidResponse
+        }
+        return NotionRemoteNotebookFile(
+            pageID: pageID,
+            notebookID: entry.key,
+            contentHash: entry.value.contentHash,
+            url: URL(string: "https://local.notion/notebook/\(entry.key)")!
+        )
     }
 
     func findLibraryManifestRootBlock(pageID: String) -> String? { manifestRootID }

@@ -2,8 +2,6 @@ import CoreGraphics
 
 enum CanvasToolbarAction: Equatable {
     case drawing
-    case width
-    case color
     case eraser
     case lasso
     case text
@@ -25,7 +23,7 @@ enum CanvasToolbarPresentation {
     }
 
     static func actions(isExpanded: Bool) -> [CanvasToolbarAction] {
-        let essentials: [CanvasToolbarAction] = [.drawing, .width, .color, .eraser]
+        let essentials: [CanvasToolbarAction] = [.drawing, .eraser]
         guard isExpanded else { return essentials }
         return essentials + [.lasso, .text, .shapes, .undo, .redo, .layers]
     }

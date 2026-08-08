@@ -18,6 +18,7 @@ enum NotionRestoreError: Error, Equatable, Sendable {
     case missingParentFolder(FolderID)
     case invalidFolderTree
     case notebookIDMismatch
+    case contentHashMismatch
 }
 
 struct NotionRestoreCoordinator: Sendable {

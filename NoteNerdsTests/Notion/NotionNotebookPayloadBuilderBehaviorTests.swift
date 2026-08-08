@@ -28,6 +28,26 @@ final class NotionPayloadBuilderTests: XCTestCase {
         }
     }
 
+    func testUnchangedNotebookProducesTheSameArchiveAcrossSeparateSyncTimes() async throws {
+        let notebook = DomainFixtures.notebook()
+        let library = LibraryState(notebooks: [notebook])
+        let builder = NotionNotebookPayloadBuilder()
+
+        let first = try await builder.build(
+            notebook: notebook,
+            library: library,
+            exportedAt: DomainFixtures.fixedDate
+        )
+        let second = try await builder.build(
+            notebook: notebook,
+            library: library,
+            exportedAt: DomainFixtures.fixedDate.addingTimeInterval(3_600)
+        )
+
+        XCTAssertEqual(first.nativeArchive, second.nativeArchive)
+        XCTAssertEqual(first.snapshot.row.contentHash, second.snapshot.row.contentHash)
+    }
+
     func testArchiveIncludesReferencedAssetsAndExcludesUnrelatedAssets() async throws {
         let referencedID = AssetID(rawValue: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!)
         let unrelatedID = AssetID(rawValue: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!)

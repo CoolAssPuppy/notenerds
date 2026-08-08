@@ -1,5 +1,7 @@
 # Lessons
 
+- Device builds must use the project build-setting names `NOTION_CLIENT_ID_B64` and `NOTION_CLIENT_SECRET_B64`. Verify the built Info.plist contains two nonempty decoded configuration values before installing it. A signed build can still omit service configuration.
+- Define the canvas toolbar by tool identity. Writing, Eraser, Lasso, Text, Shapes, and Layers are tools. Ink color, stroke width, eraser mode, pen variant, and shape variant are choices inside those tools. Undo and Redo are editing commands. Never present a choice as a peer of a tool.
 - A radial menu needs complete circles with equal radius and equal angular spacing. Multiple rings need different angular phases so they read as rings instead of spokes or branches. Verify the rendered button centers, not only the item count.
 - When the user approves artwork in Paper, export that exact node into the asset catalog before deployment. Do not substitute an older or recreated icon.
 - Keep the persistent and expanded canvas toolbar limited to core editing categories. Pen variants, width choices, colors, eraser modes, and shape choices belong inside their category inspector or radial submenu.

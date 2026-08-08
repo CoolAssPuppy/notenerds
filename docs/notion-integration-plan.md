@@ -41,6 +41,7 @@ The settings screen shows the connected workspace, destination, last sync result
 
 - `Sync now` publishes every changed notebook and the library manifest.
 - Automatic sync runs after a notebook closes and after a short idle period.
+- A transient failure records its next attempt time and retries automatically without another edit or app restart.
 - A notebook context menu includes `Sync to Notion` and `Open in Notion`.
 - Progress shows connection, destination creation, sync, restore, disconnect, and action-needed states.
 - Local editing continues during a Notion failure.
@@ -54,6 +55,8 @@ The settings screen shows the connected workspace, destination, last sync result
 5. Confirm restore.
 
 Restore validates the native archive, schema version, file bounds, content hash, and stable identifiers before modifying the local library.
+
+Notion file URLs are temporary. Restore reads the database rows, fetches each page again immediately before download, and uses the fresh URL. It computes SHA-256 over the downloaded bytes and requires an exact match with the row's `Content Hash` before decoding the archive.
 
 ### Disconnect
 
@@ -90,6 +93,8 @@ flowchart LR
 - `NotionConnectionStore`: protected local persistence for workspace, destination, bindings, and queue state.
 
 These components remain separate from `SyncProvider`. CloudKit synchronizes Note Nerds operations between devices. Notion publishes complete notebook snapshots to a user-selected external destination.
+
+The native archive uses the notebook's modification date as deterministic archive metadata. Separate sync attempts for unchanged notebook content and assets therefore produce identical bytes and the same content hash. The sync registry skips the upload when that hash already has a successful binding in the selected destination.
 
 ### Native OAuth callback
 
@@ -449,6 +454,21 @@ Current contract references:
 - [x] Strict lint and warnings-as-errors builds pass.
 - [x] Security and performance audits report no unresolved high or medium issues.
 - [x] Privacy and App Store documents describe Notion accurately.
+
+## Current verification evidence
+
+Local verification on August 8, 2026 includes:
+
+- 255 behavior tests, with stable archive, retry, fresh file URL, hash validation, and local publish-restore coverage
+- 7 performance tests, including restoration of a 1,000-item durable Notion queue within 100 milliseconds
+- focused Notion settings and canvas-toolbar interface checks
+- strict SwiftLint with zero violations
+- Xcode static analysis and compilation with warnings treated as errors
+- current-tree and Git-history secret scans with no findings
+- no third-party runtime package references
+- 13 release-tool tests
+
+The unchecked acceptance items require the connected development workspace and remain release gates.
 
 ## Deferred work
 

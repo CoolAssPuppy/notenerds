@@ -56,8 +56,6 @@ struct CanvasToolbarView: View {
     @ViewBuilder
     private var toolbarActionItems: some View {
         drawingToolInspectorButton
-        widthInspectorButton
-        colorInspectorButton
         eraserInspectorButton
         if isExpanded {
             chromeDivider
@@ -100,6 +98,8 @@ struct CanvasToolbarView: View {
             CanvasDrawingToolInspector(
                 tools: drawingTools,
                 selectedTool: editor.selectedDrawingTool,
+                selectedWidth: editor.configuration.width,
+                selectedColor: editor.configuration.color,
                 favoriteOne: editor.favoriteOne,
                 favoriteTwo: editor.favoriteTwo,
                 isFingerDrawingEnabled: editor.$isFingerDrawingEnabled,
@@ -111,6 +111,8 @@ struct CanvasToolbarView: View {
                     editor.select(configuration)
                     presentedInspector = nil
                 },
+                onSelectWidth: editor.setWidth,
+                onSelectColor: editor.setColor,
                 onSaveFavoriteOne: editor.saveFavoriteOne,
                 onSaveFavoriteTwo: editor.saveFavoriteTwo
             )
@@ -129,40 +131,6 @@ struct CanvasToolbarView: View {
                 editor.activateShapeTool(kind)
                 presentedInspector = nil
             }
-        }
-    }
-
-    private var widthInspectorButton: some View {
-        Button { presentedInspector = .width } label: {
-            CanvasChromeIcon(symbol: "lineweight")
-        }
-        .accessibilityLabel("Stroke width")
-        .accessibilityValue(editor.configuration.width.label)
-        .help("Stroke width")
-        .popover(isPresented: inspectorBinding(.width)) {
-            CanvasWidthInspector(
-                selectedWidth: editor.configuration.width,
-                onSelect: editor.setWidth
-            )
-        }
-    }
-
-    private var colorInspectorButton: some View {
-        Button { presentedInspector = .color } label: {
-            Circle()
-                .fill(Color(uiColor: UIColor(editor.configuration.color)))
-                .frame(width: 18, height: 18)
-                .overlay(Circle().stroke(Color.primary.opacity(0.28), lineWidth: 0.75))
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-        }
-        .accessibilityLabel("Ink color")
-        .help("Ink color")
-        .popover(isPresented: inspectorBinding(.color)) {
-            CanvasColorInspector(
-                selectedColor: editor.configuration.color,
-                onSelect: editor.setColor
-            )
         }
     }
 
@@ -281,8 +249,6 @@ struct CanvasToolbarView: View {
 
 private enum CanvasToolbarInspector {
     case drawing
-    case width
-    case color
     case eraser
     case shapes
     case layers

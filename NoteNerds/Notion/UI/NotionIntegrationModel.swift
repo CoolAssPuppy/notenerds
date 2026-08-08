@@ -300,20 +300,41 @@ final class NotionIntegrationModel: ObservableObject {
     }
 
     private func runAutomaticSync(generation: Int, delay: Duration) async {
-        do {
-            try await Task.sleep(for: delay)
-        } catch {
-            return
-        }
-        guard automaticSyncGeneration == generation else { return }
-        while !Task.isCancelled, let library = takePendingAutomaticSync() {
+        var nextDelay = delay
+        var retryLibrary: LibraryState?
+        while !Task.isCancelled {
+            do {
+                try await Task.sleep(for: nextDelay)
+            } catch {
+                return
+            }
+            guard automaticSyncGeneration == generation else { return }
+            guard let library = takePendingAutomaticSync() ?? retryLibrary else { break }
             automaticSyncInFlight = library
             await sync(library)
             guard automaticSyncGeneration == generation else { return }
             automaticSyncInFlight = nil
+            if pendingAutomaticSync != nil {
+                retryLibrary = nil
+                nextDelay = .zero
+            } else if let retryDelay = await automaticRetryDelay() {
+                retryLibrary = library
+                nextDelay = retryDelay
+            } else {
+                retryLibrary = nil
+                break
+            }
         }
         guard automaticSyncGeneration == generation else { return }
         automaticSyncTask = nil
+    }
+
+    private func automaticRetryDelay() async -> Duration? {
+        guard let state = try? await registry.snapshot(),
+              let nextAttempt = state.queue.compactMap(\.nextAttemptAt).min() else {
+            return nil
+        }
+        return .seconds(max(0, nextAttempt.timeIntervalSinceNow))
     }
 
     private func refreshSyncedNotebookIDs() async throws {

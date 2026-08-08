@@ -18,7 +18,7 @@ struct NotionTransportArchive: Sendable {
     func encode(
         package: NativeNotebookPackage,
         assets: [DocumentAsset],
-        exportedAt: Date
+        exportedAt _: Date
     ) throws -> Data {
         let sortedAssets = assets.sorted { $0.id.rawValue.uuidString < $1.id.rawValue.uuidString }
         let manifestEntries = sortedAssets.map { asset in
@@ -36,7 +36,7 @@ struct NotionTransportArchive: Sendable {
         let index = NotionTransportIndex(
             schemaVersion: NotionTransportIndex.currentSchemaVersion,
             notebookID: package.notebook.id.rawValue.uuidString.lowercased(),
-            exportedAt: exportedAt,
+            exportedAt: package.notebook.modifiedAt,
             uncompressedByteCount: payloadByteCount,
             assetCount: sortedAssets.count,
             entries: entries

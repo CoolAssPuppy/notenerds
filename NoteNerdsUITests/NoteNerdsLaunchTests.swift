@@ -309,7 +309,8 @@ final class NoteNerdsLaunchTests: XCTestCase {
         application.buttons["New notebook"].tap()
 
         XCTAssertTrue(application.buttons["Drawing tools"].waitForExistence(timeout: 2))
-        XCTAssertTrue(application.buttons["Stroke width"].exists)
+        XCTAssertFalse(application.buttons["Stroke width"].exists)
+        XCTAssertFalse(application.buttons["Ink color"].exists)
         XCTAssertTrue(application.buttons["Eraser"].exists)
         XCTAssertTrue(application.buttons["Canvas browser"].exists)
         XCTAssertTrue(application.buttons["New canvas"].exists)
@@ -402,11 +403,11 @@ final class NoteNerdsLaunchTests: XCTestCase {
         application.buttons["New notebook"].tap()
 
         let drawingTools = application.buttons["Drawing tools"]
-        let strokeWidth = application.buttons["Stroke width"]
+        let eraser = application.buttons["Eraser"]
         XCTAssertTrue(drawingTools.waitForExistence(timeout: 2))
-        XCTAssertTrue(strokeWidth.exists)
-        XCTAssertEqual(drawingTools.frame.midY, strokeWidth.frame.midY, accuracy: 2)
-        XCTAssertGreaterThan(strokeWidth.frame.midX, drawingTools.frame.midX)
+        XCTAssertTrue(eraser.exists)
+        XCTAssertEqual(drawingTools.frame.midY, eraser.frame.midY, accuracy: 2)
+        XCTAssertGreaterThan(eraser.frame.midX, drawingTools.frame.midX)
         let attachment = XCTAttachment(screenshot: application.screenshot())
         attachment.name = "Horizontal canvas tools"
         attachment.lifetime = .keepAlways
@@ -429,7 +430,6 @@ final class NoteNerdsLaunchTests: XCTestCase {
         toolsAttachment.name = "Apple writing tools inspector"
         toolsAttachment.lifetime = .keepAlways
         add(toolsAttachment)
-        application.scrollViews["Infinite canvas"].tap()
 
         application.buttons["Ink color"].tap()
         XCTAssertTrue(application.buttons["Black"].exists)
@@ -441,8 +441,10 @@ final class NoteNerdsLaunchTests: XCTestCase {
         colorAttachment.name = "Apple color inspector"
         colorAttachment.lifetime = .keepAlways
         add(colorAttachment)
+        application.buttons["Black"].tap()
 
-        application.scrollViews["Infinite canvas"].tap()
+        dismissPopover(in: application)
+        application.buttons["Drawing tools"].tap()
         application.buttons["Stroke width"].tap()
         for width in ["Extra fine", "Fine", "Medium", "Bold", "Extra bold"] {
             XCTAssertTrue(application.buttons[width].exists)
@@ -451,8 +453,9 @@ final class NoteNerdsLaunchTests: XCTestCase {
         widthAttachment.name = "Apple thickness inspector"
         widthAttachment.lifetime = .keepAlways
         add(widthAttachment)
+        application.buttons["Medium"].tap()
 
-        application.scrollViews["Infinite canvas"].tap()
+        dismissPopover(in: application)
         application.buttons["Eraser"].tap()
         XCTAssertTrue(application.buttons["Object eraser"].exists)
         XCTAssertTrue(application.buttons["Pixel eraser"].exists)
@@ -474,6 +477,11 @@ final class NoteNerdsLaunchTests: XCTestCase {
 }
 
 private extension NoteNerdsLaunchTests {
+    private func dismissPopover(in application: XCUIApplication) {
+        application.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.75)).tap()
+        XCTAssertTrue(application.buttons["Stroke width"].waitForNonExistence(timeout: 2))
+    }
+
     private func expandCanvasToolbarIfNeeded(in application: XCUIApplication) {
         let showMoreTools = application.buttons["Show more tools"]
         if showMoreTools.exists {

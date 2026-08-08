@@ -35,13 +35,21 @@ actor NotionRemoteLibraryLoader: NotionRemoteLibraryLoading {
         var archives: [Data] = []
         archives.reserveCapacity(files.count)
         for file in files {
+            let currentFile = try await api.fetchNativeNotebookFile(pageID: file.pageID)
+            guard currentFile.pageID == file.pageID,
+                  currentFile.notebookID == file.notebookID else {
+                throw NotionRestoreError.notebookIDMismatch
+            }
             let archiveData = try await api.downloadFile(
-                from: file.url,
+                from: currentFile.url,
                 maximumByteCount: Self.maximumArchiveByteCount
             )
+            guard NotionContentHasher.sha256Hex(of: archiveData) == currentFile.contentHash else {
+                throw NotionRestoreError.contentHashMismatch
+            }
             let decoded = try archive.decode(archiveData)
             let archiveNotebookID = decoded.package.notebook.id.rawValue.uuidString.lowercased()
-            guard archiveNotebookID == file.notebookID else {
+            guard archiveNotebookID == currentFile.notebookID else {
                 throw NotionRestoreError.notebookIDMismatch
             }
             archives.append(archiveData)

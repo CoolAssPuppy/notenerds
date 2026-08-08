@@ -88,6 +88,15 @@ actor NotionRefreshingAPI: NotionSyncAPI {
 }
 
 extension NotionRefreshingAPI: NotionRestoreAPI {
+    func fetchNativeNotebookFile(pageID: String) async throws -> NotionRemoteNotebookFile {
+        try await withRefresh { api in
+            guard let restoreAPI = api as? any NotionRestoreAPI else {
+                throw NotionAPIError.invalidResponse
+            }
+            return try await restoreAPI.fetchNativeNotebookFile(pageID: pageID)
+        }
+    }
+
     func listNativeNotebookFiles(
         dataSourceID: String
     ) async throws -> [NotionRemoteNotebookFile] {

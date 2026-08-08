@@ -3,11 +3,13 @@ import Foundation
 struct NotionRemoteNotebookFile: Equatable, Sendable {
     let pageID: String
     let notebookID: String
+    let contentHash: String
     let url: URL
 }
 
 protocol NotionRestoreAPI: Sendable {
     func listNativeNotebookFiles(dataSourceID: String) async throws -> [NotionRemoteNotebookFile]
+    func fetchNativeNotebookFile(pageID: String) async throws -> NotionRemoteNotebookFile
     func findLibraryManifestRootBlock(pageID: String) async throws -> String?
     func findManagedFile(rootBlockID: String) async throws -> URL
     func downloadFile(from url: URL, maximumByteCount: Int) async throws -> Data
@@ -16,6 +18,20 @@ protocol NotionRestoreAPI: Sendable {
 extension NotionAPIClient: NotionRestoreAPI {}
 
 extension NotionAPIClient {
+    func fetchNativeNotebookFile(pageID: String) async throws -> NotionRemoteNotebookFile {
+        guard UUID(uuidString: pageID) != nil else {
+            throw NotionAPIError.invalidIdentifier
+        }
+        let request = baseRequest(path: "pages/\(pageID)", method: "GET")
+        let response = try JSONDecoder().decode(
+            RestoreNotebookPage.self,
+            from: try await send(request)
+        )
+        let file = try response.remoteFile
+        guard file.pageID == pageID else { throw NotionAPIError.invalidResponse }
+        return file
+    }
+
     func listNativeNotebookFiles(dataSourceID: String) async throws -> [NotionRemoteNotebookFile] {
         guard UUID(uuidString: dataSourceID) != nil else {
             throw NotionAPIError.invalidIdentifier
@@ -139,12 +155,20 @@ private struct RestoreNotebookPage: Decodable {
                   let notebookProperty = properties["Notebook ID"],
                   let notebookID = notebookProperty.richText?.map(\.plainText).joined(),
                   let normalizedID = UUID(uuidString: notebookID)?.uuidString.lowercased(),
+                  let contentHash = properties["Content Hash"]?.richText?.map(\.plainText).joined(),
+                  contentHash.count == 64,
+                  contentHash.allSatisfy({ $0.isHexDigit }),
                   let file = properties["Native Notebook"]?.files?.first,
                   let url = file.url,
                   url.scheme?.lowercased() == "https" else {
                 throw NotionAPIError.invalidResponse
             }
-            return NotionRemoteNotebookFile(pageID: id, notebookID: normalizedID, url: url)
+            return NotionRemoteNotebookFile(
+                pageID: id,
+                notebookID: normalizedID,
+                contentHash: contentHash.lowercased(),
+                url: url
+            )
         }
     }
 }

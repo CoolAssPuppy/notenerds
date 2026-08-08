@@ -2,19 +2,18 @@ import XCTest
 @testable import NoteNerds
 
 final class CanvasToolbarBehaviorTests: XCTestCase {
-    func testCompactToolbarShowsOnlyEssentialDrawingControls() {
+    func testCompactToolbarShowsOnlyEssentialTools() {
         XCTAssertEqual(
             CanvasToolbarPresentation.actions(isExpanded: false),
-            [.drawing, .width, .color, .eraser]
+            [.drawing, .eraser]
         )
     }
 
-    func testExpandedToolbarAddsOnlyCoreEditingCategories() {
+    func testExpandedToolbarAddsOnlyCoreToolsAndEditingCommands() {
         XCTAssertEqual(
             CanvasToolbarPresentation.actions(isExpanded: true),
             [
-                .drawing,
-                .width, .color, .eraser,
+                .drawing, .eraser,
                 .lasso, .text, .shapes, .undo, .redo,
                 .layers
             ]

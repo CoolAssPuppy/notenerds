@@ -1,5 +1,42 @@
 # Current work
 
+## Keep tool choices out of the canvas toolbar
+
+- [x] Record the corrected toolbar rule in `tasks/lessons.md`.
+- [x] Add failing behavior and interface tests for the exact core-tool set.
+- [x] Remove stroke width and ink color from the main toolbar.
+- [x] Put writing color and width inside the Writing tools inspector.
+- [x] Verify compact, expanded, vertical, and horizontal toolbar states.
+
+### Review
+
+- Compact shows Writing and Eraser. The chevron remains fixed.
+- Expanded adds Lasso, Text, Shapes, Undo, Redo, and Layers.
+- Writing contains pen variants, color, stroke width, favorites, and Draw with finger.
+- Eraser contains its mode and precision width. Shapes contains shape choices.
+- Focused behavior tests and five iPad interface paths pass in vertical and horizontal layouts.
+
+## Notion completion audit
+
+- [x] Compare the active Notion goal with the implementation plan and current code.
+- [x] Prove that unchanged notebooks produce a stable archive and no repeated upload.
+- [x] Re-fetch each notebook page before using its temporary Notion file URL.
+- [x] Verify the row Content Hash before accepting a native notebook archive.
+- [x] Verify durable automatic retry without another edit or app restart.
+- [x] Re-run local end-to-end, security, performance, interface, and build checks.
+- [ ] Complete a live workspace create, update, move, restore, and disconnect check.
+- [x] Update the acceptance checklist and completion evidence.
+
+### Review
+
+- Unchanged notebook archives keep stable bytes and hashes across later sync times.
+- Restore fetches each page again before downloading its temporary file URL and rejects bytes that do not match the row hash.
+- Transient failures retry at their persisted attempt time without another edit or restart.
+- All 255 behavior tests and all 7 performance tests pass. The focused Notion settings check passes.
+- Strict lint, static analysis, warnings-as-errors builds, release-tool tests, dependency checks, and current-tree and history secret scans pass.
+- The signed development build is installed and open on the connected iPad mini.
+- Live workspace mutation, restore, and disconnect verification remains pending.
+
 ## Separate toolbar categories from their choices
 
 - [x] Record the correction in `tasks/lessons.md`.
@@ -10,8 +47,8 @@
 
 ### Review
 
-- Collapsed contains Writing tools, Stroke width, Ink color, Eraser, and the chevron.
-- Expanded adds only Lasso, Text, Shapes, Undo, Redo, and Layers. Choice-level controls remain in their inspectors and Pencil radial submenus.
+- Collapsed contains Writing tools, Eraser, and the chevron.
+- Expanded adds only Lasso, Text, Shapes, Undo, Redo, and Layers. Color, width, pen variants, eraser modes, and shape variants remain inside their tools.
 - Focused behavior and interface tests pass. Saved simulator screenshots confirm both toolbar states.
 
 ## True radial Pencil menus and approved Paper icon
@@ -86,19 +123,19 @@
 - The planner previews retain their portrait aspect ratio while the gallery grid remains adaptive.
 - Passed all 243 behavior tests and the complete paper gallery interaction test on iOS 26.5. Strict SwiftLint reports 0 violations, `git diff --check` passes, and the all-target simulator build passes with warnings treated as errors.
 
-## Specialized toolbar tools and radial choices
+## Specialized writing tools and radial choices
 
 - [x] Inventory every writing tool, inspector, and current Pencil radial action.
-- [x] Add failing behavior tests for visible specialized tools and nested radial pages.
+- [x] Add failing behavior tests for accessible specialized tools and nested radial pages.
 - [x] Add failing iPad interaction tests for color and width choices inside the radial menu.
-- [x] Restore every specialized writing tool to the expanded floating toolbar.
+- [x] Keep every specialized writing tool inside Writing tools and the Pencil radial menu.
 - [x] Replace radial cycling with anchored writing-tool, color, width, and eraser choice pages.
 - [x] Support one, two, and three concentric option rings without changing the Pencil anchor.
 - [x] Run focused behavior and interface tests, strict lint, and a warnings-as-errors build.
 
 ### Review
 
-- The expanded toolbar directly shows Ballpoint, Fineliner, Mechanical pencil, Pencil, Marker, Highlighter, Brush, Calligraphy pen, and Handwriting to text. Each tool has its own icon.
+- Writing tools and the Pencil radial menu show Ballpoint, Fineliner, Mechanical pencil, Pencil, Marker, Highlighter, Brush, Calligraphy pen, and Handwriting to text. Each tool has its own icon.
 - The Pencil radial now replaces itself with writing-tool, color, width, eraser-mode, and precision-width choices. Back returns to the previous radial page, while a final choice applies and closes the palette.
 - Color choices use three rings, writing tools use two, and smaller sets use one. The rings shrink on compact iPhone widths and remain inside every screen edge.
 - Restored Redo after the first nested-menu pass omitted it. The regression test now finds actions by stable label so a missing action reports an assertion instead of crashing the test process.
@@ -417,7 +454,7 @@
 ### Review
 
 - Paper contains compact, expanded, and docked toolbar states plus the hold, direct-drag, and spring-snap motion specification.
-- The compact toolbar keeps drawing, width, color, and eraser. The chevron adds every former overflow action inline and rotates 180 degrees when expanded.
+- The compact toolbar keeps Writing and Eraser. The chevron adds the remaining core tools and editing commands, then rotates 180 degrees when expanded.
 - A 220-millisecond hold starts direct dragging. Releasing near the top docks the toolbar horizontally; releasing elsewhere docks it vertically to the nearest side.
 - Expansion and docking choices persist. Reduce Motion replaces the spring movement with a short linear transition.
 - The Pencil squeeze menu uses an 80-point ring centered on the current Pencil position, falls back to the latest hover position, and has no center tool.

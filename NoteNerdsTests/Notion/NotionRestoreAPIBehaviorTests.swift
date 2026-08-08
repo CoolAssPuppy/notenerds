@@ -23,6 +23,10 @@ final class NotionRestoreAPIBehaviorTests: XCTestCase {
             "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
         ])
         XCTAssertEqual(files.map(\.url.absoluteString), [firstURL, secondURL])
+        XCTAssertEqual(files.map(\.contentHash), [
+            String(repeating: "a", count: 64),
+            String(repeating: "b", count: 64)
+        ])
         XCTAssertEqual(requests.count, 2)
         XCTAssertEqual(requests[0].url?.path, "/v1/data_sources/33333333-3333-3333-3333-333333333333/query")
         XCTAssertEqual(try jsonBody(requests[1])["start_cursor"] as? String, "next")
@@ -47,6 +51,32 @@ final class NotionRestoreAPIBehaviorTests: XCTestCase {
         XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "Bearer private-token")
         XCTAssertNil(requests[1].value(forHTTPHeaderField: "Authorization"))
         XCTAssertEqual(requests[1].url?.absoluteString, fileURL)
+    }
+
+    func testFetchesTheLatestNotebookPageBeforeUsingItsTemporaryFileURL() async throws {
+        let pageID = "66666666-6666-6666-6666-666666666666"
+        let notebookID = "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC"
+        let freshURL = "https://secure.notion-static.com/fresh.notenerds"
+        let transport = RestoreAPITransport(responses: [
+            .json(200, pageResponse(
+                page: pageID,
+                notebook: notebookID,
+                fileURL: freshURL,
+                contentHash: String(repeating: "c", count: 64)
+            ))
+        ])
+        let client = NotionAPIClient(accessToken: "private-token", transport: transport)
+
+        let file = try await client.fetchNativeNotebookFile(pageID: pageID)
+        let requests = await transport.requests
+
+        XCTAssertEqual(file.pageID, pageID)
+        XCTAssertEqual(file.notebookID, notebookID.lowercased())
+        XCTAssertEqual(file.contentHash, String(repeating: "c", count: 64))
+        XCTAssertEqual(file.url.absoluteString, freshURL)
+        XCTAssertEqual(requests.count, 1)
+        XCTAssertEqual(requests[0].httpMethod, "GET")
+        XCTAssertEqual(requests[0].url?.path, "/v1/pages/\(pageID)")
     }
 
     func testDownloadRejectsInsecureAndOversizedResponses() async {
@@ -80,8 +110,25 @@ final class NotionRestoreAPIBehaviorTests: XCTestCase {
 
     private func queryResponse(page: String, notebook: String, fileURL: String, cursor: String?) -> String {
         let next = cursor.map { "\"\($0)\"" } ?? "null"
+        let hashCharacter = notebook.first?.lowercased() ?? "0"
+        let contentHash = String(repeating: hashCharacter, count: 64)
+        let page = pageResponse(
+            page: page,
+            notebook: notebook,
+            fileURL: fileURL,
+            contentHash: contentHash
+        )
+        return #"{"results":[\#(page)],"has_more":\#(cursor == nil ? "false" : "true"),"next_cursor":\#(next)}"#
+    }
+
+    private func pageResponse(
+        page: String,
+        notebook: String,
+        fileURL: String,
+        contentHash: String
+    ) -> String {
         // swiftlint:disable:next line_length
-        return #"{"results":[{"id":"\#(page)","properties":{"Notebook ID":{"type":"rich_text","rich_text":[{"plain_text":"\#(notebook)"}]},"Native Notebook":{"type":"files","files":[{"type":"file","file":{"url":"\#(fileURL)"}}]}}}],"has_more":\#(cursor == nil ? "false" : "true"),"next_cursor":\#(next)}"#
+        #"{"id":"\#(page)","properties":{"Notebook ID":{"type":"rich_text","rich_text":[{"plain_text":"\#(notebook)"}]},"Content Hash":{"type":"rich_text","rich_text":[{"plain_text":"\#(contentHash)"}]},"Native Notebook":{"type":"files","files":[{"type":"file","file":{"url":"\#(fileURL)"}}]}}}"#
     }
 
     private func jsonBody(_ request: URLRequest) throws -> [String: Any] {

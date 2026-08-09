@@ -8,6 +8,19 @@ from ship_lib import app_store_metadata
 
 
 class AppStoreMetadataBehaviorTests(unittest.TestCase):
+    def test_store_message_leads_with_opening_a_notebook_and_writing(self) -> None:
+        repository = Path(__file__).resolve().parents[2]
+
+        metadata = app_store_metadata.read(repository / "docs/app-store-metadata.md")
+
+        self.assertEqual(metadata.subtitle, "Open it and start writing")
+        self.assertTrue(metadata.promotional_text.startswith(
+            "Open Note Nerds and start writing."
+        ))
+        self.assertTrue(metadata.description.startswith(
+            "Open a notebook and start writing."
+        ))
+
     def test_repository_metadata_is_complete_and_within_apple_limits(self) -> None:
         repository = Path(__file__).resolve().parents[2]
 

@@ -24,56 +24,39 @@ Note Nerds
 
 ## Subtitle
 
-Notes without page limits
+Open it and start writing
 
 ## Promotional text
 
-Write, sketch, plan, and organize ideas on a flexible canvas with Apple Pencil tools, paper styles, layers, folders, handwriting search, and private iCloud sync.
+Open Note Nerds and start writing. A calm canvas, familiar paper, and simple tools keep your thoughts moving without setup, clutter, or busywork.
 
 ## Description
 
-Note Nerds gives you room to write, sketch, plan, and think on iPhone and iPad.
+Open a notebook and start writing.
 
-Start with the paper you want, then use the whole canvas. Write naturally with Apple Pencil, type beside drawings, add images and PDFs, and arrange each page around the way you think.
+Note Nerds keeps the page clear and the tools close. Write down a thought before it slips away. Sketch the shape of an idea. Type when words come faster that way. The app has no ads, feeds, or setup screens competing for your attention.
 
-WRITE AND DRAW YOUR WAY
+A PAGE THAT STAYS SIMPLE
 
-• Draw with pen, pencil, marker, highlighter, brush, and calligraphy tools
-• Choose precise colors and line widths
-• Type and edit text directly on the canvas
-• Pick blank, cream, grid, dot, legal, daily planner, and weekly planner paper
-• Add, duplicate, reorder, and change canvases
-• Use layers to separate ideas
-• Select, move, resize, rotate, copy, and paste your work
+Write by hand with Apple Pencil, type, sketch, or move between them on the same canvas. Choose blank, cream, grid, dot, legal, daily planner, or weekly planner paper. Pick a pen, width, and color, then get back to the thought.
 
-KEEP YOUR LIBRARY ORDERED
+The canvas gives you room without making you manage it. Layers, shapes, and selection tools are ready when you need them.
 
-• Group notebooks in nested folders
-• Drag notebooks between folders or into Trash
-• Mark important notebooks as favorites
-• Browse recent work
-• Search typed text and recognized handwriting
+FIND IT WHEN YOU NEED IT
 
-BRING YOUR WORK WITH YOU
+Keep notebooks in folders and mark the important ones as favorites. Search typed text and handwriting when you need to return to an old thought.
 
-• Import PDFs and images
-• Export notebooks as PDF, PNG, or editable Note Nerds files
-• Share through the standard iPhone and iPad share sheet
-• Keep your library updated through your private iCloud account
-• Send restorable notebook copies to a Notion workspace you connect
-• Review and restore notebooks from Notion
+BRING IN WHAT MATTERS
 
-MADE FOR APPLE DEVICES
+Add PDFs and images to a page. Export your work as a PDF, PNG, or editable Note Nerds file. Private iCloud sync keeps your notebooks available across your Apple devices. Optional Notion sync sends restorable copies directly to the workspace you choose.
 
-Note Nerds supports Apple Pencil on iPad, touch input on iPhone and iPad, keyboard shortcuts, system fonts, drag and drop, VoiceOver, Dynamic Type, and Reduce Motion.
+PRIVACY WITHOUT EXTRA WORK
 
-YOUR NOTES STAY YOURS
-
-Note Nerds has no ads, analytics SDK, or tracking. Notes are stored on your device and in your private iCloud account when sync is available. Optional Notion sync sends notebook copies directly to the workspace you connect.
+Note Nerds has no ads, analytics SDK, or tracking. Your notes stay on your device and in your private iCloud account when sync is available.
 
 ## Keywords
 
-notes,handwriting,sketch,pencil,notebook,canvas,journal,paper,drawing,planner,ink,pdf
+notes,handwriting,notebook,pencil,canvas,journal,paper,planner,sketch,drawing,focus,ideas
 
 ## First update release notes
 
@@ -96,6 +79,12 @@ https://github.com/CoolAssPuppy/notenerds/blob/main/docs/privacy-policy.md
 ## Copyright
 
 2026 Prashant Sridharan
+
+## Messaging direction
+
+Note Nerds is about getting a thought onto the page with as little effort as possible. Marketing should lead with opening a notebook and writing. Paper, tools, folders, search, sync, and export support that promise and should never become the main message.
+
+Keep the language calm, short, and plain. Describe familiar writing before advanced editing. Avoid long feature inventories, technical architecture, productivity claims, and comparisons with other products.
 
 ## App information outside the upload command
 

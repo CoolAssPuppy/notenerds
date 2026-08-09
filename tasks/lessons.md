@@ -1,5 +1,7 @@
 # Lessons
 
+- Lead all Note Nerds marketing with simplicity: open a notebook, write the thought, and continue. Present tools, organization, and sync as quiet support for writing. Never lead with a feature inventory.
+- Use a restrained paper-notebook tone for Note Nerds. Emphasize calm, focus, familiar writing, and the absence of setup or clutter. Keep every sentence original and never name the reference brand.
 - Treat App Store versions that differ only by trailing zeroes, such as `1.0` and `1.0.0`, as the same release when reading or updating metadata.
 - Apple does not allow `whatsNew` on an app’s first release. Keep first-update notes in the metadata document and send later release notes through the version release command.
 - App Store metadata writes require an explicit upload flag, a preview of changed fields, and a read-back check after Apple accepts the update.

@@ -1,5 +1,21 @@
 # Current work
 
+## Make simplicity the App Store message
+
+- [x] Study the current public messaging of the reference paper-notebook product.
+- [x] Add a failing check for the approved “open and write” message.
+- [x] Rewrite the subtitle, promotional text, description, and keywords around simplicity.
+- [x] Verify Apple’s field limits and run the release-tool checks.
+- [x] Upload the revised metadata and read it back from App Store Connect.
+- [x] Commit and push the messaging revision.
+
+### Review
+
+- The subtitle is now “Open it and start writing.” The promotional text and description lead with immediate writing, a calm page, and simple tools.
+- The description is shorter and groups paper, organization, import, sync, and privacy around the writing experience instead of listing every feature.
+- The tracked messaging direction now requires simplicity, familiar writing, and quiet support from secondary tools.
+- App Store Connect accepted the revised subtitle, promotional text, description, and keywords. The upload command read them back successfully.
+
 ## Publish App Store metadata locally
 
 - [x] Rename the existing App Store listing to `docs/app-store-metadata.md` and update its stale product claims.

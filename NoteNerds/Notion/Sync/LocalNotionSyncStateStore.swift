@@ -48,8 +48,12 @@ actor LocalNotionSyncStateStore: NotionSyncStateStoring {
         }
         guard state.bindings.count <= maximumRecordCount,
               state.queue.count <= maximumRecordCount,
+              state.meetingLinks.count <= maximumRecordCount,
               Set(state.bindings.map(\.notebookID)).count == state.bindings.count,
-              Set(state.queue.map(\.notebookID)).count == state.queue.count else {
+              Set(state.queue.map(\.notebookID)).count == state.queue.count,
+              Set(state.meetingLinks.map {
+                  "\($0.meetingBlockID):\($0.notebookID)"
+              }).count == state.meetingLinks.count else {
             throw NotionSyncStateError.invalidState
         }
     }

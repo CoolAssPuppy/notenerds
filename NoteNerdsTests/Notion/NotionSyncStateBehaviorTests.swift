@@ -118,10 +118,118 @@ final class NotionSyncStateBehaviorTests: XCTestCase {
         XCTAssertTrue(changedNeedsSync)
     }
 
+    func testMeetingLinksRoundTripWithoutContent() async throws {
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = LocalNotionSyncStateStore(directoryURL: directory)
+        let link = NotionMeetingNotebookLink(
+            meetingBlockID: "11111111-1111-1111-1111-111111111111",
+            notebookID: "22222222-2222-2222-2222-222222222222",
+            notebookPageID: "33333333-3333-3333-3333-333333333333",
+            linkBlockID: "44444444-4444-4444-4444-444444444444",
+            createdAt: Date(timeIntervalSince1970: 100),
+            wasRemovedByUser: false
+        )
+        try await store.save(NotionSyncState(meetingLinks: [link]))
+
+        let restored = try await store.load()
+
+        XCTAssertEqual(restored?.schemaVersion, NotionSyncState.currentSchemaVersion)
+        XCTAssertEqual(restored?.meetingLinks, [link])
+    }
+
+    func testVersionOneStateMigratesWithAnEmptyMeetingLinkList() async throws {
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let legacy = LegacyNotionSyncState(
+            schemaVersion: 1,
+            workspaceID: "workspace",
+            destination: nil,
+            manifestPageID: nil,
+            manifestRootBlockID: nil,
+            manifestContentHash: nil,
+            bindings: [],
+            queue: []
+        )
+        let encoder = PropertyListEncoder()
+        encoder.outputFormat = .binary
+        try encoder.encode(legacy).write(
+            to: directory.appending(path: "notion-sync-state.plist")
+        )
+
+        let restored = try await LocalNotionSyncStateStore(directoryURL: directory).load()
+
+        XCTAssertEqual(restored?.schemaVersion, 2)
+        XCTAssertEqual(restored?.workspaceID, "workspace")
+        XCTAssertTrue(try XCTUnwrap(restored).meetingLinks.isEmpty)
+    }
+
+    func testRegistryPreventsDuplicateMeetingLinksAndRemembersManualRemoval() async throws {
+        let registry = NotionSyncRegistry(store: InMemoryNotionSyncStateStore())
+        let link = NotionMeetingNotebookLink(
+            meetingBlockID: "55555555-5555-5555-5555-555555555555",
+            notebookID: "66666666-6666-6666-6666-666666666666",
+            notebookPageID: "77777777-7777-7777-7777-777777777777",
+            linkBlockID: "88888888-8888-8888-8888-888888888888",
+            createdAt: Date(timeIntervalSince1970: 200),
+            wasRemovedByUser: false
+        )
+
+        try await registry.recordMeetingLink(link)
+        try await registry.recordMeetingLink(link)
+        try await registry.markMeetingLinkRemoved(
+            meetingBlockID: link.meetingBlockID,
+            notebookID: link.notebookID
+        )
+        let state = try await registry.snapshot()
+
+        XCTAssertEqual(state.meetingLinks.count, 1)
+        XCTAssertTrue(try XCTUnwrap(state.meetingLinks.first).wasRemovedByUser)
+    }
+
+    func testChangingWorkspaceClearsNotebookAndMeetingAssociations() async throws {
+        let link = NotionMeetingNotebookLink(
+            meetingBlockID: "11111111-1111-1111-1111-111111111111",
+            notebookID: "22222222-2222-2222-2222-222222222222",
+            notebookPageID: "33333333-3333-3333-3333-333333333333",
+            linkBlockID: "44444444-4444-4444-4444-444444444444",
+            createdAt: DomainFixtures.fixedDate,
+            wasRemovedByUser: false
+        )
+        let registry = NotionSyncRegistry(store: InMemoryNotionSyncStateStore(state: NotionSyncState(
+            workspaceID: "old",
+            meetingLinks: [link]
+        )))
+
+        try await registry.setDestination(
+            workspaceID: "new",
+            destination: NotionDestination(
+                databaseID: "55555555-5555-5555-5555-555555555555",
+                dataSourceID: "66666666-6666-6666-6666-666666666666"
+            ),
+            manifestPageID: nil
+        )
+        let state = try await registry.snapshot()
+
+        XCTAssertTrue(state.meetingLinks.isEmpty)
+    }
+
     private func temporaryDirectory() -> URL {
         FileManager.default.temporaryDirectory
             .appending(path: "NoteNerds-Notion-State-\(UUID().uuidString)", directoryHint: .isDirectory)
     }
+}
+
+private struct LegacyNotionSyncState: Codable {
+    let schemaVersion: Int
+    let workspaceID: String?
+    let destination: NotionDestination?
+    let manifestPageID: String?
+    let manifestRootBlockID: String?
+    let manifestContentHash: String?
+    let bindings: [NotionNotebookBinding]
+    let queue: [NotionSyncQueueItem]
 }
 
 private actor InMemoryNotionSyncStateStore: NotionSyncStateStoring {

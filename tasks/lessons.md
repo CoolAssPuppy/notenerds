@@ -77,3 +77,4 @@
 - When a background operation is working but takes time, keep its normal settings and status visible. Replacing the whole section with a spinner makes healthy work look frozen.
 - Synced deletion rules must distinguish recoverable app Trash from permanent deletion. Keep the remote item while it can be restored in the app, then remove it from the remote destination after Empty Trash.
 - Treat writing, note previews, and reopening saved notes as one release gate. Passing isolated persistence and Pencil callback tests is insufficient when the real library-to-editor flow still fails.
+- Decode external API query responses from the smallest documented example. If Notion omits a meeting parent, retrieve the meeting block before inserting a related link.

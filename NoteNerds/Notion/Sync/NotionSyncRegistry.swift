@@ -82,6 +82,44 @@ actor NotionSyncRegistry {
         try await restoreIfNeeded()
         state.bindings.removeAll { $0.notebookID == notebookID }
         state.queue.removeAll { $0.notebookID == notebookID }
+        state.meetingLinks.removeAll { $0.notebookID == notebookID }
+        try await store.save(state)
+    }
+
+    func recordMeetingLink(_ link: NotionMeetingNotebookLink) async throws {
+        try Self.validateNotebookID(link.notebookID)
+        try Self.validateIdentifier(link.meetingBlockID)
+        try Self.validateIdentifier(link.notebookPageID)
+        try Self.validateIdentifier(link.linkBlockID)
+        try await restoreIfNeeded()
+        state.meetingLinks.removeAll {
+            $0.meetingBlockID == link.meetingBlockID && $0.notebookID == link.notebookID
+        }
+        state.meetingLinks.append(link)
+        state.meetingLinks.sort {
+            ($0.meetingBlockID, $0.notebookID) < ($1.meetingBlockID, $1.notebookID)
+        }
+        try await store.save(state)
+    }
+
+    func markMeetingLinkRemoved(
+        meetingBlockID: String,
+        notebookID: String
+    ) async throws {
+        try Self.validateNotebookID(notebookID)
+        try Self.validateIdentifier(meetingBlockID)
+        try await restoreIfNeeded()
+        guard let index = state.meetingLinks.firstIndex(where: {
+            $0.meetingBlockID == meetingBlockID && $0.notebookID == notebookID
+        }) else { return }
+        state.meetingLinks[index].wasRemovedByUser = true
+        try await store.save(state)
+    }
+
+    func removeMeetingLinks(notebookID: String) async throws {
+        try Self.validateNotebookID(notebookID)
+        try await restoreIfNeeded()
+        state.meetingLinks.removeAll { $0.notebookID == notebookID }
         try await store.save(state)
     }
 
@@ -111,6 +149,7 @@ actor NotionSyncRegistry {
         state.manifestPageID = manifestPageID
         if didChange {
             state.bindings.removeAll()
+            state.meetingLinks.removeAll()
             state.manifestRootBlockID = nil
             state.manifestContentHash = nil
         }
@@ -134,6 +173,10 @@ actor NotionSyncRegistry {
     }
 
     private static func validateNotebookID(_ id: String) throws {
+        guard UUID(uuidString: id) != nil else { throw NotionAPIError.invalidIdentifier }
+    }
+
+    private static func validateIdentifier(_ id: String) throws {
         guard UUID(uuidString: id) != nil else { throw NotionAPIError.invalidIdentifier }
     }
 }

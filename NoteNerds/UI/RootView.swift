@@ -41,14 +41,55 @@ struct RootView: View {
         }
         .onReceive(model.$library.dropFirst()) { library in
             notion.scheduleAutomaticSync(library)
+            notion.updateOpenNotebookLibrary(library)
+        }
+        .onChange(of: model.selectedNotebookID, initial: true) { _, notebookID in
+            if let notebookID {
+                notion.openNotebook(notebookID, library: model.library)
+            } else {
+                notion.closeNotebookMeetingLinks()
+            }
         }
         .task {
             await model.restoreLibrary()
             await notion.restore(library: model.library)
+            if let notebookID = model.selectedNotebookID {
+                notion.openNotebook(notebookID, library: model.library)
+            }
+        }
+        .confirmationDialog(
+            "Choose the active Notion meeting",
+            isPresented: meetingChoiceBinding,
+            titleVisibility: .visible
+        ) {
+            ForEach(notion.meetingChoices) { meeting in
+                Button(meeting.title.isEmpty ? "Untitled meeting" : meeting.title) {
+                    notion.chooseMeeting(meeting)
+                }
+            }
+            Button("Not now", role: .cancel) { notion.dismissMeetingChoices() }
+        }
+        .overlay(alignment: .top) {
+            if let message = notion.meetingLinkMessage {
+                Text(message)
+                    .font(.callout)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(.regularMaterial, in: Capsule())
+                    .padding(.top, 12)
+                    .accessibilityIdentifier("Notion meeting link confirmation")
+            }
         }
     }
 
     private var errorBinding: Binding<Bool> {
         Binding(get: { model.presentedError != nil }, set: { if !$0 { model.presentedError = nil } })
+    }
+
+    private var meetingChoiceBinding: Binding<Bool> {
+        Binding(
+            get: { !notion.meetingChoices.isEmpty },
+            set: { if !$0 { notion.dismissMeetingChoices() } }
+        )
     }
 }

@@ -74,6 +74,7 @@ final class NotionEndToEndIntegrationTests: XCTestCase {
     func testFullPublishTrashesBoundPageForNotebookMissingAfterEmptyTrash() async throws {
         let notebookID = "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD".lowercased()
         let pageID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"
+        let meetingLinks = DeletionMeetingCoordinator()
         let destination = NotionDestination(
             databaseID: "11111111-1111-1111-1111-111111111111",
             dataSourceID: "22222222-2222-2222-2222-222222222222"
@@ -100,13 +101,19 @@ final class NotionEndToEndIntegrationTests: XCTestCase {
         )))
         let notion = LocalNotionService(manifestPageID: "33333333-3333-3333-3333-333333333333")
 
-        let report = try await NotionLibraryPublisher(api: notion, registry: registry)
+        let report = try await NotionLibraryPublisher(
+            api: notion,
+            registry: registry,
+            meetingLinkCoordinator: meetingLinks
+        )
             .publish(LibraryState())
         let state = try await registry.snapshot()
         let trashedPageIDs = await notion.trashedNotebookPageIDs()
+        let cleanedNotebookIDs = await meetingLinks.cleanedNotebookIDs
 
         XCTAssertEqual(report.deletedNotebookCount, 1)
         XCTAssertEqual(trashedPageIDs, [pageID])
+        XCTAssertEqual(cleanedNotebookIDs, [notebookID])
         XCTAssertNil(state.binding(notebookID: notebookID))
         XCTAssertTrue(state.queue.isEmpty)
     }
@@ -202,6 +209,14 @@ final class NotionEndToEndIntegrationTests: XCTestCase {
         XCTAssertEqual(restored.notebook(id: notebook.id), notebook)
         XCTAssertEqual(restored.asset(id: assetID), asset)
     }
+}
+
+private actor DeletionMeetingCoordinator: NotionMeetingLinkCoordinating {
+    private(set) var cleanedNotebookIDs: [String] = []
+
+    func check(notebookID: String) -> NotionMeetingLinkResult { .noActiveMeeting }
+    func link(meetingID: String, notebookID: String) -> NotionMeetingLinkResult { .noActiveMeeting }
+    func removeLinks(notebookID: String) { cleanedNotebookIDs.append(notebookID) }
 }
 
 private actor EndToEndStateStore: NotionSyncStateStoring {

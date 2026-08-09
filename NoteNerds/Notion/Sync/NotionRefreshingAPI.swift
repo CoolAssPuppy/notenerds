@@ -173,3 +173,49 @@ extension NotionRefreshingAPI: NotionDestinationProviding {
         }
     }
 }
+
+extension NotionRefreshingAPI: NotionMeetingLinkAPI {
+    func queryMeetingNotes() async throws -> [NotionMeetingNote] {
+        try await withRefresh { api in
+            guard let meetingAPI = api as? any NotionMeetingLinkAPI else {
+                throw NotionAPIError.invalidResponse
+            }
+            return try await meetingAPI.queryMeetingNotes()
+        }
+    }
+
+    func listNotebookLinks(parentBlockID: String) async throws -> [NotionNotebookLinkBlock] {
+        try await withRefresh { api in
+            guard let meetingAPI = api as? any NotionMeetingLinkAPI else {
+                throw NotionAPIError.invalidResponse
+            }
+            return try await meetingAPI.listNotebookLinks(parentBlockID: parentBlockID)
+        }
+    }
+
+    func insertNotebookLink(
+        parentBlockID: String,
+        afterBlockID: String,
+        notebookPageID: String
+    ) async throws -> String {
+        try await withRefresh { api in
+            guard let meetingAPI = api as? any NotionMeetingLinkAPI else {
+                throw NotionAPIError.invalidResponse
+            }
+            return try await meetingAPI.insertNotebookLink(
+                parentBlockID: parentBlockID,
+                afterBlockID: afterBlockID,
+                notebookPageID: notebookPageID
+            )
+        }
+    }
+
+    func trashMeetingLink(blockID: String) async throws {
+        try await withRefresh { api in
+            guard let meetingAPI = api as? any NotionMeetingLinkAPI else {
+                throw NotionAPIError.invalidResponse
+            }
+            try await meetingAPI.trashMeetingLink(blockID: blockID)
+        }
+    }
+}

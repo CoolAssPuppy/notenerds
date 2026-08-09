@@ -21,10 +21,16 @@
 - [x] Confirm that Notion API `2026-03-11` can query active AI Meeting Notes.
 - [x] Map the requested behavior to the current Note Nerds sync code.
 - [x] Define link placement, duplicate prevention, privacy rules, failure behavior, and tests.
+- [x] Add failing API contract tests for meeting queries, link insertion, permission failures, and link removal.
+- [x] Add failing persistence and coordinator tests for duplicate prevention, relaunch, several meetings, and manual link deletion.
+- [x] Add failing lifecycle tests for notebook changes, foreground polling, connection changes, and cancellation.
+- [x] Add failing permanent-deletion tests while keeping recoverable Trash unchanged.
+- [x] Implement API models, durable link state, the meeting-link coordinator, editor lifecycle, chooser, and Settings permission state.
+- [x] Run focused tests, the complete behavior suite, strict lint, and release checks.
+- [x] Send the completed feature through TestFlight, then commit and push it.
 - [ ] Run a live API check with the existing public OAuth connection while AI Meeting Notes is recording.
 - [ ] Confirm whether the meeting-note parent must be shared with the Note Nerds connection before insertion.
-- [ ] Implement the feature through failing behavior and live integration tests.
-- [ ] Verify one meeting, several open notebooks, app relaunch, manual link deletion, and permanent notebook deletion.
+- [x] Verify one meeting, several open notebooks, app relaunch, manual link deletion, and permanent notebook deletion through behavior tests.
 
 ### Research result
 
@@ -36,6 +42,16 @@
 - Note Nerds does not need transcript text or audio. It stores only identifiers and link state.
 - The public OAuth connection already has the required read and insert capabilities. A live check must confirm content access for AI Meeting Notes pages outside the selected Note Nerds destination.
 - The complete feature brief is in `docs/notion-ai-meeting-note-links.md`.
+
+### Implementation review
+
+- Opening a notebook publishes it when needed, then checks for an active Notion AI meeting every 30 seconds while the app remains active.
+- One active meeting links automatically. Several meetings open a chooser. A recording paused for up to five minutes still qualifies.
+- Saved and remote checks prevent duplicate links. A link deleted in Notion stays deleted.
+- App Trash keeps the link. Empty Trash removes the saved link block before removing the notebook page.
+- State version 1 migrates to version 2 with an empty meeting-link list. No transcript text or audio is saved.
+- The complete behavior suite, strict SwiftLint, release-script tests, and diff checks pass. Live Notion recording access remains to be checked on the connected iPad.
+- TestFlight build 10 uploaded successfully and Apple marked it valid.
 
 ## Remaining original product-specification acceptance
 

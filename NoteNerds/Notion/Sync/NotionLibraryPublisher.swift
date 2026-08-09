@@ -45,10 +45,12 @@ final class NotionLibraryPublisher: NotionLibraryPublishing {
     private let manifestCoordinator: NotionManifestSyncCoordinator
     private let payloadBuilder: NotionNotebookPayloadBuilder
     private let now: @Sendable () -> Date
+    private let meetingLinkCoordinator: (any NotionMeetingLinkCoordinating)?
 
     init(
         api: any NotionSyncAPI,
         registry: NotionSyncRegistry,
+        meetingLinkCoordinator: (any NotionMeetingLinkCoordinating)? = nil,
         now: @escaping @Sendable () -> Date = Date.init
     ) {
         self.api = api
@@ -56,6 +58,7 @@ final class NotionLibraryPublisher: NotionLibraryPublishing {
         notebookCoordinator = NotionSyncCoordinator(api: api, registry: registry, now: now)
         manifestCoordinator = NotionManifestSyncCoordinator(api: api, registry: registry)
         payloadBuilder = NotionNotebookPayloadBuilder()
+        self.meetingLinkCoordinator = meetingLinkCoordinator
         self.now = now
     }
 
@@ -115,6 +118,7 @@ final class NotionLibraryPublisher: NotionLibraryPublishing {
             !localNotebookIDs.contains($0.notebookID)
         }
         for binding in missingBindings {
+            try await meetingLinkCoordinator?.removeLinks(notebookID: binding.notebookID)
             do {
                 try await api.trashNotebookPage(pageID: binding.pageID)
             } catch NotionAPIError.httpStatus(404) {

@@ -1,6 +1,6 @@
 # Notion AI meeting note links
 
-Status: Research complete. Live permission check and implementation remain.
+Status: Implemented. A live recording and permission check remain.
 
 Date: August 9, 2026
 
@@ -125,18 +125,17 @@ sequenceDiagram
     API-->>Meeting: Linked Note Nerds notebook
 ```
 
-## Current code map
+## Implemented code map
 
-| Area | Current file | Required change |
+| Area | File | Implementation |
 | --- | --- | --- |
-| API version and requests | `NoteNerds/Notion/API/NotionAPIClient.swift` | Add meeting-note query, block retrieval, parent-child listing, insertion, and link deletion requests. |
-| API response types | `NoteNerds/Notion/API/NotionAPIModels.swift` | Add meeting status, parent, recording window, and link-block types. |
-| Durable state | `NoteNerds/Notion/Sync/NotionSyncState.swift` | Move to schema version 2 and persist meeting-to-notebook link records. |
-| Sync registry | `NoteNerds/Notion/Sync/NotionSyncRegistry.swift` | Add idempotent association lookup, save, removed-by-user, and notebook cleanup operations. |
-| Feature coordinator | New `NoteNerds/Notion/Sync/NotionMeetingLinkCoordinator.swift` | Choose eligible meetings, confirm the notebook binding, prevent duplicates, insert links, and classify failures. |
-| App state | `NoteNerds/Notion/UI/NotionIntegrationModel.swift` | Start and stop foreground detection, provide chooser state, and expose a permission status. |
-| Editor lifecycle | `NoteNerds/UI/RootView.swift` and notebook editor lifecycle | Send open notebook and scene activity changes to the integration model. |
-| Permanent deletion | Current Notion reconciliation path | Trash saved meeting link blocks when Empty Trash removes the notebook page. |
+| API requests and response types | `NoteNerds/Notion/API/NotionAPIClient+MeetingLinks.swift` | Queries meetings, retrieves omitted parent data, lists and inserts notebook links, and removes saved links. |
+| Durable state | `NoteNerds/Notion/Sync/NotionSyncState.swift` | Schema version 2 saves meeting-to-notebook links and migrates version 1 data. |
+| Sync registry | `NoteNerds/Notion/Sync/NotionSyncRegistry.swift` | Saves associations, prevents duplicates, remembers manual removal, and cleans up notebook records. |
+| Feature coordinator | `NoteNerds/Notion/Sync/NotionMeetingLinkCoordinator.swift` | Selects eligible meetings, prevents duplicates, inserts links, and classifies permission failures. |
+| App state | `NoteNerds/Notion/UI/NotionIntegrationModel+MeetingLinks.swift` | Polls while the editor is active, stops when it closes, and provides chooser and permission state. |
+| Editor interface | `NoteNerds/UI/RootView.swift` | Tracks the open notebook, presents the meeting chooser, and shows a short success message. |
+| Permanent deletion | `NoteNerds/Notion/Sync/NotionLibraryPublisher.swift` | Removes recorded meeting links after Empty Trash permanently removes a notebook. |
 
 The feature should stay separate from `NotionSyncCoordinator`. Notebook publishing and meeting-note linking have different triggers and retry rules, while both use the same API client, credential refresh wrapper, and sync registry.
 
@@ -184,8 +183,8 @@ The feature should stay separate from `NotionSyncCoordinator`. Notebook publishi
 6. Permanent-deletion cleanup.
 7. Full simulator, physical iPad, and connected-workspace acceptance.
 
-## Decisions needed before implementation
+## Implemented decisions
 
-1. Confirm whether a deleted Notion link should remain deleted. The recommendation is yes.
-2. Confirm whether a paused recording counts as active. The recommendation is to include it for five minutes and show it in the chooser.
-3. Confirm the setup wording if the meeting-notes parent must be shared with Note Nerds.
+1. A link deleted in Notion remains deleted. Note Nerds records that choice and does not recreate it.
+2. A paused recording counts as active for five minutes and appears in the chooser.
+3. A `403` response adds Settings instructions to share the AI Meeting Notes page or its parent with Note Nerds. The live permission check will confirm the exact Notion sharing step.

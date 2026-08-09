@@ -27,8 +27,17 @@ struct NotionSyncQueueItem: Codable, Equatable, Sendable {
     var lastFailure: NotionSyncFailure?
 }
 
+struct NotionMeetingNotebookLink: Codable, Equatable, Sendable {
+    let meetingBlockID: String
+    let notebookID: String
+    let notebookPageID: String
+    let linkBlockID: String
+    let createdAt: Date
+    var wasRemovedByUser: Bool
+}
+
 struct NotionSyncState: Codable, Equatable, Sendable {
-    static let currentSchemaVersion = 1
+    static let currentSchemaVersion = 2
 
     let schemaVersion: Int
     var workspaceID: String?
@@ -38,6 +47,7 @@ struct NotionSyncState: Codable, Equatable, Sendable {
     var manifestContentHash: String?
     var bindings: [NotionNotebookBinding]
     var queue: [NotionSyncQueueItem]
+    var meetingLinks: [NotionMeetingNotebookLink]
 
     init(
         schemaVersion: Int = currentSchemaVersion,
@@ -47,7 +57,8 @@ struct NotionSyncState: Codable, Equatable, Sendable {
         manifestRootBlockID: String? = nil,
         manifestContentHash: String? = nil,
         bindings: [NotionNotebookBinding] = [],
-        queue: [NotionSyncQueueItem] = []
+        queue: [NotionSyncQueueItem] = [],
+        meetingLinks: [NotionMeetingNotebookLink] = []
     ) {
         self.schemaVersion = schemaVersion
         self.workspaceID = workspaceID
@@ -57,10 +68,52 @@ struct NotionSyncState: Codable, Equatable, Sendable {
         self.manifestContentHash = manifestContentHash
         self.bindings = bindings
         self.queue = queue
+        self.meetingLinks = meetingLinks
     }
 
     func binding(notebookID: String) -> NotionNotebookBinding? {
         bindings.first { $0.notebookID == notebookID }
+    }
+
+    func meetingLink(
+        meetingBlockID: String,
+        notebookID: String
+    ) -> NotionMeetingNotebookLink? {
+        meetingLinks.first {
+            $0.meetingBlockID == meetingBlockID && $0.notebookID == notebookID
+        }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion
+        case workspaceID
+        case destination
+        case manifestPageID
+        case manifestRootBlockID
+        case manifestContentHash
+        case bindings
+        case queue
+        case meetingLinks
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let storedVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
+        guard storedVersion == 1 || storedVersion == Self.currentSchemaVersion else {
+            throw NotionSyncStateError.unsupportedSchema
+        }
+        schemaVersion = Self.currentSchemaVersion
+        workspaceID = try container.decodeIfPresent(String.self, forKey: .workspaceID)
+        destination = try container.decodeIfPresent(NotionDestination.self, forKey: .destination)
+        manifestPageID = try container.decodeIfPresent(String.self, forKey: .manifestPageID)
+        manifestRootBlockID = try container.decodeIfPresent(String.self, forKey: .manifestRootBlockID)
+        manifestContentHash = try container.decodeIfPresent(String.self, forKey: .manifestContentHash)
+        bindings = try container.decodeIfPresent([NotionNotebookBinding].self, forKey: .bindings) ?? []
+        queue = try container.decodeIfPresent([NotionSyncQueueItem].self, forKey: .queue) ?? []
+        meetingLinks = try container.decodeIfPresent(
+            [NotionMeetingNotebookLink].self,
+            forKey: .meetingLinks
+        ) ?? []
     }
 }
 

@@ -42,6 +42,9 @@ final class NotionIntegrationModel: ObservableObject {
     @Published private(set) var lastSyncSummary: String?
     @Published private(set) var restoreCandidates: [NotionRestoreCandidate] = []
     @Published private(set) var syncedNotebookIDs: Set<String> = []
+    @Published var meetingChoices: [NotionMeetingNote] = []
+    @Published var meetingLinkMessage: String?
+    @Published var isMeetingLinkPermissionRequired = false
 
     private let isConfigured: Bool
     private let connectionManager: any NotionConnectionManaging
@@ -50,12 +53,18 @@ final class NotionIntegrationModel: ObservableObject {
     private let publisher: (any NotionLibraryPublishing)?
     private let restorer: (any NotionLibraryRestoring)?
     private let automaticSyncDelay: Duration
+    let meetingLinkCoordinator: (any NotionMeetingLinkCoordinating)?
+    let meetingPollInterval: Duration
     private var connection: NotionStoredConnection?
     private var destinationProvider: (any NotionDestinationProviding)?
     private var pendingAutomaticSync: LibraryState?
     private var automaticSyncInFlight: LibraryState?
     private var automaticSyncTask: Task<Void, Never>?
     private var automaticSyncGeneration = 0
+    var meetingLinkTask: Task<Void, Never>?
+    var meetingNotebookID: NotebookID?
+    var meetingLibrary: LibraryState?
+    var dismissedMeetingIDs: Set<String> = []
 
     var workspaceName: String? {
         connection?.credentials.workspaceName
@@ -70,7 +79,9 @@ final class NotionIntegrationModel: ObservableObject {
         registry: NotionSyncRegistry,
         publisher: (any NotionLibraryPublishing)? = nil,
         restorer: (any NotionLibraryRestoring)? = nil,
-        automaticSyncDelay: Duration = .seconds(2)
+        automaticSyncDelay: Duration = .seconds(2),
+        meetingLinkCoordinator: (any NotionMeetingLinkCoordinating)? = nil,
+        meetingPollInterval: Duration = .seconds(30)
     ) {
         self.isConfigured = isConfigured
         self.connectionManager = connectionManager
@@ -79,6 +90,8 @@ final class NotionIntegrationModel: ObservableObject {
         self.publisher = publisher
         self.restorer = restorer
         self.automaticSyncDelay = automaticSyncDelay
+        self.meetingLinkCoordinator = meetingLinkCoordinator
+        self.meetingPollInterval = meetingPollInterval
         state = isConfigured ? .disconnected : .unavailable
     }
 
@@ -149,11 +162,13 @@ final class NotionIntegrationModel: ObservableObject {
             return
         }
         await sync(library)
+        resumeMeetingLinks()
     }
 
     func disconnect() async {
         guard isConfigured else { return }
         state = .disconnecting
+        closeNotebookMeetingLinks()
         failureMessage = nil
         do {
             try await connectionManager.disconnect()

@@ -51,6 +51,22 @@ final class NotionAuthenticatedAPIBehaviorTests: XCTestCase {
         XCTAssertEqual(refreshCount, 1)
     }
 
+    func testMeetingQueryUsesTheSameTokenRefreshPath() async throws {
+        let store = AuthCredentialStore(connection: connection(access: "expired"))
+        let recorder = TokenRecorder()
+        let refresh = RefreshRecorder(store: store, result: connection(access: "rotated"))
+        let api = NotionRefreshingAPI(
+            credentialStore: store,
+            refresh: { try await refresh.run() },
+            apiFactory: { token in TokenAwareSyncAPI(token: token, recorder: recorder) }
+        )
+
+        _ = try await api.queryMeetingNotes()
+        let tokens = await recorder.tokens
+
+        XCTAssertEqual(tokens, ["expired", "rotated"])
+    }
+
     private func connection(access: String) -> NotionStoredConnection {
         NotionStoredConnection(
             credentials: NotionOAuthCredentials(
@@ -120,7 +136,7 @@ private actor TokenRecorder {
     }
 }
 
-private struct TokenAwareSyncAPI: NotionSyncAPI {
+private struct TokenAwareSyncAPI: NotionSyncAPI, NotionMeetingLinkAPI {
     let token: String
     let recorder: TokenRecorder
 
@@ -168,5 +184,28 @@ private struct TokenAwareSyncAPI: NotionSyncAPI {
     ) async throws -> String {
         try await recorder.record(token)
         return "33333333-3333-3333-3333-333333333333"
+    }
+
+    func queryMeetingNotes() async throws -> [NotionMeetingNote] {
+        try await recorder.record(token)
+        return []
+    }
+
+    func listNotebookLinks(parentBlockID: String) async throws -> [NotionNotebookLinkBlock] {
+        try await recorder.record(token)
+        return []
+    }
+
+    func insertNotebookLink(
+        parentBlockID: String,
+        afterBlockID: String,
+        notebookPageID: String
+    ) async throws -> String {
+        try await recorder.record(token)
+        return "44444444-4444-4444-4444-444444444444"
+    }
+
+    func trashMeetingLink(blockID: String) async throws {
+        try await recorder.record(token)
     }
 }

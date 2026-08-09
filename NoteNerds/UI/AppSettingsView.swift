@@ -132,6 +132,16 @@ struct AppSettingsView: View {
             )
         }
         if notion.destination != nil {
+            LabeledContent("AI Meeting Notes links") {
+                Text(notion.isMeetingLinkPermissionRequired ? "Share meeting notes" : "Automatic")
+                    .foregroundStyle(
+                        notion.isMeetingLinkPermissionRequired ? Color.orange : Color.secondary
+                    )
+            }
+            if notion.isMeetingLinkPermissionRequired {
+                Text("Share the AI Meeting Notes page or its parent with Note Nerds in Notion.")
+                    .foregroundStyle(.secondary)
+            }
             if isSyncing {
                 progressRow("Sending notebooks to Notion")
             }

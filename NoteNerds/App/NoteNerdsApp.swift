@@ -61,7 +61,15 @@ struct NoteNerdsApp: App {
                 )
             }
         )
-        let publisher = NotionLibraryPublisher(api: refreshingAPI, registry: registry)
+        let meetingLinkCoordinator = NotionMeetingLinkCoordinator(
+            api: refreshingAPI,
+            registry: registry
+        )
+        let publisher = NotionLibraryPublisher(
+            api: refreshingAPI,
+            registry: registry,
+            meetingLinkCoordinator: meetingLinkCoordinator
+        )
         let remoteLoader = NotionRemoteLibraryLoader(api: refreshingAPI, registry: registry)
         let restorer = NotionLibraryRestoreService(loader: remoteLoader)
         return NotionIntegrationModel(
@@ -70,7 +78,8 @@ struct NoteNerdsApp: App {
             destinationProviderFactory: { _ in refreshingAPI },
             registry: registry,
             publisher: publisher,
-            restorer: restorer
+            restorer: restorer,
+            meetingLinkCoordinator: meetingLinkCoordinator
         )
     }
 
@@ -98,8 +107,10 @@ struct NoteNerdsApp: App {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 notion.resumeAutomaticSync()
+                notion.resumeMeetingLinks()
             } else {
                 notion.pauseAutomaticSync()
+                notion.pauseMeetingLinks()
                 Task { await model.checkpointDocuments() }
             }
         }

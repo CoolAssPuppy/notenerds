@@ -13,15 +13,20 @@ actor LocalNotionSyncStateStore: NotionSyncStateStoring {
     }
 
     func load() throws -> NotionSyncState? {
-        guard fileManager.fileExists(atPath: fileURL.path) else { return nil }
-        let attributes = try fileManager.attributesOfItem(atPath: fileURL.path)
-        guard let size = attributes[.size] as? NSNumber,
-              size.int64Value <= Self.maximumByteCount else {
+        let data: Data
+        do {
+            guard let storedData = try BoundedFileReader(
+                maximumByteCount: Int(Self.maximumByteCount)
+            ).readIfPresent(from: fileURL) else { return nil }
+            data = storedData
+        } catch BoundedFileReaderError.fileTooLarge {
             throw NotionSyncStateError.fileTooLarge
+        } catch BoundedFileReaderError.unsupportedFile {
+            throw NotionSyncStateError.invalidState
         }
         let state = try PropertyListDecoder().decode(
             NotionSyncState.self,
-            from: Data(contentsOf: fileURL, options: .mappedIfSafe)
+            from: data
         )
         try Self.validate(state)
         return state

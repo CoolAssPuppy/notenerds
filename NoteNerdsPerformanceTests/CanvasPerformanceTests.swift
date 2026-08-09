@@ -3,6 +3,57 @@ import UIKit
 @testable import NoteNerds
 
 final class CanvasPerformanceTests: XCTestCase {
+    func testSyncQueueAcceptsTenThousandUniqueChangesWithinHalfASecond() async {
+        let engine = SyncEngine(provider: InMemorySyncProvider())
+        let notebookID = NotebookID()
+        let changes = (0..<10_000).map { index in
+            DocumentChange(
+                id: ChangeID(),
+                notebookID: notebookID,
+                objectKey: "object-\(index)",
+                kind: .upsert,
+                payload: Data(),
+                timestamp: Date(timeIntervalSince1970: TimeInterval(index)),
+                deviceID: "performance",
+                sequence: index
+            )
+        }
+        let clock = ContinuousClock()
+        let start = clock.now
+
+        for change in changes {
+            await engine.enqueue(change)
+        }
+
+        let pendingCount = await engine.pendingChanges.count
+        XCTAssertEqual(pendingCount, changes.count)
+        XCTAssertLessThan(start.duration(to: clock.now), .milliseconds(500))
+    }
+
+    func testTrashingTenThousandNestedFoldersWithinHalfASecond() throws {
+        let date = Date(timeIntervalSince1970: 1_750_000_000)
+        var parentID: FolderID?
+        let folders = (0..<10_000).map { index in
+            let folder = Folder(
+                name: "Folder \(index)",
+                parentID: parentID,
+                createdAt: date,
+                modifiedAt: date
+            )
+            parentID = folder.id
+            return folder
+        }
+        var library = LibraryState(folders: folders)
+        let rootID = try XCTUnwrap(folders.first?.id)
+        let clock = ContinuousClock()
+        let start = clock.now
+
+        try library.moveFolderToTrash(rootID, at: date)
+
+        XCTAssertEqual(library.folders.filter { $0.trashedAt != nil }.count, folders.count)
+        XCTAssertLessThan(start.duration(to: clock.now), .milliseconds(500))
+    }
+
     func testNotionQueueWithOneThousandEntriesRestoresWithinOneTenthSecond() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appending(path: "NoteNerds-Notion-Performance-\(UUID().uuidString)", directoryHint: .isDirectory)

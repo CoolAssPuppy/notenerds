@@ -10,7 +10,13 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from ship_lib import config, diagnostics, exportplist, secrets, version, xcode
-from ship_lib.commands import _next_build, build_parser, cmd_archive, cmd_simulator
+from ship_lib.commands import (
+    _archive_and_export,
+    _next_build,
+    build_parser,
+    cmd_archive,
+    cmd_simulator,
+)
 
 
 class PipelineBehaviorTests(unittest.TestCase):
@@ -239,6 +245,46 @@ class PipelineBehaviorTests(unittest.TestCase):
             self.assertEqual(result, 0)
             archive.assert_called_once()
             upload.assert_not_called()
+
+    def test_archive_passes_the_project_to_xcode_once(self) -> None:
+        loaded = config.load(Path(__file__).resolve().parents[2])
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            dist = temporary / "dist"
+            export_dir = dist / "export"
+            project = replace(loaded.project, dist_dir=dist)
+            asc_config = replace(loaded.asc, key_dir=temporary)
+            ship_config = replace(loaded, project=project, asc=asc_config)
+            (temporary / "AuthKey_key-id.p8").touch()
+            commands: list[list[str]] = []
+
+            def record(command: list[str], **kwargs: object) -> int:
+                del kwargs
+                commands.append(command)
+                if "-exportArchive" in command:
+                    export_dir.mkdir(parents=True)
+                    (export_dir / "NoteNerds.ipa").touch()
+                return 0
+
+            with (
+                patch("ship_lib.commands.secrets.require", return_value={
+                    "NOTION_CLIENT_ID": "client-id",
+                    "NOTION_CLIENT_SECRET": "client-secret",
+                }),
+                patch("ship_lib.commands.exportplist.write_app_store", return_value=temporary / "Export.plist"),
+                patch("ship_lib.commands.xcode.run", side_effect=record),
+            ):
+                _archive_and_export(
+                    ship_config,
+                    archive_path=dist / "NoteNerds.xcarchive",
+                    export_dir=export_dir,
+                    log_path=dist / "archive.log",
+                    asc_key_id="key-id",
+                    asc_issuer_id="issuer-id",
+                )
+
+            archive_command = commands[0]
+            self.assertEqual(archive_command.count("-project"), 1)
 
 
 if __name__ == "__main__":

@@ -44,6 +44,29 @@ final class NotionSyncStateBehaviorTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: fileURL.path))
     }
 
+    func testDurableStateRejectsASymbolicLink() async throws {
+        let sourceDirectory = temporaryDirectory()
+        let linkedDirectory = temporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: sourceDirectory)
+            try? FileManager.default.removeItem(at: linkedDirectory)
+        }
+        let sourceStore = LocalNotionSyncStateStore(directoryURL: sourceDirectory)
+        try await sourceStore.save(NotionSyncState(workspaceID: "workspace"))
+        try FileManager.default.createDirectory(at: linkedDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(
+            at: linkedDirectory.appending(path: "notion-sync-state.plist"),
+            withDestinationURL: sourceDirectory.appending(path: "notion-sync-state.plist")
+        )
+
+        do {
+            _ = try await LocalNotionSyncStateStore(directoryURL: linkedDirectory).load()
+            XCTFail("Expected a symbolic-link state file to be rejected")
+        } catch {
+            XCTAssertEqual(error as? NotionSyncStateError, .invalidState)
+        }
+    }
+
     func testRegistryCoalescesNotebookWorkAndPersistsEveryMutation() async throws {
         let store = InMemoryNotionSyncStateStore()
         let registry = NotionSyncRegistry(store: store, now: { Date(timeIntervalSince1970: 200) })

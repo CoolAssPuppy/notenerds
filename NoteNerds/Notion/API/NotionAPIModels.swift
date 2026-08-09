@@ -61,12 +61,16 @@ struct URLSessionNotionTransport: NotionHTTPTransport {
         guard let http = response as? HTTPURLResponse else {
             throw NotionAPIError.invalidResponse
         }
-        let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
-        guard let size = attributes[.size] as? NSNumber,
-              size.int64Value <= Int64(maximumByteCount) else {
+        do {
+            return (
+                try BoundedFileReader(maximumByteCount: maximumByteCount).read(from: fileURL),
+                http
+            )
+        } catch BoundedFileReaderError.fileTooLarge {
             throw NotionAPIError.payloadTooLarge
+        } catch BoundedFileReaderError.unsupportedFile {
+            throw NotionAPIError.invalidResponse
         }
-        return (try Data(contentsOf: fileURL, options: .mappedIfSafe), http)
     }
 
     private static func makeSession() -> URLSession {

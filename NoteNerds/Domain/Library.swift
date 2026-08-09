@@ -325,12 +325,20 @@ struct LibraryState: Codable, Equatable, Sendable {
     }
 
     private func descendantFolderIDs(of id: FolderID) -> Set<FolderID> {
+        var childrenByParent: [FolderID: [FolderID]] = [:]
+        for folder in folderStorage.values {
+            guard let parentID = folder.parentID else { continue }
+            childrenByParent[parentID, default: []].append(folder.id)
+        }
         var descendants: Set<FolderID> = []
+        var visited: Set<FolderID> = [id]
         var pending = [id]
         while let parentID = pending.popLast() {
-            let childIDs = folderStorage.values.filter { $0.parentID == parentID }.map(\.id)
-            descendants.formUnion(childIDs)
-            pending.append(contentsOf: childIDs)
+            let unvisitedChildren = childrenByParent[parentID, default: []].filter {
+                visited.insert($0).inserted
+            }
+            descendants.formUnion(unvisitedChildren)
+            pending.append(contentsOf: unvisitedChildren)
         }
         return descendants
     }

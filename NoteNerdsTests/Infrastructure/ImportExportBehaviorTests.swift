@@ -88,6 +88,19 @@ final class ImportExportBehaviorTests: XCTestCase {
         }
     }
 
+    func testBoundedFileReaderRechecksTheBytesReturnedByTheRead() throws {
+        let fileURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        try Data(repeating: 1, count: 3).write(to: fileURL)
+        let reader = BoundedFileReader(
+            maximumByteCount: 3,
+            readData: { _ in Data(repeating: 2, count: 4) }
+        )
+
+        XCTAssertThrowsError(try reader.read(from: fileURL)) { error in
+            XCTAssertEqual(error as? BoundedFileReaderError, .fileTooLarge)
+        }
+    }
+
     func testPDFExportProducesReadablePages() throws {
         let notebook = DomainFixtures.notebook()
 

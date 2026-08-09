@@ -4,6 +4,7 @@ struct NotionAPIClient: Sendable {
     private static let baseURL = URL(string: "https://api.notion.com/v1")!
     private static let notionVersion = "2026-03-11"
     private static let maximumPaginationRequests = 1_000
+    private static let maximumResponseByteCount = 20 * 1_024 * 1_024
 
     private let accessToken: String
     let transport: any NotionHTTPTransport
@@ -89,6 +90,9 @@ struct NotionAPIClient: Sendable {
             do {
                 try await requestRateLimiter.acquire()
                 let (data, response) = try await transport.data(for: request)
+                guard data.count <= Self.maximumResponseByteCount else {
+                    throw NotionAPIError.payloadTooLarge
+                }
                 if (200..<300).contains(response.statusCode) { return data }
                 guard attempt < maximumRetryCount, Self.isRetryable(response.statusCode) else {
                     throw NotionAPIError.httpStatus(response.statusCode)
@@ -114,6 +118,9 @@ struct NotionAPIClient: Sendable {
                     for: request,
                     fromFile: uploadFileURL
                 )
+                guard data.count <= Self.maximumResponseByteCount else {
+                    throw NotionAPIError.payloadTooLarge
+                }
                 if (200..<300).contains(response.statusCode) { return data }
                 guard attempt < maximumRetryCount, Self.isRetryable(response.statusCode) else {
                     throw NotionAPIError.httpStatus(response.statusCode)

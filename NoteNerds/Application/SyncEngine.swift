@@ -10,8 +10,10 @@ actor SyncEngine {
     private let provider: any SyncProvider
     private let stateStore: (any SyncStateStore)?
     private(set) var pendingChanges: [DocumentChange] = []
+    private var pendingChangeIDs: Set<ChangeID> = []
     private(set) var pendingAssets: [AssetID: DocumentAsset] = [:]
     private(set) var receivedChanges: [DocumentChange] = []
+    private var receivedChangeIDs: Set<ChangeID> = []
     private(set) var state = SyncState.idle
     private(set) var lastFailure: SyncProviderFailure?
     private var cursor: SyncCursor?
@@ -24,7 +26,7 @@ actor SyncEngine {
 
     func enqueue(_ change: DocumentChange) async {
         await restoreStateIfNeeded()
-        guard !pendingChanges.contains(where: { $0.id == change.id }) else { return }
+        guard pendingChangeIDs.insert(change.id).inserted else { return }
         pendingChanges.append(change)
         await persistState()
     }
@@ -47,10 +49,11 @@ actor SyncEngine {
             if !pendingChanges.isEmpty {
                 try await provider.push(pendingChanges)
                 pendingChanges.removeAll(keepingCapacity: true)
+                pendingChangeIDs.removeAll(keepingCapacity: true)
             }
             let batch = try await provider.pull(since: cursor)
-            let knownIDs = Set(receivedChanges.map(\.id))
-            receivedChanges.append(contentsOf: batch.changes.filter { !knownIDs.contains($0.id) })
+            let newChanges = batch.changes.filter { receivedChangeIDs.insert($0.id).inserted }
+            receivedChanges.append(contentsOf: newChanges)
             receivedChanges.sort {
                 if $0.sequence != $1.sequence { return $0.sequence < $1.sequence }
                 if $0.timestamp != $1.timestamp { return $0.timestamp < $1.timestamp }
@@ -70,7 +73,10 @@ actor SyncEngine {
     }
 
     func drainReceivedChanges() -> [DocumentChange] {
-        defer { receivedChanges = [] }
+        defer {
+            receivedChanges = []
+            receivedChangeIDs.removeAll(keepingCapacity: true)
+        }
         return receivedChanges
     }
 
@@ -80,6 +86,7 @@ actor SyncEngine {
 
     func acknowledgeReceivedChanges(_ identifiers: Set<ChangeID>) async {
         receivedChanges.removeAll { identifiers.contains($0.id) }
+        receivedChangeIDs.subtract(identifiers)
         await persistState()
     }
 
@@ -99,10 +106,15 @@ actor SyncEngine {
             return
         }
         guard let snapshot else { return }
-        let knownChangeIDs = Set(pendingChanges.map(\.id))
-        pendingChanges.insert(contentsOf: snapshot.pendingChanges.filter { !knownChangeIDs.contains($0.id) }, at: 0)
+        pendingChangeIDs.formUnion(pendingChanges.map(\.id))
+        let restoredChanges = snapshot.pendingChanges.filter {
+            pendingChangeIDs.insert($0.id).inserted
+        }
+        pendingChanges.insert(contentsOf: restoredChanges, at: 0)
         for asset in snapshot.pendingAssets { pendingAssets[asset.id] = asset }
-        receivedChanges = snapshot.receivedChanges
+        receivedChanges = snapshot.receivedChanges.filter {
+            receivedChangeIDs.insert($0.id).inserted
+        }
         cursor = snapshot.cursor
     }
 

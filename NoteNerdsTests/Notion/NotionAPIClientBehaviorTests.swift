@@ -11,6 +11,23 @@ final class NotionAPIClientBehaviorTests: XCTestCase {
         XCTAssertEqual(configuration.urlCredentialStorage, nil)
     }
 
+    func testOrdinaryAPIResponsesHaveABoundedSize() async throws {
+        let transport = StubNotionTransport(responses: [StubNotionTransport.Response(
+            status: 200,
+            body: Data(repeating: 0, count: 20 * 1_024 * 1_024 + 1),
+            headers: [:]
+        )])
+        let client = NotionAPIClient(accessToken: "token", transport: transport)
+        let request = client.baseRequest(path: "search", method: "POST")
+
+        do {
+            _ = try await client.send(request)
+            XCTFail("Expected an oversized API response to be rejected")
+        } catch {
+            XCTAssertEqual(error as? NotionAPIError, .payloadTooLarge)
+        }
+    }
+
     func testSearchPagesUsesCurrentHeadersAndFollowsPagination() async throws {
         let transport = StubNotionTransport(responses: [
             .json(200, searchResponse(idSuffix: "01", title: "Projects", nextCursor: "next")),

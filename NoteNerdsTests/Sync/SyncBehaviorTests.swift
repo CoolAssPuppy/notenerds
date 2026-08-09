@@ -128,6 +128,30 @@ final class SyncBehaviorTests: XCTestCase {
         XCTAssertEqual(restored, snapshot)
     }
 
+    func testLocalSyncStateReadsTheCurrentFileWithoutAnExistencePreflight() async throws {
+        let change = DocumentChange.fixture(objectKey: "protected", sequence: 1)
+        let snapshot = SyncEngineSnapshot(
+            pendingChanges: [change],
+            pendingAssets: [],
+            receivedChanges: [],
+            cursor: nil
+        )
+        let encoder = PropertyListEncoder()
+        encoder.outputFormat = .binary
+        let storedData = try encoder.encode(snapshot)
+        let directoryURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        let store = LocalSyncStateStore(directoryURL: directoryURL) { url in
+            guard url.lastPathComponent == "sync-state.plist" else {
+                throw CocoaError(.fileReadNoSuchFile)
+            }
+            return storedData
+        }
+
+        let restored = try await store.load()
+
+        XCTAssertEqual(restored, snapshot)
+    }
+
     func testReceivedChangesAreDeliveredOnlyOnce() async throws {
         let provider = InMemorySyncProvider()
         let remote = DocumentChange.fixture(objectKey: "remote-stroke", sequence: 1)

@@ -7,7 +7,7 @@
 - [x] Fix the persistence or reconstruction path without changing live Pencil input.
 - [x] Run focused drawing tests and the complete test suite.
 - [x] Run strict lint, static analysis, release checks, and diff checks.
-- [ ] Record the result, commit, push, and upload a corrected TestFlight build.
+- [x] Record the result, commit, push, and upload a corrected TestFlight build.
 
 ### Marker reopen review
 
@@ -18,6 +18,7 @@
 - The complete iOS 26.5 scheme passed 374 tests with 0 failures and 0 skipped tests. A 1,000-stroke native PencilKit reopen performance check passed its one-second budget.
 - Strict SwiftLint passed across 218 files. All 33 release-tool tests, Xcode static analysis, the secret scan, and `git diff --check` passed.
 - Strokes already saved incorrectly by build 13 do not contain the discarded native transform. Build 14 prevents new corruption but cannot reconstruct that missing transform with certainty.
+- Apple accepted TestFlight build 14 and marked it valid. The Internal Testers group has the build. Delivery UUID: `f6f21be5-e8fe-417e-ab78-3a641ac40789`.
 
 ## Require iOS 26 and remove older-OS code
 

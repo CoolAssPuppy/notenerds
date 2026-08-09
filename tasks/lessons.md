@@ -72,3 +72,4 @@
 - Keep live Pencil input inside PencilKit until the Pencil leaves the canvas. Sending partial strokes through persistence or planner constraints during the gesture causes lag and missing samples.
 - Draw lasso feedback with vector layers. Invalidating a bitmap-backed view the size of the infinite canvas can hide the path and waste memory.
 - Pencil input regressions need PencilKit integration tests that drive begin, repeated drawing-change, and end callbacks. Cover rapid strokes and model refreshes during contact; helper-only checks miss the timing failure.
+- Match every nested field in a date-versioned API request to the current endpoint schema. A valid field from a related object, such as a data-source title, can make the whole request fail when placed inside a database-creation payload.

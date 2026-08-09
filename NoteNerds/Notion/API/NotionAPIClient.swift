@@ -65,7 +65,6 @@ struct NotionAPIClient: Sendable {
             "title": .array([title]),
             "is_inline": .bool(false),
             "initial_data_source": .object([
-                "title": .array([title]),
                 "properties": .object(NotionDatabaseSchema.properties)
             ])
         ])

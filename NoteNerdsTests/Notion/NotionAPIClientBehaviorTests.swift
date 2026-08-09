@@ -123,6 +123,7 @@ final class NotionAPIClientBehaviorTests: XCTestCase {
         XCTAssertEqual(destination.dataSourceID, dataSourceID)
         XCTAssertEqual(destination.parentPageID, "33333333-3333-3333-3333-333333333333")
         XCTAssertEqual(request.url?.path, "/v1/databases")
+        XCTAssertEqual(Set(initialSource.keys), ["properties"])
         XCTAssertEqual(Set(properties.keys), Set(NotionDatabaseSchema.propertyNames))
         XCTAssertNotNil((properties["Name"] as? [String: Any])?["title"])
         XCTAssertNotNil((properties["Folder"] as? [String: Any])?["rich_text"])

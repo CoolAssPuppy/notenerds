@@ -1,5 +1,31 @@
 # Current work
 
+## Send Pencil fixes through TestFlight
+
+- [x] Confirm the clean repository, current build number, signing, and App Store access.
+- [x] Run the local TestFlight archive, export, and upload pipeline.
+- [x] Wait for Apple to finish processing the build.
+- [x] Upload the testing notes and confirm Internal Testers receives the build.
+- [x] Commit and push the release build number.
+
+### Review
+
+- Build 4 was stopped during archive before upload after the Notion destination-selection failure was reported.
+- Build 5 includes the Notion request fix plus the Pencil and lasso fixes. Apple accepted it, finished TestFlight processing, and marked it valid.
+- The English testing notes are uploaded. Internal Testers has access to all builds and includes build 5.
+
+## Fix Notion destination selection and initial sync
+
+- [x] Trace the error after OAuth and parent-page selection through the current Notion API contract.
+- [x] Add a failing regression test for the confirmed request or state failure.
+- [x] Fix destination creation and the first library publish.
+- [x] Run the focused Notion tests, complete behavior suite, and strict lint.
+
+### Review
+
+- The database request sent a data-source title field that the current Notion create-database contract does not accept. The database already has its own title, so the initial data source now contains only the required notebook property schema.
+- The contract test failed before the change and passes afterward. The destination, manifest, immediate first-sync tests, complete app behavior target, and strict SwiftLint pass.
+
 ## Prevent Pencil and lasso regressions
 
 - [x] Audit the current tests against every reported Pencil and lasso failure.

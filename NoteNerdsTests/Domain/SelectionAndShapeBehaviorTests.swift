@@ -19,6 +19,46 @@ final class SelectionAndShapeBehaviorTests: XCTestCase {
         XCTAssertTrue(lasso.selects(.stroke(crossingStroke)))
     }
 
+    func testLassoDoesNotSelectNearbyTextWhenOnlyItsFrameEdgeCrossesThePath() {
+        let layerID = LayerID()
+        let nearbyText = TextBlock(
+            id: ObjectID(),
+            layerID: layerID,
+            text: "Nearby text",
+            frame: CanvasRect(x: 95, y: 20, width: 160, height: 44),
+            fontSize: 18,
+            alignment: .left,
+            fontName: nil
+        )
+        var enclosedText = nearbyText
+        enclosedText.frame = CanvasRect(x: 20, y: 20, width: 60, height: 44)
+        let lasso = LassoPath(points: [
+            CanvasPoint(x: 0, y: 0), CanvasPoint(x: 100, y: 0),
+            CanvasPoint(x: 100, y: 100), CanvasPoint(x: 0, y: 100)
+        ])
+
+        XCTAssertFalse(lasso.selects(.text(nearbyText)))
+        XCTAssertTrue(lasso.selects(.text(enclosedText)))
+    }
+
+    func testLassoDoesNotSelectNearbyInkThatOnlySharesItsBoundingBox() {
+        let layerID = LayerID()
+        let nearbyStroke = Stroke(
+            id: StrokeID(),
+            layerID: layerID,
+            samples: [sample(x: 80, y: 80), sample(x: 90, y: 90)],
+            style: StrokeStyle(instrument: .ballpoint, width: 2, color: .black),
+            createdAt: DomainFixtures.fixedDate
+        )
+        let triangularLasso = LassoPath(points: [
+            CanvasPoint(x: 0, y: 0),
+            CanvasPoint(x: 100, y: 0),
+            CanvasPoint(x: 0, y: 100)
+        ])
+
+        XCTAssertFalse(triangularLasso.selects(.stroke(nearbyStroke)))
+    }
+
     func testProportionalInkResizeScalesGeometryAndWidth() {
         let stroke = DomainFixtures.stroke()
         let transform = SelectionTransform(scaleX: 2, scaleY: 2, rotation: 0, translation: .zero)

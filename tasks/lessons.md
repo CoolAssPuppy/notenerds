@@ -1,5 +1,6 @@
 # Lessons
 
+- Move lassoed PencilKit strokes by changing their existing transforms. Rebuilding a whole drawing from saved samples can alter both selected and nearby handwriting. Test the exact PencilKit paths, true polygon selection, movement, and relaunch persistence.
 - Lead all Note Nerds marketing with simplicity: open a notebook, write the thought, and continue. Present tools, organization, and sync as quiet support for writing. Never lead with a feature inventory.
 - Use a restrained paper-notebook tone for Note Nerds. Emphasize calm, focus, familiar writing, and the absence of setup or clutter. Keep every sentence original and never name the reference brand.
 - Treat App Store versions that differ only by trailing zeroes, such as `1.0` and `1.0.0`, as the same release when reading or updating metadata.

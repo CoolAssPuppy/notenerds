@@ -2,7 +2,7 @@ import XCTest
 
 @MainActor
 final class ShapeToolbarUITests: XCTestCase {
-    func testCompactLassoSelectsInkOnAnInkOnlyCanvas() {
+    func testCompactLassoMovesInkAndPersistsItAfterRelaunch() {
         let application = makeApplication()
         application.launch()
         application.buttons["New notebook"].tap()
@@ -25,6 +25,20 @@ final class ShapeToolbarUITests: XCTestCase {
         )
 
         XCTAssertEqual(application.buttons["Selection actions"].value as? String, "Selection active")
+        canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.45)).press(
+            forDuration: 0.1,
+            thenDragTo: canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.65, dy: 0.60))
+        )
+        application.buttons["Library"].tap()
+        XCTAssertTrue(application.buttons["Notebook, Untitled notebook"].waitForExistence(timeout: 3))
+
+        application.terminate()
+        application.launchArguments = ["-ui-testing"]
+        application.launch()
+        application.buttons["Notebook, Untitled notebook"].tap()
+        let reopenedCanvas = application.scrollViews["Infinite canvas"]
+        XCTAssertTrue(reopenedCanvas.waitForExistence(timeout: 3))
+        XCTAssertTrue((reopenedCanvas.value as? String)?.contains("1 ink strokes") == true)
     }
 
     func testShapeToolCreatesAndSelectsAClassicShapeOnTheCanvas() {

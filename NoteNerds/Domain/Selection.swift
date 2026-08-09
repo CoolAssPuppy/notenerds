@@ -10,12 +10,14 @@ struct LassoPath: Codable, Hashable, Sendable {
         if case let .stroke(stroke) = object {
             return stroke.samples.contains { contains($0.point) }
                 || stroke.samples.indices.dropFirst().contains { index in
-                    segmentIntersectsBounds(stroke.samples[index - 1].point, stroke.samples[index].point)
+                    segmentIntersectsPath(stroke.samples[index - 1].point, stroke.samples[index].point)
                 }
         }
-        return contains(object.bounds.origin)
-            || contains(CanvasPoint(x: object.bounds.maxX, y: object.bounds.maxY))
-            || bounds.intersects(object.bounds)
+        let objectCenter = CanvasPoint(
+            x: object.bounds.minX + object.bounds.size.width / 2,
+            y: object.bounds.minY + object.bounds.size.height / 2
+        )
+        return contains(objectCenter)
     }
 
     private func contains(_ point: CanvasPoint) -> Bool {
@@ -34,8 +36,53 @@ struct LassoPath: Codable, Hashable, Sendable {
         return isInside
     }
 
-    private func segmentIntersectsBounds(_ first: CanvasPoint, _ second: CanvasPoint) -> Bool {
-        CanvasRect.enclosing([first, second]).intersects(bounds)
+    private func segmentIntersectsPath(_ first: CanvasPoint, _ second: CanvasPoint) -> Bool {
+        guard points.count > 2 else { return false }
+        return points.indices.contains { index in
+            let nextIndex = points.index(after: index) == points.endIndex ? points.startIndex : index + 1
+            return segmentsIntersect(first, second, points[index], points[nextIndex])
+        }
+    }
+
+    private func segmentsIntersect(
+        _ firstStart: CanvasPoint,
+        _ firstEnd: CanvasPoint,
+        _ secondStart: CanvasPoint,
+        _ secondEnd: CanvasPoint
+    ) -> Bool {
+        let firstSideA = crossProduct(firstStart, firstEnd, secondStart)
+        let firstSideB = crossProduct(firstStart, firstEnd, secondEnd)
+        let secondSideA = crossProduct(secondStart, secondEnd, firstStart)
+        let secondSideB = crossProduct(secondStart, secondEnd, firstEnd)
+        let crossesBothSegments = haveOppositeSigns(firstSideA, firstSideB)
+            && haveOppositeSigns(secondSideA, secondSideB)
+        return crossesBothSegments
+            || isOnSegment(secondStart, firstStart, firstEnd, crossProduct: firstSideA)
+            || isOnSegment(secondEnd, firstStart, firstEnd, crossProduct: firstSideB)
+            || isOnSegment(firstStart, secondStart, secondEnd, crossProduct: secondSideA)
+            || isOnSegment(firstEnd, secondStart, secondEnd, crossProduct: secondSideB)
+    }
+
+    private func crossProduct(_ start: CanvasPoint, _ end: CanvasPoint, _ point: CanvasPoint) -> Double {
+        (end.x - start.x) * (point.y - start.y) - (end.y - start.y) * (point.x - start.x)
+    }
+
+    private func haveOppositeSigns(_ first: Double, _ second: Double) -> Bool {
+        (first > 0 && second < 0) || (first < 0 && second > 0)
+    }
+
+    private func isOnSegment(
+        _ point: CanvasPoint,
+        _ start: CanvasPoint,
+        _ end: CanvasPoint,
+        crossProduct: Double
+    ) -> Bool {
+        let tolerance = 0.000_001
+        return abs(crossProduct) <= tolerance
+            && point.x >= min(start.x, end.x) - tolerance
+            && point.x <= max(start.x, end.x) + tolerance
+            && point.y >= min(start.y, end.y) - tolerance
+            && point.y <= max(start.y, end.y) + tolerance
     }
 }
 

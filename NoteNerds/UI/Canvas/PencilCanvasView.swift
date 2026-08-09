@@ -226,7 +226,7 @@ struct PencilCanvasView: UIViewRepresentable {
             let addedStrokes = addedPencilStrokes.compactMap { pencilStroke -> Stroke? in
                 let samples = pencilStroke.path.map { point in
                     StrokeSample(
-                        point: CanvasPoint(x: point.location.x, y: point.location.y),
+                        point: point.location.applying(pencilStroke.transform).canvasPoint,
                         pressure: point.force,
                         altitude: point.altitude,
                         azimuth: point.azimuth,
@@ -255,7 +255,7 @@ struct PencilCanvasView: UIViewRepresentable {
             let points = Array(pencilStroke.path)
             let samples = points.enumerated().map { index, point in
                 StrokeSample(
-                    point: CanvasPoint(x: point.location.x, y: point.location.y),
+                    point: point.location.applying(pencilStroke.transform).canvasPoint,
                     pressure: point.force,
                     altitude: point.altitude,
                     azimuth: point.azimuth,
@@ -438,6 +438,32 @@ struct PencilCanvasView: UIViewRepresentable {
         }
     }
 
+}
+
+extension PencilCanvasView.Coordinator {
+    func applySelectionTransform(
+        objectIDs: Set<ObjectID>,
+        transform: SelectionTransform,
+        center: CanvasPoint,
+        in canvasView: PKCanvasView
+    ) {
+        let result = PencilCanvasSelectionTransform.applying(
+            objectIDs: objectIDs,
+            transform: transform,
+            center: center,
+            to: canvasView.drawing,
+            canonicalStrokes: canonicalStrokes
+        )
+        isApplyingModelDrawing = true
+        canvasView.drawing = result.drawing
+        canonicalStrokes = result.canonicalStrokes
+        knownStrokeCount = result.canonicalStrokes.count
+        isApplyingModelDrawing = false
+    }
+}
+
+private extension CGPoint {
+    var canvasPoint: CanvasPoint { CanvasPoint(x: x, y: y) }
 }
 
 private extension PencilCanvasView {

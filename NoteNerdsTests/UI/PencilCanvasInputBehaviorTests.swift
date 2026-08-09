@@ -124,8 +124,48 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
         XCTAssertEqual(parent.sublayers?.count, 3)
         XCTAssertTrue(outlines.isSelectionVisible)
         XCTAssertTrue(outlines.isLassoVisible)
+        XCTAssertTrue(outlines.isSelectionAnimating)
         XCTAssertEqual(outlines.selectionPathBounds, CGRect(x: 8_994, y: 8_994, width: 612, height: 412))
         XCTAssertEqual(outlines.lassoPathBounds, CGRect(x: 9_100, y: 9_100, width: 400, height: 300))
+    }
+
+    func testLassoMovePreservesExactPencilKitPathsForSelectedAndNearbyWriting() {
+        let selected = uniquelyIdentified(stroke(sampleCount: 8, xOffset: 0))
+        let nearby = uniquelyIdentified(stroke(sampleCount: 10, xOffset: 100))
+        let drawing = PencilCanvasRenderer.drawing(from: [selected, nearby])
+        let originalSelected = drawing.strokes[0]
+        let originalNearby = drawing.strokes[1]
+        let transform = SelectionTransform(
+            scaleX: 1,
+            scaleY: 1,
+            rotation: 0,
+            translation: CanvasPoint(x: 40, y: 25)
+        )
+
+        let result = PencilCanvasSelectionTransform.applying(
+            objectIDs: [selected.objectID],
+            transform: transform,
+            center: CanvasPoint(x: 20, y: 20),
+            to: drawing,
+            canonicalStrokes: [selected, nearby]
+        )
+
+        XCTAssertEqual(result.drawing.strokes[0].path.map(\.location), originalSelected.path.map(\.location))
+        XCTAssertEqual(result.drawing.strokes[1].path.map(\.location), originalNearby.path.map(\.location))
+        XCTAssertEqual(result.drawing.strokes[1].transform, originalNearby.transform)
+        XCTAssertEqual(
+            result.drawing.strokes[0].renderBounds,
+            originalSelected.renderBounds.offsetBy(dx: 40, dy: 25)
+        )
+        XCTAssertEqual(result.canonicalStrokes[1], nearby)
+        XCTAssertEqual(result.canonicalStrokes[0].samples[0].point, CanvasPoint(x: 40, y: 25))
+    }
+
+    func testLassoOutlineUsesAnimatedMarchingAnts() {
+        let outline = CanvasLassoOutlineLayer()
+
+        XCTAssertEqual(outline.lineDashPattern, [6, 4])
+        XCTAssertNotNil(outline.animation(forKey: "marchingAnts"))
     }
 
     private func draw(
@@ -153,6 +193,16 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
             )
         }
         return result
+    }
+
+    private func uniquelyIdentified(_ stroke: Stroke) -> Stroke {
+        Stroke(
+            id: StrokeID(),
+            layerID: stroke.layerID,
+            samples: stroke.samples,
+            style: stroke.style,
+            createdAt: stroke.createdAt
+        )
     }
 
     private func makeCoordinator(

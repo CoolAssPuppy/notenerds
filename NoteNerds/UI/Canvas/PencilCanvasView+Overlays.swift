@@ -126,7 +126,15 @@ extension PencilCanvasView {
                 ? strokes.map(CanvasObject.stroke) + nonStrokeObjects
                 : nonStrokeObjects,
             isLassoEnabled: configuration.tool == .lasso,
-            onTransform: onTransformObjects,
+            onTransform: { objectIDs, transform, center in
+                coordinator.applySelectionTransform(
+                    objectIDs: objectIDs,
+                    transform: transform,
+                    center: center,
+                    in: canvasView
+                )
+                onTransformObjects(objectIDs, transform, center)
+            },
             onDelete: onDeleteObjects,
             onPaste: onPasteObjects,
             onMoveToLayer: onMoveObjectsToLayer,

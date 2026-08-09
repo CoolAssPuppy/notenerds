@@ -1,5 +1,22 @@
 # Current work
 
+## Preserve lassoed writing and add marching ants
+
+- [x] Reproduce lasso movement changing selected and nearby writing.
+- [x] Add failing checks for exact PencilKit stroke preservation and an animated dashed lasso outline.
+- [x] Apply selection movement to the existing PencilKit strokes without reconstructing surrounding writing.
+- [x] Add classic marching-ants animation to the live lasso and selected boundary.
+- [x] Run focused lasso tests, the complete behavior suite, the UI interaction, strict lint, and project checks.
+- [x] Send the correction through TestFlight, then commit and push it.
+
+### Review
+
+- Lasso movement now transforms the existing PencilKit strokes, preserving the exact paths and appearance of selected and nearby writing.
+- Ink selection checks the real lasso polygon. Typed objects require their center inside the lasso, so nearby content is left unchanged.
+- Live and completed selections use an animated dashed outline with contrasting edges.
+- Focused canvas checks, the complete behavior suite, the move-and-relaunch UI check, strict SwiftLint, release-tool tests, and whitespace checks pass.
+- Apple accepted TestFlight build 8, marked it valid, and saved the English testing notes. Internal Testers receives valid builds automatically.
+
 ## Restore fast writing, note previews, and saved-note loading
 
 - [x] Reproduce fast Pencil input falling behind with a failing integration test.

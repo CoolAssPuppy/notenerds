@@ -6,12 +6,6 @@ extension PencilCanvasView.Coordinator {
         transformedBy transform: CGAffineTransform,
         roll: Double
     ) -> StrokeSample {
-        let threshold: Double?
-        if #available(iOS 26.0, *) {
-            threshold = point.threshold
-        } else {
-            threshold = nil
-        }
         let location = point.location.applying(transform)
         return StrokeSample(
             point: CanvasPoint(x: location.x, y: location.y),
@@ -24,7 +18,7 @@ extension PencilCanvasView.Coordinator {
                 size: CanvasSize(width: point.size.width, height: point.size.height),
                 opacity: point.opacity,
                 secondaryScale: point.secondaryScale,
-                threshold: threshold
+                threshold: point.threshold
             )
         )
     }

@@ -57,7 +57,7 @@ The plan is based on the current repository and shipped identifiers.
 - Bundle identifier: `com.strategicnerds.notenerds`
 - App Store Connect Apple ID: `6799369721`
 - Apple Developer team: `955GSY56UT`
-- Minimum operating system: iOS and iPadOS 18
+- Minimum operating system: iOS and iPadOS 26
 - Current document schema: version 4
 - Current remote provider: private CloudKit
 - Current external publisher: Notion

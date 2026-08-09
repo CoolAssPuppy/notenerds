@@ -108,9 +108,7 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
             XCTAssertEqual(restored.path.map(\.size), original.path.map(\.size))
             XCTAssertEqual(restored.path.map(\.opacity), original.path.map(\.opacity))
             XCTAssertEqual(restored.path.map(\.secondaryScale), original.path.map(\.secondaryScale))
-            if #available(iOS 26.0, *) {
-                XCTAssertEqual(restored.path.map(\.threshold), original.path.map(\.threshold))
-            }
+            XCTAssertEqual(restored.path.map(\.threshold), original.path.map(\.threshold))
             XCTAssertEqual(restored.renderBounds, original.renderBounds)
         }
     }

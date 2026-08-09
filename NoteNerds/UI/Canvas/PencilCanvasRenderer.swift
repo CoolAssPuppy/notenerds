@@ -30,7 +30,7 @@ enum PencilCanvasRenderer {
             ?? CGSize(width: style.width, height: style.width)
         let opacity = sample.renderedOpacity ?? style.color.alpha
         let location = CGPoint(x: sample.point.x, y: sample.point.y)
-        if #available(iOS 26.0, *), let threshold = sample.threshold {
+        if let threshold = sample.threshold {
             return PKStrokePoint(
                 location: location,
                 timeOffset: sample.timeOffset,

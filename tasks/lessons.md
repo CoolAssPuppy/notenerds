@@ -1,5 +1,6 @@
 # Lessons
 
+- Treat the minimum OS and Apple Intelligence availability as separate policies. Use only documented App Store capability keys for installation rules, and keep runtime checks for hardware, settings, and language-dependent AI features.
 - After changing a shared schema version, classify every hard-coded old version before running the full suite. Assertions for newly produced data must use the current schema constant; explicit old numbers belong only in migration fixtures.
 - A saved Pencil stroke needs the rendered PencilKit point size, opacity, secondary scale, and threshold in addition to location, force, tilt, and time. Reconstructing Marker or Highlighter paths from a selected toolbar width changes their appearance after reopening the note. Test a mixed-instrument note before and after native serialization.
 - A shared service connection needs both its credential and its durable sync state on every device. Do not enable iCloud Keychain for a token while leaving the destination, remote mappings, pending work, and deletion records device-local.

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 import plistlib
+import re
+import subprocess
 import tempfile
 import unittest
 from dataclasses import replace
@@ -42,6 +44,7 @@ class PipelineBehaviorTests(unittest.TestCase):
         repository = Path(__file__).resolve().parents[2]
         workflow = (repository / ".github/workflows/ci.yml").read_text()
 
+        self.assertIn("runs-on: macos-26", workflow)
         self.assertIn("XCODEGEN_VERSION: 2.46.0", workflow)
         self.assertIn(
             "4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806",
@@ -81,6 +84,39 @@ class PipelineBehaviorTests(unittest.TestCase):
         )
         self.assertEqual(info_plist["CFBundleShortVersionString"], "$(MARKETING_VERSION)")
         self.assertEqual(info_plist["CFBundleVersion"], "$(CURRENT_PROJECT_VERSION)")
+
+    def test_ios_26_is_the_only_supported_runtime(self) -> None:
+        repository = Path(__file__).resolve().parents[2]
+        ship_config = config.load(repository)
+        project_yml = (repository / "project.yml").read_text()
+        readme = (repository / "README.md").read_text()
+        swift_source = "\n".join(
+            path.read_text() for path in (repository / "NoteNerds").rglob("*.swift")
+        )
+        obsolete_runtime_branches = [
+            path.relative_to(repository)
+            for path in (repository / "NoteNerds").rglob("*.swift")
+            if any(
+                int(version) <= 26
+                for version in re.findall(
+                    r"#(?:un)?available\(iOS (\d+)",
+                    path.read_text(),
+                )
+            )
+        ]
+
+        self.assertEqual(ship_config.project.min_ios, "26.0")
+        self.assertIn('deploymentTarget:\n    iOS: "26.0"', project_yml)
+        self.assertNotIn("IPHONEOS_DEPLOYMENT_TARGET", project_yml)
+        self.assertNotIn("UIRequiresFullScreen", project_yml)
+        self.assertNotIn("ASPresentationAnchor(frame:", swift_source)
+        self.assertEqual(obsolete_runtime_branches, [])
+        self.assertIn("Xcode 26 or newer", readme)
+
+        info_plist = plistlib.loads((repository / "NoteNerds/Info.plist").read_bytes())
+        capabilities = info_plist.get("UIRequiredDeviceCapabilities", [])
+        self.assertNotIn("apple-intelligence", capabilities)
+        self.assertNotIn("foundation-models", capabilities)
 
     def test_version_updates_only_the_project_source_of_truth(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -140,6 +176,43 @@ class PipelineBehaviorTests(unittest.TestCase):
             return_value=SimpleNamespace(stdout="Version: 2.45.4\n"),
         ):
             self.assertEqual(diagnostics._check_xcodegen_version("2.46.0"), 1)
+
+    def test_release_preflight_requires_matching_generated_app_settings(self) -> None:
+        ship_config = config.load(Path(__file__).resolve().parents[2])
+        settings = """
+            IPHONEOS_DEPLOYMENT_TARGET = 18.0
+            TARGETED_DEVICE_FAMILY = 1,2
+        """
+
+        with patch(
+            "ship_lib.diagnostics.subprocess.run",
+            return_value=SimpleNamespace(stdout=settings),
+        ):
+            self.assertEqual(diagnostics._check_build_settings(ship_config), 1)
+
+    def test_release_preflight_accepts_matching_generated_app_settings(self) -> None:
+        ship_config = config.load(Path(__file__).resolve().parents[2])
+        settings = f"""
+            IPHONEOS_DEPLOYMENT_TARGET = {ship_config.project.min_ios}
+            TARGETED_DEVICE_FAMILY = {ship_config.project.device_family}
+        """
+
+        with patch(
+            "ship_lib.diagnostics.subprocess.run",
+            return_value=SimpleNamespace(stdout=settings),
+        ) as run:
+            self.assertEqual(diagnostics._check_build_settings(ship_config), 0)
+
+        command = run.call_args.args[0]
+        self.assertIn("-scheme", command)
+        self.assertIn("-derivedDataPath", command)
+
+    def test_release_preflight_reports_unavailable_simulators(self) -> None:
+        ship_config = config.load(Path(__file__).resolve().parents[2])
+        unavailable = subprocess.CalledProcessError(1, ["xcrun", "simctl"])
+
+        with patch("ship_lib.diagnostics.xcode.list_simulators", side_effect=unavailable):
+            self.assertEqual(diagnostics._check_simulators(ship_config), 1)
 
     def test_latest_ipad_prefers_thirteen_inch_pro_over_chip_number(self) -> None:
         runtime = "com.apple.CoreSimulator.SimRuntime.iOS-26-5"

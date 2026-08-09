@@ -31,7 +31,7 @@ Prints the resolved bundle, signing, version, build, path, and Doppler settings.
 
 ### `verify`
 
-Checks Xcode, XcodeGen, the project, version settings, and compatible iPad simulators. `verify --release` also requires App Store Connect credentials, the private key file, PyJWT, and a successful App Store Connect API request.
+Checks Xcode, XcodeGen, the project, generated deployment settings, and compatible simulators. `verify --release` also requires App Store Connect credentials, the private key file, PyJWT, and a successful App Store Connect API request.
 
 ### `testflight`
 

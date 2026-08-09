@@ -21,13 +21,16 @@ extension ASWebAuthenticationSession: NotionWebAuthenticationSession {}
 
 @MainActor
 final class SystemNotionBrowser: NSObject, NotionBrowserOpening, ASWebAuthenticationPresentationContextProviding {
+    typealias PresentationAnchorProvider = @MainActor () -> ASPresentationAnchor?
     typealias SessionFactory = (
         URL,
         String?,
         @escaping ASWebAuthenticationSession.CompletionHandler
     ) -> any NotionWebAuthenticationSession
 
+    private let presentationAnchorProvider: PresentationAnchorProvider
     private let sessionFactory: SessionFactory
+    private var presentationAnchor: ASPresentationAnchor?
     private var session: (any NotionWebAuthenticationSession)?
     private var cancellationHandler: (@MainActor () -> Void)?
 
@@ -38,13 +41,19 @@ final class SystemNotionBrowser: NSObject, NotionBrowserOpening, ASWebAuthentica
                 callbackURLScheme: scheme,
                 completionHandler: completion
             )
+        },
+        presentationAnchorProvider: @escaping PresentationAnchorProvider = {
+            SystemNotionBrowser.activePresentationAnchor()
         }
     ) {
+        self.presentationAnchorProvider = presentationAnchorProvider
         self.sessionFactory = sessionFactory
     }
 
     func open(_ url: URL, onCancel: @escaping @MainActor () -> Void) async -> Bool {
         dismiss()
+        guard let presentationAnchor = presentationAnchorProvider() else { return false }
+        self.presentationAnchor = presentationAnchor
         cancellationHandler = onCancel
         let session = sessionFactory(url, nil) { [weak self] _, error in
             guard let error else { return }
@@ -64,17 +73,25 @@ final class SystemNotionBrowser: NSObject, NotionBrowserOpening, ASWebAuthentica
         cancellationHandler = nil
         session?.cancel()
         session = nil
+        presentationAnchor = nil
     }
 
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        guard let presentationAnchor else {
+            preconditionFailure("Notion authorization started without a presentation anchor.")
+        }
+        return presentationAnchor
+    }
+
+    private static func activePresentationAnchor() -> ASPresentationAnchor? {
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        if let window = scenes.flatMap(\.windows).first(where: \.isKeyWindow) {
+        let activeScenes = scenes.filter { $0.activationState == .foregroundActive }
+        let candidates = activeScenes.isEmpty ? scenes : activeScenes
+        if let window = candidates.flatMap(\.windows).first(where: \.isKeyWindow) {
             return window
         }
-        if let scene = scenes.first {
-            return ASPresentationAnchor(windowScene: scene)
-        }
-        return ASPresentationAnchor(frame: .zero)
+        guard let scene = candidates.first else { return nil }
+        return ASPresentationAnchor(windowScene: scene)
     }
 
     private func isCancellation(_ error: any Error) -> Bool {

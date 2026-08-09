@@ -5,6 +5,7 @@ import argparse
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 from . import asc, config, log, version, xcode
@@ -66,6 +67,55 @@ def _check_project(cfg: config.ShipConfig) -> int:
     return errors
 
 
+def _check_build_settings(cfg: config.ShipConfig) -> int:
+    project = cfg.project
+    try:
+        with tempfile.TemporaryDirectory(prefix="notenerds-verify-") as derived_data:
+            result = subprocess.run(
+                [
+                    "xcodebuild",
+                    "-project",
+                    str(project.xcodeproj),
+                    "-scheme",
+                    project.scheme,
+                    "-configuration",
+                    "Release",
+                    "-destination",
+                    "generic/platform=iOS",
+                    "-derivedDataPath",
+                    derived_data,
+                    "-showBuildSettings",
+                ],
+                cwd=cfg.repo_root,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+    except (FileNotFoundError, subprocess.CalledProcessError) as error:
+        print(f"  build settings UNREADABLE ({error})")
+        return 1
+
+    resolved: dict[str, str] = {}
+    for line in result.stdout.splitlines():
+        key, separator, value = line.strip().partition(" = ")
+        if separator:
+            resolved[key] = value
+
+    expected = {
+        "IPHONEOS_DEPLOYMENT_TARGET": project.min_ios,
+        "TARGETED_DEVICE_FAMILY": project.device_family,
+    }
+    errors = 0
+    for key, required_value in expected.items():
+        actual_value = resolved.get(key)
+        if actual_value == required_value:
+            print(f"  {key:25s} {actual_value}")
+            continue
+        print(f"  {key:25s} {actual_value or 'NOT SET'} (requires {required_value})")
+        errors += 1
+    return errors
+
+
 def _check_asc(cfg: config.ShipConfig, *, is_required: bool) -> int:
     key_id = os.environ.get("ASC_KEY_ID")
     issuer_id = os.environ.get("ASC_ISSUER_ID")
@@ -99,7 +149,11 @@ def _check_asc(cfg: config.ShipConfig, *, is_required: bool) -> int:
 
 
 def _check_simulators(cfg: config.ShipConfig) -> int:
-    simulators = xcode.list_simulators(cfg.project.device_family)
+    try:
+        simulators = xcode.list_simulators(cfg.project.device_family)
+    except (OSError, subprocess.CalledProcessError, ValueError) as error:
+        print(f"  unavailable ({error})")
+        return 1
     simulators.sort(key=xcode._sim_sort_key, reverse=True)
     for simulator in simulators[:5]:
         print(f"  {simulator.name:30s} ({simulator.runtime.split('.')[-1]})")
@@ -122,6 +176,7 @@ def cmd_verify(cfg: config.ShipConfig, args: argparse.Namespace) -> int:
 
     log.step("Project")
     errors += _check_project(cfg)
+    errors += _check_build_settings(cfg)
     log.step("App Store Connect credentials")
     errors += _check_asc(cfg, is_required=args.release)
     log.step("Simulators")

@@ -6,7 +6,7 @@ Note Nerds ships from a local Python command patterned after TripMaster. XcodeGe
 
 - Product: Note Nerds
 - Platform: iOS and iPadOS
-- Minimum version: iOS and iPadOS 18.0
+- Minimum version: iOS and iPadOS 26.0
 - Device family: iPhone and iPad
 - Bundle identifier: `com.strategicnerds.notenerds`
 - CloudKit container: `iCloud.com.strategicnerds.notenerds`
@@ -14,6 +14,8 @@ Note Nerds ships from a local Python command patterned after TripMaster. XcodeGe
 - Marketing version: `1.0.0`
 - Current TestFlight build: `12`
 - Release mode: manual after approval
+
+Apple provides no App Store capability that exactly identifies Apple Intelligence-capable hardware. Note Nerds declares no substitute capability. Features that depend on Apple Intelligence must check their framework availability at runtime.
 
 ## What is already configured
 

@@ -85,8 +85,8 @@ Build and App Store release instructions are in [the deployment guide](docs/depl
 
 ## Requirements
 
-- macOS with Xcode 16 or newer. Development is currently verified with Xcode 26.6.
-- An iPad simulator or physical iPad running iPadOS 18 or newer.
+- macOS with Xcode 26 or newer. Development is currently verified with Xcode 26.6.
+- An iPhone or iPad simulator, or a physical device, running iOS or iPadOS 26 or newer.
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.46 or newer when regenerating the Xcode project.
 - [SwiftLint](https://github.com/realm/SwiftLint) 0.63 or newer for the strict style check.
 - An Apple Developer account and a CloudKit container for device sync testing.

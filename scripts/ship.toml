@@ -9,7 +9,7 @@ xcodeproj = "NoteNerds.xcodeproj"
 project_yml = "project.yml"
 xcodegen_version = "2.46.0"
 dist_dir = "dist"
-min_ios = "18.0"
+min_ios = "26.0"
 device_family = "1,2"
 
 [asc]

@@ -44,6 +44,22 @@ final class SystemNotionBrowserBehaviorTests: XCTestCase {
         browser.dismiss()
         XCTAssertEqual(session.cancelCallCount, 1)
     }
+
+    @MainActor
+    func testAuthorizationDoesNotStartWithoutAPresentationScene() async throws {
+        let session = RecordingWebAuthenticationSession()
+        let browser = SystemNotionBrowser(
+            sessionFactory: { _, _, _ in session },
+            presentationAnchorProvider: { nil }
+        )
+        let url = try XCTUnwrap(URL(string: "https://api.notion.com/v1/oauth/authorize"))
+
+        let didStart = await browser.open(url, onCancel: {})
+
+        XCTAssertFalse(didStart)
+        XCTAssertEqual(session.startCallCount, 0)
+        XCTAssertNil(session.presentationContextProvider)
+    }
 }
 
 @MainActor

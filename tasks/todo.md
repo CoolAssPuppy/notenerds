@@ -1,5 +1,26 @@
 # Current work
 
+## Require iOS 26 and remove older-OS code
+
+- [x] Add a failing release-policy test for the iOS 26 minimum and obsolete runtime branches.
+- [x] Make the XcodeGen project definition the deployment-target source of truth.
+- [x] Update local shipping configuration and release documentation to iOS and iPadOS 26.
+- [x] Remove runtime branches for iOS versions the app can no longer run on.
+- [x] Confirm whether App Store device filtering can require Apple Intelligence-capable hardware.
+- [x] Regenerate the Xcode project and verify every target requires iOS 26.
+- [x] Run focused tests, the complete test suite, strict lint, static analysis, and release checks.
+- [x] Record the result, commit, and push.
+
+### iOS 26 review
+
+- XcodeGen and the local shipping configuration require iOS and iPadOS 26.0. The app remains available on iPhone and iPad.
+- Apple publishes no App Store capability that exactly matches Apple Intelligence-capable iPads. The app declares no substitute capability. Future Apple Intelligence features must check framework availability at runtime.
+- The three obsolete iOS 26 runtime branches are gone. Existing notebook files remain readable, including older strokes that do not contain the newer PencilKit threshold value.
+- The ignored full-screen plist key is gone. Notion authorization uses scene-based presentation and stops normally when no presentation scene exists.
+- Local release verification now rejects a generated deployment target or device family that differs from `ship.toml`. CI uses the macOS 26 runner and Xcode 26.
+- The complete iOS 26.5 scheme passed 367 tests with 0 failures and 0 skipped tests. The 33 release-tool tests passed.
+- Strict SwiftLint passed across 214 files. Xcode static analysis, the unsigned Release build, the secret scan, release preflight, XcodeGen stability check, and `git diff --check` passed.
+
 ## Keep drawing writes on the active canvas
 
 - [x] Add a failing regression test for rename, add canvas, draw immediately, switch, and reopen.

@@ -133,7 +133,7 @@ Use the conservative disclosure for the optional Notion connection:
 - Analytics data collection: No.
 - Data broker sharing: No.
 
-Notes and drawings are processed locally unless the user enables Notion. Private CloudKit storage is provided by Apple. Notion receives the notebooks selected for sync and stores them in the user’s workspace. The app contains no advertising, analytics, crash-reporting, or developer account SDK.
+Notes and drawings are processed locally unless the user enables Notion. Private CloudKit storage is provided by Apple. Notion receives the notebooks selected for sync and stores them in the user’s workspace. Note Nerds may also add a notebook-page link to an active Notion AI meeting note. The app contains no advertising, analytics, crash-reporting, or developer account SDK.
 
 ## Age rating guidance
 

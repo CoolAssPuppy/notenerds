@@ -1,5 +1,7 @@
 # Lessons
 
+- A shared service connection needs both its credential and its durable sync state on every device. Do not enable iCloud Keychain for a token while leaving the destination, remote mappings, pending work, and deletion records device-local.
+- After choosing an option from a toolbar popover, verify the next primary tool is tappable. A visible core button can still be blocked by an inspector that did not close.
 - Never send highlighter strokes through held-shape recognition. Test a real highlight over existing writing and confirm that Pencil lift keeps both strokes as ink without replacing the canvas drawing.
 - Move lassoed PencilKit strokes by changing their existing transforms. Rebuilding a whole drawing from saved samples can alter both selected and nearby handwriting. Test the exact PencilKit paths, true polygon selection, movement, and relaunch persistence.
 - Lead all Note Nerds marketing with simplicity: open a notebook, write the thought, and continue. Present tools, organization, and sync as quiet support for writing. Never lead with a feature inventory.

@@ -21,7 +21,7 @@ final class PaperSelectionUITests: XCTestCase {
         galleryScreenshot.name = "Paper gallery"
         galleryScreenshot.lifetime = .keepAlways
         add(galleryScreenshot)
-        application.buttons["Paper, Yellow legal pad"].tap()
+        tapPaper("Yellow legal pad", in: application)
         application.navigationBars["Paper"].buttons["Done"].tap()
         application.navigationBars["Settings"].buttons["Done"].tap()
 
@@ -38,7 +38,7 @@ final class PaperSelectionUITests: XCTestCase {
 
         application.buttons["New canvas"].tap()
         assertPaperGallery(in: application)
-        application.buttons["Paper, Grid small"].tap()
+        tapPaper("Grid small", in: application)
         application.buttons["Create"].tap()
         application.buttons["Canvas browser"].tap()
         let secondCanvas = application.buttons["Canvas thumbnail, Canvas 2"]
@@ -48,20 +48,34 @@ final class PaperSelectionUITests: XCTestCase {
         firstCanvas.press(forDuration: 1)
         hittableButton("Change paper", in: application).tap()
         assertPaperGallery(in: application)
-        application.buttons["Paper, Dot large"].tap()
+        tapPaper("Dot large", in: application)
         application.buttons["Apply"].tap()
         XCTAssertTrue((firstCanvas.value as? String)?.contains("Dot large") == true)
     }
 
     private func assertPaperGallery(in application: XCUIApplication) {
         XCTAssertTrue(application.navigationBars["Paper"].waitForExistence(timeout: 2))
-        let gallery = application.scrollViews.firstMatch
+        let gallery = application.scrollViews["Paper gallery"]
         for paperName in paperNames {
             for _ in 0..<4 where !application.buttons["Paper, \(paperName)"].exists {
                 gallery.swipeUp()
             }
             XCTAssertTrue(application.buttons["Paper, \(paperName)"].exists)
         }
+    }
+
+    private func tapPaper(_ name: String, in application: XCUIApplication) {
+        let gallery = application.scrollViews["Paper gallery"]
+        let button = application.buttons["Paper, \(name)"]
+        for _ in 0..<12 where !button.isHittable {
+            if button.exists, button.frame.midY < gallery.frame.midY {
+                gallery.swipeDown()
+            } else {
+                gallery.swipeUp()
+            }
+        }
+        XCTAssertTrue(button.isHittable)
+        button.tap()
     }
 
     private func hittableButton(_ label: String, in application: XCUIApplication) -> XCUIElement {

@@ -1,6 +1,6 @@
 # Note Nerds privacy policy
 
-Effective date: August 8, 2026
+Effective date: August 9, 2026
 
 Note Nerds is a local-first notebook and drawing application. This policy explains how the version distributed through Apple’s App Store handles information.
 
@@ -23,6 +23,8 @@ Users can control iCloud access through Apple ID and iCloud settings on their de
 ## Optional Notion connection
 
 Users may connect a Notion workspace and choose a Notion page. Note Nerds then creates a notebook database and a library manifest in that workspace. When the user selects Sync now, or edits a notebook after setup, the app sends notebook titles, folders, tags, canvas text, previews, PDFs, and restorable notebook files directly from the device to Notion. The developer does not receive this content.
+
+While a synced notebook is open, Note Nerds may ask Notion whether an AI meeting note is actively recording. When one is active, the app adds a link from that meeting note to the synced notebook page. The app stores only the meeting, notebook, page, and created-link identifiers needed to prevent duplicates and respect deleted links. Meeting audio and transcript text stay in Notion.
 
 Notion provides and operates this storage under Notion's terms and privacy policy. Notion account and workspace identifiers are stored on the device so the app can maintain the connection. Access and refresh tokens are stored in the device Keychain and are excluded from iCloud backups and Keychain sync.
 

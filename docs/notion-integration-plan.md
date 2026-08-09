@@ -1,6 +1,6 @@
 # Notion integration implementation plan
 
-Status: Implemented and syncing in a connected workspace. Full live restore and disconnect verification is pending.
+Status: Implemented and syncing in a connected workspace. Live restore, disconnect, AI meeting recording, and cross-device connection work remain.
 
 Date: August 8, 2026
 
@@ -62,6 +62,31 @@ Notion file URLs are temporary. Restore reads the database rows, fetches each pa
 
 - Disconnect removes local OAuth credentials and stops sync.
 - Existing Notion pages remain in the user's workspace.
+
+### AI meeting note links
+
+- Opening a synced notebook checks for an active Notion AI meeting note.
+- One active meeting receives a notebook link automatically. Several active meetings open a chooser.
+- A recording paused for up to five minutes still qualifies.
+- Checks run every 30 seconds while the notebook and app remain active. A completed link changes the interval to two minutes.
+- Saved state and a remote child scan prevent duplicate links after another check or app restart.
+- A link deleted in Notion stays deleted.
+- App Trash keeps meeting links. Empty Trash removes recorded link blocks before the notebook page is removed.
+- Note Nerds stores meeting and link identifiers. It does not store meeting audio or transcript text.
+
+### Multiple devices
+
+The current Notion connection is device-local. The OAuth credential uses `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`. The destination, notebook-page mappings, pending work, and meeting-link records are saved in the app's local support directory. Connecting one iPad therefore does not connect another iPad or iPhone.
+
+The required behavior is one Notion connection for every Note Nerds installation signed into the same iCloud account. A complete change must:
+
+- save the OAuth credential as an iCloud Keychain synchronizable item and migrate the existing device-only item;
+- keep the Notion workspace and destination consistent through the private CloudKit account;
+- share notebook-page mappings and meeting-link deletion records so another device does not create duplicates;
+- merge pending changes without losing an edit made on another device;
+- allow a manual connection on devices where iCloud Keychain is disabled.
+
+Sharing only the token is unsafe. A second device would appear connected while lacking the destination and remote mappings needed to publish or delete the correct Notion pages.
 
 ## System architecture
 
@@ -451,6 +476,11 @@ Current contract references:
 - [x] The native attachment restores exact notebook and asset content.
 - [x] Empty folders and folder metadata restore from the library manifest.
 - [x] Repeated sync creates no duplicate rows.
+- [x] Meeting-link checks prevent duplicates and respect a link deleted in Notion.
+- [x] Empty Trash removes recorded meeting links while recoverable app Trash keeps them.
+- [ ] An active Notion AI recording receives the correct open-notebook link in the live workspace.
+- [ ] Live access confirms whether the AI meeting note parent must be shared with Note Nerds.
+- [ ] A second iPad and an iPhone restore the same Notion connection, destination, mappings, and meeting-link history through iCloud.
 - [x] Offline work remains saved and later syncs.
 - [x] Rate limits, token expiry, missing access, deleted pages, and upload failure produce tested recovery behavior.
 - [x] All Swift and release-tool tests pass.
@@ -462,20 +492,20 @@ Current contract references:
 
 ## Current verification evidence
 
-Local verification on August 8, 2026 includes:
+Local verification through August 9, 2026 includes:
 
-- 255 behavior tests, with stable archive, retry, fresh file URL, hash validation, and local publish-restore coverage
+- the complete behavior suite, with stable archive, retry, fresh file URL, hash validation, meeting-link, and local publish-restore coverage
 - 7 performance tests, including restoration of a 1,000-item durable Notion queue within 100 milliseconds
-- focused Notion settings and canvas-toolbar interface checks
+- the complete interface suite, including Notion settings, saved-note reopening, Pencil input, lasso, planner, toolbar, and library checks
 - strict SwiftLint with zero violations
 - Xcode static analysis and compilation with warnings treated as errors
 - current-tree and Git-history secret scans with no findings
 - no third-party runtime package references
-- 13 release-tool tests
+- 28 release-tool tests
 
-Live use on August 9, 2026 confirmed OAuth, parent selection, database creation, and notebook publishing after the destination-request correction.
+Live use on August 9, 2026 confirmed OAuth, parent selection, database creation, and notebook publishing after the destination-request correction. TestFlight build 10 contains AI meeting note links and Apple marked the build valid.
 
-The unchecked acceptance items require a complete restore and disconnect run in the connected development workspace.
+The unchecked acceptance items require a complete restore, disconnect, active AI recording, and cross-device run. The current user access token stays in one device's Keychain, so a connected device is required for the meeting query until the cross-device work is complete.
 
 ## Deferred work
 

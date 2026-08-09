@@ -42,22 +42,25 @@ struct CanvasToolbarView: View {
     @ViewBuilder
     private var toolbarViewport: some View {
         if isExpanded {
-            ScrollView(scrollAxes, showsIndicators: false) {
-                toolbarLayout { toolbarActionItems }
+            toolbarLayout {
+                coreActionItems
+                ScrollView(scrollAxes, showsIndicators: false) {
+                    toolbarLayout { expandedActionItems }
+                }
+                .accessibilityLabel("Expanded tools")
+                .frame(
+                    maxWidth: editor.toolbarOrientation == .horizontal ? maximumExpandedLength : nil,
+                    maxHeight: editor.toolbarOrientation == .vertical ? maximumExpandedLength : nil
+                )
+                .scrollBounceBehavior(.basedOnSize)
             }
-            .accessibilityLabel("Expanded tools")
-            .frame(
-                maxWidth: editor.toolbarOrientation == .horizontal ? maximumExpandedLength : nil,
-                maxHeight: editor.toolbarOrientation == .vertical ? maximumExpandedLength : nil
-            )
-            .scrollBounceBehavior(.basedOnSize)
         } else {
-            toolbarLayout { toolbarActionItems }
+            toolbarLayout { coreActionItems }
         }
     }
 
     @ViewBuilder
-    private var toolbarActionItems: some View {
+    private var coreActionItems: some View {
         drawingToolInspectorButton
         widthInspectorButton
         colorInspectorButton
@@ -65,21 +68,23 @@ struct CanvasToolbarView: View {
         chromeButton("Lasso", symbol: "lasso", isSelected: editor.configuration.tool == .lasso) {
             editor.selectTool(.lasso)
         }
-        if isExpanded {
-            chromeDivider
-            chromeButton("Add text", symbol: "textformat", isSelected: editor.isTextToolActive) {
-                editor.activateTextTool()
-            }
-            .accessibilityValue(editor.isTextToolActive ? "Selected" : "Not selected")
-            shapeInspectorButton
-            chromeDivider
-            chromeButton("Undo", symbol: "arrow.uturn.backward") { editor.model.undo(editor.notebook.id) }
-                .keyboardShortcut("z", modifiers: .command)
-            chromeButton("Redo", symbol: "arrow.uturn.forward") { editor.model.redo(editor.notebook.id) }
-                .keyboardShortcut("z", modifiers: [.command, .shift])
-            chromeDivider
-            layersButton
+    }
+
+    @ViewBuilder
+    private var expandedActionItems: some View {
+        chromeDivider
+        chromeButton("Add text", symbol: "textformat", isSelected: editor.isTextToolActive) {
+            editor.activateTextTool()
         }
+        .accessibilityValue(editor.isTextToolActive ? "Selected" : "Not selected")
+        shapeInspectorButton
+        chromeDivider
+        chromeButton("Undo", symbol: "arrow.uturn.backward") { editor.model.undo(editor.notebook.id) }
+            .keyboardShortcut("z", modifiers: .command)
+        chromeButton("Redo", symbol: "arrow.uturn.forward") { editor.model.redo(editor.notebook.id) }
+            .keyboardShortcut("z", modifiers: [.command, .shift])
+        chromeDivider
+        layersButton
     }
 
     private var toolbarLayout: AnyLayout {
@@ -145,7 +150,10 @@ struct CanvasToolbarView: View {
         CanvasEraserInspector(
             selectedMode: editor.configuration.eraserMode,
             selectedWidth: editor.configuration.width,
-            onSelectMode: editor.selectEraser,
+            onSelectMode: { mode in
+                editor.selectEraser(mode)
+                presentedInspector = nil
+            },
             onSelectWidth: editor.setWidth
         )
         .onAppear { editor.selectTool(.eraser) }

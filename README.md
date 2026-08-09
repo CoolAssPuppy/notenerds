@@ -70,6 +70,7 @@ Build and App Store release instructions are in [the deployment guide](docs/depl
 - Optional Notion OAuth connection using a device-only localhost callback.
 - One Notion database row per notebook, with canvas previews, searchable text, PDF output, and a restorable native archive.
 - Manual and automatic Notion publishing, folder-manifest preservation, conflict review, and exact restore.
+- Automatic links from active Notion AI meeting notes to the open synced notebook.
 - A provider protocol that keeps CloudKit types out of the domain model.
 
 ### iPad integration and accessibility
@@ -86,7 +87,7 @@ Build and App Store release instructions are in [the deployment guide](docs/depl
 
 - macOS with Xcode 16 or newer. Development is currently verified with Xcode 26.6.
 - An iPad simulator or physical iPad running iPadOS 18 or newer.
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.45 or newer when regenerating the Xcode project.
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.46 or newer when regenerating the Xcode project.
 - [SwiftLint](https://github.com/realm/SwiftLint) 0.63 or newer for the strict style check.
 - An Apple Developer account and a CloudKit container for device sync testing.
 
@@ -267,6 +268,8 @@ Local files remain authoritative for immediate interaction. Search, drawing, ope
 Notion is an optional publish and restore destination. CloudKit remains the device sync provider. After OAuth, the user chooses a Notion page and Note Nerds creates a database plus a companion library-manifest page there.
 
 Each notebook row includes ordered canvas previews, searchable text, a PDF, and a restorable `.notenerds.json` attachment. The JSON wrapper uses a Notion-supported file type and contains the checksum-verified native archive.
+
+When a synced notebook is open during a Notion AI meeting recording, Note Nerds links the meeting note to that notebook page. The app checks only while it is active, prevents duplicate links, and remembers a link deleted in Notion.
 
 Release builds read `NOTION_CLIENT_ID` and `NOTION_CLIENT_SECRET` from Doppler through the release command. The Notion integration must use this exact redirect URI:
 

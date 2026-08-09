@@ -114,8 +114,8 @@ final class NoteNerdsLaunchTests: XCTestCase {
         application.buttons["Eraser"].tap()
         application.buttons["Object eraser"].tap()
         XCTAssertEqual(application.buttons["Drawing tools"].value as? String, "Highlighter")
-        canvas.tap()
         application.buttons["Lasso"].tap()
+        canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.52, dy: 0.5)).tap()
         application.buttons["Selection actions"].tap()
         XCTAssertTrue(application.buttons["Convert handwriting to text"].exists)
     }
@@ -462,9 +462,9 @@ final class NoteNerdsLaunchTests: XCTestCase {
         XCTAssertTrue(application.buttons["Object eraser"].exists)
         XCTAssertTrue(application.buttons["Pixel eraser"].exists)
         application.buttons["Pixel eraser"].tap()
-        for width in ["Extra fine", "Fine", "Medium", "Bold", "Extra bold"] {
-            XCTAssertTrue(application.buttons[width].exists)
-        }
+        XCTAssertTrue(application.buttons["Pixel eraser"].waitForNonExistence(timeout: 2))
+        XCTAssertTrue(application.buttons["Stroke width"].isHittable)
+        XCTAssertTrue(application.buttons["Lasso"].isHittable)
         let eraserAttachment = XCTAttachment(screenshot: application.screenshot())
         eraserAttachment.name = "Apple eraser inspector"
         eraserAttachment.lifetime = .keepAlways

@@ -58,6 +58,9 @@ struct LibraryView: View {
                     systemImage: model.selectedSection == .trash ? AppSymbol.trash : AppSymbol.allNotes,
                     description: Text(emptyDescription)
                 )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
+                .onTapGesture { collapseSearch() }
             }
         }
     }

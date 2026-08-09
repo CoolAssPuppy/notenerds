@@ -41,6 +41,7 @@ struct PaperGalleryView: View {
                 }
                 .padding(24)
             }
+            .accessibilityIdentifier("Paper gallery")
             .background(Color(uiColor: .secondarySystemGroupedBackground))
             .navigationTitle("Paper")
             .navigationBarTitleDisplayMode(.inline)

@@ -14,6 +14,15 @@ from ship_lib.commands import _next_build, build_parser, cmd_archive, cmd_simula
 
 
 class PipelineBehaviorTests(unittest.TestCase):
+    def test_app_store_icon_has_no_transparency(self) -> None:
+        repository = Path(__file__).resolve().parents[2]
+        icon = repository / "NoteNerds/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
+        png = icon.read_bytes()
+
+        self.assertEqual(png[:8], b"\x89PNG\r\n\x1a\n")
+        self.assertNotIn(png[25], {4, 6})
+        self.assertNotIn(b"tRNS", png)
+
     def test_metadata_upload_requires_an_explicit_flag(self) -> None:
         parser = build_parser()
 

@@ -1,5 +1,23 @@
 # Current work
 
+## Deploy to iPad and TestFlight
+
+- [x] Confirm the connected iPad, release credentials, signing assets, and clean repository state.
+- [x] Build, install, and launch the current app on the paired iPad mini.
+- [x] Run the local TestFlight archive, export, and upload pipeline.
+- [x] Wait for Apple to finish processing the build.
+- [x] Confirm the TestFlight tester group receives the processed build.
+- [x] Attach the processed build to App Store version 1.0 without submitting it for review.
+- [x] Commit and push the version and build changes from the release pipeline.
+
+### Review
+
+- The current app was built, installed, and launched on Prashant's paired iPad mini.
+- Apple rejected build 2 because the 1024-pixel App Store icon contained transparency. The icon is now opaque with identical visible RGB artwork.
+- Apple accepted build 3 and finished processing it with a valid state.
+- The Internal Testers group receives all builds and contains build 3. Its English testing notes were uploaded and read back from Apple.
+- App Store version 1.0 now points to build 3. The version was not submitted for App Review.
+
 ## Make simplicity the App Store message
 
 - [x] Study the current public messaging of the reference paper-notebook product.

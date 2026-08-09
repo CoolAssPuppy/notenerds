@@ -1,5 +1,9 @@
 # Lessons
 
+- Treat App Store versions that differ only by trailing zeroes, such as `1.0` and `1.0.0`, as the same release when reading or updating metadata.
+- Apple does not allow `whatsNew` on an app’s first release. Keep first-update notes in the metadata document and send later release notes through the version release command.
+- App Store metadata writes require an explicit upload flag, a preview of changed fields, and a read-back check after Apple accepts the update.
+
 - Device builds must use the project build-setting names `NOTION_CLIENT_ID_B64` and `NOTION_CLIENT_SECRET_B64`. Verify the built Info.plist contains two nonempty decoded configuration values before installing it. A signed build can still omit service configuration.
 - The main canvas toolbar and radial root share this order: Writing, stroke width, ink color, Eraser, Lasso. Pen variants stay inside Writing. Eraser mode and shape variants stay inside their inspectors.
 - A radial menu needs complete circles with equal radius and equal angular spacing. Multiple rings need different angular phases so they read as rings instead of spokes or branches. Verify the rendered button centers, not only the item count.

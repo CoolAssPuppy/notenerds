@@ -1,5 +1,22 @@
 # Current work
 
+## Publish App Store metadata locally
+
+- [x] Rename the existing App Store listing to `docs/app-store-metadata.md` and update its stale product claims.
+- [x] Add failing tests for metadata parsing, field limits, preview, and overwrite behavior.
+- [x] Add a local `ship.py metadata` command with an explicit `--upload` flag.
+- [x] Fetch Apple’s current English (U.S.) metadata and preview every changed field.
+- [x] Upload the documented metadata once and read it back from App Store Connect.
+- [x] Run release-tool tests, lint, secret scanning, and repository checks.
+- [x] Commit and push the completed metadata work.
+
+### Review
+
+- The tracked English (U.S.) metadata now covers the name, subtitle, promotional text, description, keywords, support URL, marketing URL, privacy policy URL, and copyright.
+- `./scripts/ship.py metadata --version 1.0.0` previews differences. Adding `--upload` overwrites those fields and reads them back from Apple.
+- The command matches Apple’s existing `1.0` record to the project’s `1.0.0` release number.
+- Apple accepted the metadata and the read-back check found no remaining differences. First-update release notes remain documented because Apple does not provide “What’s New” for the first release.
+
 ## Restore the core canvas toolbar
 
 - [x] Confirm the current toolbar and Writing inspector behavior.

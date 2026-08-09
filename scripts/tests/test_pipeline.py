@@ -10,10 +10,19 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from ship_lib import config, diagnostics, exportplist, secrets, version, xcode
-from ship_lib.commands import _next_build, cmd_archive, cmd_simulator
+from ship_lib.commands import _next_build, build_parser, cmd_archive, cmd_simulator
 
 
 class PipelineBehaviorTests(unittest.TestCase):
+    def test_metadata_upload_requires_an_explicit_flag(self) -> None:
+        parser = build_parser()
+
+        preview = parser.parse_args(["metadata", "--version", "1.0.0"])
+        upload = parser.parse_args(["metadata", "--version", "1.0.0", "--upload"])
+
+        self.assertFalse(preview.upload)
+        self.assertTrue(upload.upload)
+
     def test_ci_pins_the_expected_xcodegen_archive(self) -> None:
         repository = Path(__file__).resolve().parents[2]
         workflow = (repository / ".github/workflows/ci.yml").read_text()

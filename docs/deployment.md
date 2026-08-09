@@ -140,11 +140,12 @@ The first upload should stop before automated review submission:
 In App Store Connect:
 
 1. Wait for build processing.
-2. Add the copy from `docs/app-store-listing.md`.
-3. Upload iPad screenshots.
-4. Complete App Privacy, age rating, pricing, availability, content rights, and App Review contact fields.
-5. Add the processed build to version 1.0.0.
-6. Confirm the version shows Ready for Review.
+2. Preview the tracked text with `./scripts/ship.py metadata --version 1.0.0`.
+3. Upload it with `./scripts/ship.py metadata --version 1.0.0 --upload`.
+4. Upload the required iPhone and iPad screenshots.
+5. Complete App Privacy, age rating, pricing, availability, content rights, and App Review contact fields.
+6. Add the processed build to version 1.0.0.
+7. Confirm the version shows Ready for Review.
 
 After one manual submission succeeds, the local command can submit later versions through the App Store Connect API.
 

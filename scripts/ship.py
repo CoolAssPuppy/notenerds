@@ -12,6 +12,8 @@ Commands:
     ship app-store --version 1.2.3    Bump version+build, upload, submit for review.
                    [--notes "..."] [--release-type AFTER_APPROVAL|MANUAL|SCHEDULED]
                    [--allow-dirty] [--skip-submit]
+    ship metadata --version 1.2.3 [--upload]
+                                           Preview or overwrite App Store metadata.
     ship bump --build|--patch|--minor|--major
     ship verify                       Check tools, credentials, project state.
     ship info                         Print resolved config + version.

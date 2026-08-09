@@ -8,9 +8,9 @@ We deliberately keep this small. The full ASC API is large; we only use:
   GET    /appStoreVersions                                     (find by version)
   POST   /appStoreVersions                                     (create version)
   PATCH  /appStoreVersions/{id}/relationships/build            (attach build)
-  GET    /appStoreVersions/{id}/appStoreVersionLocalizations   (find en-US)
-  POST   /appStoreVersionLocalizations                         (create en-US)
-  PATCH  /appStoreVersionLocalizations/{id}                    (update notes)
+  GET    /appInfos and localized app/version metadata
+  POST   localized app/version metadata
+  PATCH  localized app/version metadata and copyright
   POST   /reviewSubmissions                                    (open submission)
   POST   /reviewSubmissionItems                                (attach version)
   PATCH  /reviewSubmissions/{id}                               (submit)
@@ -26,7 +26,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from . import log
+from . import app_store_metadata, log
 
 
 def try_import_jwt():
@@ -175,11 +175,17 @@ def find_or_create_version(
     # CREATE, DELETE, GET_INSTANCE and UPDATE there.
     resp = get(token, f"/apps/{app_id}/appStoreVersions", {
         "filter[platform]": "IOS",
-        "filter[versionString]": version_string,
-        "limit": 1,
+        "limit": 50,
     })
-    if resp.get("data"):
-        version_id = resp["data"][0]["id"]
+    requested_version = _normalized_version(version_string)
+    matching_versions = [
+        item
+        for item in resp.get("data", [])
+        if _normalized_version(item.get("attributes", {}).get("versionString", "0"))
+        == requested_version
+    ]
+    if matching_versions:
+        version_id = matching_versions[0]["id"]
         log.info(f"Reusing existing App Store version {version_string} (id={version_id})")
         return version_id
 
@@ -207,6 +213,180 @@ def attach_build(token: str, version_id: str, build_id: str) -> None:
         f"/appStoreVersions/{version_id}/relationships/build",
         {"data": {"type": "builds", "id": build_id}},
     )
+
+
+def _normalized_version(value: str) -> tuple[int, ...]:
+    parts = [int(part) for part in value.split(".")]
+    while len(parts) > 1 and parts[-1] == 0:
+        parts.pop()
+    return tuple(parts)
+
+
+def _metadata_resources(
+    token: str,
+    app_id: str,
+    version_string: str,
+    locale: str,
+    *,
+    create_version: bool = False,
+    release_type: str = "MANUAL",
+) -> tuple[dict[str, Any], dict[str, Any] | None, dict[str, Any], dict[str, Any] | None]:
+    app_infos = get(token, f"/apps/{app_id}/appInfos", {"limit": 50}).get("data", [])
+    if not app_infos:
+        raise AscError(f"App {app_id} has no editable app information record")
+    app_info = app_infos[0]
+    app_localizations = get(
+        token,
+        f"/appInfos/{app_info['id']}/appInfoLocalizations",
+        {"limit": 50},
+    ).get("data", [])
+    app_localization = next(
+        (item for item in app_localizations if item["attributes"].get("locale") == locale),
+        None,
+    )
+
+    available_versions = get(token, f"/apps/{app_id}/appStoreVersions", {
+        "filter[platform]": "IOS",
+        "limit": 50,
+    }).get("data", [])
+    requested_version = _normalized_version(version_string)
+    versions = [
+        item
+        for item in available_versions
+        if _normalized_version(item.get("attributes", {}).get("versionString", "0"))
+        == requested_version
+    ]
+    if versions:
+        app_version = versions[0]
+    elif create_version:
+        log.info(f"Creating App Store version {version_string} ({release_type})")
+        response = post(token, "/appStoreVersions", {
+            "data": {
+                "type": "appStoreVersions",
+                "attributes": {
+                    "platform": "IOS",
+                    "versionString": version_string,
+                    "releaseType": release_type,
+                },
+                "relationships": {
+                    "app": {"data": {"type": "apps", "id": app_id}},
+                },
+            }
+        })
+        app_version = response["data"]
+    else:
+        return app_info, app_localization, {}, None
+    version_localizations = get(
+        token,
+        f"/appStoreVersions/{app_version['id']}/appStoreVersionLocalizations",
+        {"limit": 50},
+    ).get("data", [])
+    version_localization = next(
+        (item for item in version_localizations if item["attributes"].get("locale") == locale),
+        None,
+    )
+    return app_info, app_localization, app_version, version_localization
+
+
+def fetch_metadata(
+    token: str,
+    app_id: str,
+    version_string: str,
+    locale: str,
+) -> dict[str, str]:
+    """Read the metadata fields managed by the local release command."""
+    _, app_localization, app_version, version_localization = _metadata_resources(
+        token,
+        app_id,
+        version_string,
+        locale,
+    )
+    app_attributes = (app_localization or {}).get("attributes", {})
+    version_attributes = (version_localization or {}).get("attributes", {})
+    return {
+        "locale": locale,
+        "name": app_attributes.get("name", ""),
+        "subtitle": app_attributes.get("subtitle", ""),
+        "privacy_policy_url": app_attributes.get("privacyPolicyUrl", ""),
+        "description": version_attributes.get("description", ""),
+        "keywords": version_attributes.get("keywords", ""),
+        "marketing_url": version_attributes.get("marketingUrl", ""),
+        "promotional_text": version_attributes.get("promotionalText", ""),
+        "support_url": version_attributes.get("supportUrl", ""),
+        "copyright": app_version.get("attributes", {}).get("copyright", ""),
+    }
+
+
+def overwrite_metadata(
+    token: str,
+    app_id: str,
+    version_string: str,
+    metadata: app_store_metadata.AppStoreMetadata,
+    *,
+    release_type: str = "MANUAL",
+) -> None:
+    """Overwrite the tracked localization and version metadata fields."""
+    app_info, app_localization, app_version, version_localization = _metadata_resources(
+        token,
+        app_id,
+        version_string,
+        metadata.locale,
+        create_version=True,
+        release_type=release_type,
+    )
+    if app_localization is None:
+        post(token, "/appInfoLocalizations", {
+            "data": {
+                "type": "appInfoLocalizations",
+                "attributes": {
+                    "locale": metadata.locale,
+                    **metadata.app_info_attributes(),
+                },
+                "relationships": {
+                    "appInfo": {"data": {"type": "appInfos", "id": app_info["id"]}},
+                },
+            }
+        })
+    else:
+        patch(token, f"/appInfoLocalizations/{app_localization['id']}", {
+            "data": {
+                "type": "appInfoLocalizations",
+                "id": app_localization["id"],
+                "attributes": metadata.app_info_attributes(),
+            }
+        })
+
+    if version_localization is None:
+        post(token, "/appStoreVersionLocalizations", {
+            "data": {
+                "type": "appStoreVersionLocalizations",
+                "attributes": {
+                    "locale": metadata.locale,
+                    **metadata.version_localization_attributes(),
+                },
+                "relationships": {
+                    "appStoreVersion": {
+                        "data": {"type": "appStoreVersions", "id": app_version["id"]}
+                    },
+                },
+            }
+        })
+    else:
+        patch(token, f"/appStoreVersionLocalizations/{version_localization['id']}", {
+            "data": {
+                "type": "appStoreVersionLocalizations",
+                "id": version_localization["id"],
+                "attributes": metadata.version_localization_attributes(),
+            }
+        })
+
+    patch(token, f"/appStoreVersions/{app_version['id']}", {
+        "data": {
+            "type": "appStoreVersions",
+            "id": app_version["id"],
+            "attributes": {"copyright": metadata.copyright},
+        }
+    })
 
 
 def set_release_notes(

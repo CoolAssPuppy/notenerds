@@ -12,6 +12,8 @@
 ./scripts/ship.py verify --release
 ./scripts/ship.py testflight --notes "What testers should check"
 ./scripts/ship.py app-store --version 1.0.0 --notes "Initial release"
+./scripts/ship.py metadata --version 1.0.0
+./scripts/ship.py metadata --version 1.0.0 --upload
 ./scripts/ship.py bump --build
 ```
 
@@ -56,6 +58,20 @@ The first release should stop after upload while the App Store record is being c
 ```
 
 Remove `--skip-submit` after App Store Connect shows the version as ready for review.
+
+### `metadata`
+
+Reads `docs/app-store-metadata.md` and compares its English (U.S.) text with the selected editable App Store version. The default command prints every difference and leaves App Store Connect unchanged:
+
+```bash
+./scripts/ship.py metadata --version 1.0.0
+```
+
+Add `--upload` to overwrite the name, subtitle, description, keywords, promotional text, support URL, marketing URL, privacy policy URL, and copyright. The command reads the values back from Apple and fails if they do not match the file. Later release notes continue to use `app-store --notes`; Apple does not provide a “What’s New” field for the first release.
+
+```bash
+./scripts/ship.py metadata --version 1.0.0 --upload
+```
 
 ### `bump`
 

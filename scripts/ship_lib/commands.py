@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import asc, config, diagnostics, exportplist, log, secrets, version, xcode
+from . import asc, config, diagnostics, exportplist, log, metadata_command, secrets, version, xcode
 
 
 # =============================================================================
@@ -84,6 +84,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Stop after upload - don't attach to a version or submit for review.",
     )
 
+    metadata = sub.add_parser(
+        "metadata",
+        help="Preview or upload the tracked App Store metadata.",
+    )
+    metadata.add_argument("--version", required=True, help="Editable App Store version.")
+    metadata.add_argument(
+        "--file",
+        type=Path,
+        help="Metadata Markdown path relative to the repository root.",
+    )
+    metadata.add_argument(
+        "--upload",
+        action="store_true",
+        help="Overwrite App Store Connect. Without this flag, show a preview only.",
+    )
+
     bp = sub.add_parser("bump", help="Bump version or build number.")
     grp = bp.add_mutually_exclusive_group(required=True)
     grp.add_argument("--build", action="store_const", dest="what", const="build")
@@ -104,6 +120,7 @@ def dispatch(args: argparse.Namespace) -> int:
         "archive": cmd_archive,
         "testflight": cmd_testflight,
         "app-store": cmd_app_store,
+        "metadata": metadata_command.cmd_metadata,
         "bump": cmd_bump,
         "verify": diagnostics.cmd_verify,
         "info": diagnostics.cmd_info,

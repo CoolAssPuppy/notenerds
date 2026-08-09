@@ -16,21 +16,54 @@ enum PencilCanvasRenderer {
         let pencilStrokes = strokes.compactMap { stroke -> PKStroke? in
             guard !stroke.samples.isEmpty else { return nil }
             let points = stroke.samples.map { sample in
-                PKStrokePoint(
-                    location: CGPoint(x: sample.point.x, y: sample.point.y),
-                    timeOffset: sample.timeOffset,
-                    size: CGSize(width: stroke.style.width, height: stroke.style.width),
-                    opacity: stroke.style.color.alpha,
-                    force: sample.pressure,
-                    azimuth: sample.azimuth,
-                    altitude: sample.altitude
-                )
+                strokePoint(from: sample, style: stroke.style)
             }
             let path = PKStrokePath(controlPoints: points, creationDate: stroke.createdAt)
             let ink = PKInk(stroke.style.instrument.inkType, color: UIColor(stroke.style.color))
             return PKStroke(ink: ink, path: path)
         }
         return PKDrawing(strokes: pencilStrokes)
+    }
+
+    private static func strokePoint(from sample: StrokeSample, style: StrokeStyle) -> PKStrokePoint {
+        let size = sample.renderedSize.map { CGSize(width: $0.width, height: $0.height) }
+            ?? CGSize(width: style.width, height: style.width)
+        let opacity = sample.renderedOpacity ?? style.color.alpha
+        let location = CGPoint(x: sample.point.x, y: sample.point.y)
+        if #available(iOS 26.0, *), let threshold = sample.threshold {
+            return PKStrokePoint(
+                location: location,
+                timeOffset: sample.timeOffset,
+                size: size,
+                opacity: opacity,
+                force: sample.pressure,
+                azimuth: sample.azimuth,
+                altitude: sample.altitude,
+                secondaryScale: sample.secondaryScale ?? 1,
+                threshold: threshold
+            )
+        }
+        if let secondaryScale = sample.secondaryScale {
+            return PKStrokePoint(
+                location: location,
+                timeOffset: sample.timeOffset,
+                size: size,
+                opacity: opacity,
+                force: sample.pressure,
+                azimuth: sample.azimuth,
+                altitude: sample.altitude,
+                secondaryScale: secondaryScale
+            )
+        }
+        return PKStrokePoint(
+            location: location,
+            timeOffset: sample.timeOffset,
+            size: size,
+            opacity: opacity,
+            force: sample.pressure,
+            azimuth: sample.azimuth,
+            altitude: sample.altitude
+        )
     }
 
     static func patternColor(for template: CanvasTemplate) -> UIColor {

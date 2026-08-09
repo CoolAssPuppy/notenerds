@@ -67,4 +67,47 @@ final class LibraryBehaviorTests: XCTestCase {
         XCTAssertEqual(library.folders(sortedBy: .nameAscending).map(\.name), ["Alpha", "zebra"])
         XCTAssertEqual(library.folders(sortedBy: .nameDescending).map(\.name), ["zebra", "Alpha"])
     }
+
+    func testMyNotebooksIncludesRootAndFolderNotebooksByRecentEditTime() throws {
+        var library = LibraryState()
+        let folder = try library.createFolder(named: "Projects", in: nil, at: DomainFixtures.fixedDate)
+        let root = Notebook(
+            title: "Root",
+            canvases: [Canvas(title: "Canvas 1")],
+            createdAt: DomainFixtures.fixedDate,
+            modifiedAt: DomainFixtures.fixedDate.addingTimeInterval(60)
+        )
+        let filed = Notebook(
+            title: "Filed",
+            canvases: [Canvas(title: "Canvas 1")],
+            createdAt: DomainFixtures.fixedDate,
+            modifiedAt: DomainFixtures.fixedDate.addingTimeInterval(120)
+        )
+        try library.addNotebook(root, to: nil)
+        try library.addNotebook(filed, to: folder.id)
+
+        XCTAssertEqual(
+            library.notebooks(in: nil, sortedBy: .recentlyModified).map(\.title),
+            ["Filed", "Root"]
+        )
+        XCTAssertEqual(
+            library.notebooks(in: folder.id, sortedBy: .recentlyModified).map(\.title),
+            ["Filed"]
+        )
+    }
+
+    func testOldestEditTimeSortsFromOldestToNewest() throws {
+        var library = LibraryState()
+        let oldest = DomainFixtures.notebook(title: "Oldest")
+        let newest = Notebook(
+            title: "Newest",
+            canvases: [Canvas(title: "Canvas 1")],
+            createdAt: DomainFixtures.fixedDate,
+            modifiedAt: DomainFixtures.fixedDate.addingTimeInterval(300)
+        )
+        try library.addNotebook(newest, to: nil)
+        try library.addNotebook(oldest, to: nil)
+
+        XCTAssertEqual(library.notebooks(sortedBy: .oldestModified).map(\.title), ["Oldest", "Newest"])
+    }
 }

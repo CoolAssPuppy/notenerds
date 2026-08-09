@@ -1,5 +1,40 @@
 # Current work
 
+## Keep drawing writes on the active canvas
+
+- [x] Add a failing regression test for rename, add canvas, draw immediately, switch, and reopen.
+- [x] Give each displayed canvas its own PencilKit view and save callbacks.
+- [x] Verify that drawing and erasing on one canvas cannot replace strokes on another canvas.
+- [x] Run focused tests and the complete test suite.
+- [x] Record the result before release.
+
+## Organize notebooks and preview every canvas
+
+- [x] Show every notebook in My Notebooks, including folder members, with newest edits first.
+- [x] Show notebook edit times as relative minutes, hours, and days.
+- [x] Keep folder views limited to their notebooks and add A-Z, Z-A, recent, and oldest sorting.
+- [x] Show multi-canvas notebooks as stacks with swipeable canvas previews.
+- [x] Verify folder sorting and canvas preview paging through behavior and UI tests.
+- [x] Run the complete test suite and record the result before release.
+
+## Preserve PencilKit stroke appearance after reopen
+
+- [x] Add a failing Marker, Highlighter, Marker persistence test using distinct PencilKit point sizes and opacity.
+- [x] Preserve PencilKit point rendering data in the native note format while keeping older notes readable.
+- [x] Verify focused drawing, persistence, and highlighter regressions.
+- [x] Run the complete test suite, strict lint, release tests, and static checks.
+- [x] Record the result, commit, push, and send a corrected TestFlight build.
+
+### Current release review
+
+- The signed complete Xcode scheme passed 366 tests with 0 failures and 0 skipped tests.
+- The canvas safety UI test reproduced the reported rename, add-canvas, and immediate-drawing sequence and verified every canvas again after reopening the notebook.
+- Marker and Highlighter point size, opacity, and secondary-scale data now survive native-file persistence without changing older note files.
+- My Notebooks includes folder members in newest-first order. Folder views provide four sort choices, and notebook stacks page through every canvas preview.
+- Strict SwiftLint passed with 0 violations across 214 files. All 29 release-pipeline tests passed, and `git diff --check` passed.
+- Release preflight authenticated with the existing App Store Connect key and passed every check.
+- Apple accepted TestFlight build 12 with no upload errors. Delivery UUID: `87ba5036-e271-4128-a8b9-45726ab73d40`.
+
 ## Final code-quality audit
 
 - [x] Run the complete baseline test suite and record the result: 353 passed, 0 failed, 0 skipped.

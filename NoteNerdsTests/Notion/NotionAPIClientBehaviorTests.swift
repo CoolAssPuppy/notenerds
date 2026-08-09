@@ -225,7 +225,10 @@ final class NotionAPIClientBehaviorTests: XCTestCase {
         XCTAssertEqual(try richText(properties, name: "Notebook ID"), snapshot.row.notebookID)
         XCTAssertEqual(try richText(properties, name: "Content Hash"), snapshot.row.contentHash)
         XCTAssertEqual(try number(properties, name: "Canvas Count"), 2)
-        XCTAssertEqual(try number(properties, name: "Schema Version"), 4)
+        XCTAssertEqual(
+            try number(properties, name: "Schema Version"),
+            DocumentSchemaVersion.current.rawValue
+        )
         XCTAssertEqual(try checkbox(properties, name: "Favorite"), true)
         XCTAssertEqual(try select(properties, name: "Sync Status"), "Complete")
         XCTAssertEqual(try multiSelect(properties, name: "Tags"), ["planning", "work，personal"])

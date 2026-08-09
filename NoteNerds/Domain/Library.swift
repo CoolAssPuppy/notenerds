@@ -10,6 +10,7 @@ enum LibraryError: Error, Equatable {
 
 enum LibrarySortMode: String, Codable, CaseIterable, Sendable {
     case recentlyModified
+    case oldestModified
     case recentlyOpened
     case nameAscending
     case nameDescending
@@ -305,6 +306,7 @@ struct LibraryState: Codable, Equatable, Sendable {
         return availableNotebooks.sorted { first, second in
             switch mode {
             case .recentlyModified: first.modifiedAt > second.modifiedAt
+            case .oldestModified: first.modifiedAt < second.modifiedAt
             case .recentlyOpened: first.lastOpenedAt > second.lastOpenedAt
             case .nameAscending: first.title.localizedCaseInsensitiveCompare(second.title) == .orderedAscending
             case .nameDescending: first.title.localizedCaseInsensitiveCompare(second.title) == .orderedDescending
@@ -313,10 +315,17 @@ struct LibraryState: Codable, Equatable, Sendable {
         }
     }
 
+    func notebooks(in folderID: FolderID?, sortedBy mode: LibrarySortMode) -> [Notebook] {
+        let sorted = notebooks(sortedBy: mode)
+        guard let folderID else { return sorted }
+        return sorted.filter { $0.parentFolderID == folderID }
+    }
+
     func folders(sortedBy mode: LibrarySortMode) -> [Folder] {
         folderStorage.values.sorted { first, second in
             switch mode {
             case .recentlyModified, .recentlyOpened: first.modifiedAt > second.modifiedAt
+            case .oldestModified: first.modifiedAt < second.modifiedAt
             case .nameAscending: first.name.localizedCaseInsensitiveCompare(second.name) == .orderedAscending
             case .nameDescending: first.name.localizedCaseInsensitiveCompare(second.name) == .orderedDescending
             case .dateCreated: first.createdAt > second.createdAt

@@ -36,6 +36,11 @@ struct LibraryView: View {
         .simultaneousGesture(TapGesture().onEnded { collapseSearch() })
         .navigationTitle(detailTitle)
         .toolbar {
+            if model.selectedSection == .files, model.currentFolderID != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    folderSortMenu
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 LibrarySearchControl(text: $model.searchQuery, isExpanded: $isSearchExpanded)
             }
@@ -85,6 +90,15 @@ struct LibraryView: View {
 
     private var defaultPaperType: PaperType {
         PaperType(rawValue: defaultPaperTypeRawValue) ?? .blankWhite
+    }
+
+    private var folderSortMenu: some View {
+        Menu("Sort", systemImage: AppSymbol.sort) {
+            ForEach(LibrarySortMode.folderOptions, id: \.self) { mode in
+                Button(mode.folderLabel) { model.setSortMode(mode) }
+            }
+        }
+        .accessibilityValue(model.library.preferredSortMode.folderLabel)
     }
 
     private var isEmpty: Bool {
@@ -173,13 +187,7 @@ private struct NotebookCard: View {
     @State private var isConfirmingPermanentDelete = false
 
     var body: some View {
-        Button { isSelecting ? onSelect() : model.open(notebook.id) } label: {
-            cardContent
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Notebook, \(notebook.title)")
-        .accessibilityValue(accessibilityValue)
-        .accessibilityHint("Opens the notebook")
+        cardContent
         .overlay { trashOutline }
         .overlay(alignment: .topTrailing) {
             if isSelecting {
@@ -215,18 +223,37 @@ private struct NotebookCard: View {
     private var cardContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             NotebookThumbnail(notebook: notebook)
-            HStack(alignment: .firstTextBaseline) {
-                notebookDetails
-                Spacer()
-                if notebook.isFavorite { Image(systemName: "star.fill").foregroundStyle(.primary) }
+                .onTapGesture(perform: activate)
+            Button(action: activate) {
+                HStack(alignment: .firstTextBaseline) {
+                    notebookDetails
+                    Spacer()
+                    if notebook.isFavorite { Image(systemName: "star.fill").foregroundStyle(.primary) }
+                }
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Notebook, \(notebook.title)")
+            .accessibilityValue(accessibilityValue)
+            .accessibilityHint("Opens the notebook")
+        }
+    }
+
+    private func activate() {
+        if isSelecting {
+            onSelect()
+        } else {
+            model.open(notebook.id)
         }
     }
 
     private var notebookDetails: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(notebook.title).font(.headline).foregroundStyle(.primary).lineLimit(2)
-            Text(notebook.modifiedAt, style: .relative).font(.caption).foregroundStyle(.secondary)
+            TimelineView(.periodic(from: .now, by: 60)) { context in
+                Text(NotebookModifiedTime.label(for: notebook.modifiedAt, relativeTo: context.date))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             if !notebook.tags.isEmpty {
                 Text(notebook.tags.sorted().joined(separator: ", "))
                     .font(.caption2)
@@ -293,18 +320,25 @@ private struct NotebookThumbnail: View {
     let notebook: Notebook
 
     var body: some View {
-        CanvasContentThumbnail(canvas: notebook.previewCanvas)
-        .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
+        NotebookCanvasPreviewStack(notebook: notebook)
     }
 }
 
 extension LibrarySortMode {
-    var label: String {
+    static let folderOptions: [LibrarySortMode] = [
+        .nameAscending,
+        .nameDescending,
+        .recentlyModified,
+        .oldestModified
+    ]
+
+    var folderLabel: String {
         switch self {
-        case .recentlyModified: "Recently modified"
+        case .nameAscending: "A-Z"
+        case .nameDescending: "Z-A"
+        case .recentlyModified: "Time (recent)"
+        case .oldestModified: "Time (oldest)"
         case .recentlyOpened: "Recently opened"
-        case .nameAscending: "Name, A to Z"
-        case .nameDescending: "Name, Z to A"
         case .dateCreated: "Date created"
         }
     }

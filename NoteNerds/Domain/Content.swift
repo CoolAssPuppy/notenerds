@@ -33,6 +33,38 @@ struct StrokeSample: Codable, Hashable, Sendable {
     var azimuth: Double
     var roll: Double
     var timeOffset: TimeInterval
+    var renderedSize: CanvasSize?
+    var renderedOpacity: Double?
+    var secondaryScale: Double?
+    var threshold: Double?
+
+    init(
+        point: CanvasPoint,
+        pressure: Double,
+        altitude: Double,
+        azimuth: Double,
+        roll: Double,
+        timeOffset: TimeInterval,
+        rendering: StrokeSampleRendering? = nil
+    ) {
+        self.point = point
+        self.pressure = pressure
+        self.altitude = altitude
+        self.azimuth = azimuth
+        self.roll = roll
+        self.timeOffset = timeOffset
+        renderedSize = rendering?.size
+        renderedOpacity = rendering?.opacity
+        secondaryScale = rendering?.secondaryScale
+        threshold = rendering?.threshold
+    }
+}
+
+struct StrokeSampleRendering: Hashable, Sendable {
+    let size: CanvasSize
+    let opacity: Double
+    let secondaryScale: Double
+    let threshold: Double?
 }
 
 struct Stroke: Codable, Hashable, Sendable {

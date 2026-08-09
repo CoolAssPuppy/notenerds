@@ -225,13 +225,10 @@ struct PencilCanvasView: UIViewRepresentable {
             guard let instrument = configuration.tool.instrument else { return }
             let addedStrokes = addedPencilStrokes.compactMap { pencilStroke -> Stroke? in
                 let samples = pencilStroke.path.map { point in
-                    StrokeSample(
-                        point: point.location.applying(pencilStroke.transform).canvasPoint,
-                        pressure: point.force,
-                        altitude: point.altitude,
-                        azimuth: point.azimuth,
-                        roll: latestPencilRoll,
-                        timeOffset: point.timeOffset
+                    canonicalSample(
+                        from: point,
+                        transformedBy: pencilStroke.transform,
+                        roll: latestPencilRoll
                     )
                 }
                 guard !samples.isEmpty else { return nil }
@@ -254,13 +251,10 @@ struct PencilCanvasView: UIViewRepresentable {
         private func canonicalStroke(from pencilStroke: PKStroke, preserving source: Stroke) -> Stroke {
             let points = Array(pencilStroke.path)
             let samples = points.enumerated().map { index, point in
-                StrokeSample(
-                    point: point.location.applying(pencilStroke.transform).canvasPoint,
-                    pressure: point.force,
-                    altitude: point.altitude,
-                    azimuth: point.azimuth,
-                    roll: source.samples.indices.contains(index) ? source.samples[index].roll : 0,
-                    timeOffset: point.timeOffset
+                canonicalSample(
+                    from: point,
+                    transformedBy: pencilStroke.transform,
+                    roll: source.samples.indices.contains(index) ? source.samples[index].roll : 0
                 )
             }
             return Stroke(

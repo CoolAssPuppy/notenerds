@@ -12,7 +12,7 @@ Note Nerds ships from a local Python command patterned after TripMaster. XcodeGe
 - CloudKit container: `iCloud.com.strategicnerds.notenerds`
 - Apple Developer team: `955GSY56UT`
 - Marketing version: `1.0.0`
-- Current TestFlight build: `11`
+- Current TestFlight build: `12`
 - Release mode: manual after approval
 
 ## What is already configured

@@ -339,7 +339,7 @@ final class NoteNerdsLaunchTests: XCTestCase {
 
         application.buttons["More"].tap()
         XCTAssertTrue(application.buttons["Select"].exists)
-        XCTAssertTrue(application.buttons["Sort"].exists)
+        XCTAssertFalse(application.buttons["Sort"].exists)
         XCTAssertTrue(application.buttons["App settings"].exists)
         let attachment = XCTAttachment(screenshot: application.screenshot())
         attachment.name = "Apple standard library sidebar"

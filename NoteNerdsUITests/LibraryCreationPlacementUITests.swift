@@ -49,6 +49,47 @@ final class LibraryCreationPlacementUITests: XCTestCase {
         XCTAssertTrue(newNotebook.exists)
     }
 
+    func testFolderSortAndGlobalSwipeableCanvasStack() {
+        let application = makeApplication()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        application.launch()
+
+        application.buttons["New folder"].tap()
+        application.buttons["Folder, New folder"].tap()
+        let sort = application.buttons["Sort"]
+        XCTAssertTrue(sort.waitForExistence(timeout: 2))
+        sort.tap()
+        for option in ["A-Z", "Z-A", "Time (recent)", "Time (oldest)"] {
+            XCTAssertTrue(application.buttons[option].exists)
+        }
+        application.buttons["Time (recent)"].tap()
+
+        application.buttons["New notebook"].tap()
+        for _ in 0..<2 {
+            application.buttons["New canvas"].tap()
+            application.buttons["Create"].tap()
+        }
+        application.buttons["Library"].tap()
+        application.staticTexts["My Notebooks"].tap()
+
+        XCTAssertTrue(application.buttons["Notebook, Untitled notebook"].waitForExistence(timeout: 2))
+        let preview = application.descendants(matching: .any)["Canvas previews"]
+        XCTAssertTrue(preview.waitForExistence(timeout: 2))
+        XCTAssertEqual(preview.value as? String, "Canvas 1 of 3")
+        preview.swipeLeft()
+        let secondCanvas = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", "Canvas 2 of 3"),
+            object: preview
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [secondCanvas], timeout: 2), .completed)
+        XCTAssertGreaterThan(
+            application.staticTexts.matching(
+                NSPredicate(format: "label == 'now' OR label ENDSWITH 'ago'")
+            ).count,
+            0
+        )
+    }
+
     private func makeApplication() -> XCUIApplication {
         let application = XCUIApplication()
         application.launchArguments = ["-ui-testing", "-reset-library"]

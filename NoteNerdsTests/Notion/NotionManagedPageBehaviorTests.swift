@@ -173,7 +173,7 @@ private extension NotionNotebookSnapshot {
                 canvasCount: 2,
                 tags: ["work"],
                 isFavorite: false,
-                schemaVersion: 4,
+                schemaVersion: DocumentSchemaVersion.current.rawValue,
                 contentHash: String(repeating: "f", count: 64),
                 syncStatus: .complete,
                 trashedAt: nil

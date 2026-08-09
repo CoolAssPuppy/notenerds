@@ -69,7 +69,8 @@ final class AppModel: ObservableObject {
         let base: [Notebook]
         switch selectedSection {
         case .files:
-            base = library.notebooks(sortedBy: library.preferredSortMode)
+            let sortMode: LibrarySortMode = currentFolderID == nil ? .recentlyModified : library.preferredSortMode
+            base = library.notebooks(in: currentFolderID, sortedBy: sortMode)
         case .favorites:
             base = library.notebooks(sortedBy: library.preferredSortMode).filter(\.isFavorite)
         case .recents:
@@ -77,9 +78,7 @@ final class AppModel: ObservableObject {
         case .trash:
             base = library.notebooks.filter { $0.trashedAt != nil }.sorted { $0.modifiedAt > $1.modifiedAt }
         }
-        let scoped = selectedSection == .files && searchQuery.isEmpty
-            ? base.filter { $0.parentFolderID == currentFolderID }
-            : base
+        let scoped = base
         guard !searchQuery.isEmpty else { return scoped }
         return scoped.filter { $0.matches(searchQuery) }
     }

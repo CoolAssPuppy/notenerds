@@ -150,6 +150,7 @@ struct NotebookEditorView: View {
                 onPencilDoubleTap: switchDrawingToolAndEraser,
                 onPlannerRegionPageRequested: selectPlannerRegion
             )
+            .id(currentCanvas.id)
             floatingToolbar
             if isPlannerRegionPagingPresented {
                 VStack {

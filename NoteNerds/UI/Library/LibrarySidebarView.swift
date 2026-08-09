@@ -114,11 +114,6 @@ struct LibrarySidebarView: View {
                     if !isSelecting { selectedItems = [] }
                 }
             }
-            Menu("Sort", systemImage: AppSymbol.sort) {
-                ForEach(LibrarySortMode.allCases, id: \.self) { mode in
-                    Button(mode.label) { model.setSortMode(mode) }
-                }
-            }
             selectionActions
             trashActions
             Divider()

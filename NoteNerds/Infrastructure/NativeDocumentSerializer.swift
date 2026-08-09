@@ -1,7 +1,7 @@
 import Foundation
 
 struct DocumentSchemaVersion: RawRepresentable, Codable, Hashable, Sendable {
-    static let current = DocumentSchemaVersion(rawValue: 4)
+    static let current = DocumentSchemaVersion(rawValue: 5)
 
     let rawValue: Int
 }

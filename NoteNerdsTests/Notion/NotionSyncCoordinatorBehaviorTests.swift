@@ -191,7 +191,7 @@ final class NotionSyncCoordinatorBehaviorTests: XCTestCase {
                     canvasCount: 2,
                     tags: [],
                     isFavorite: false,
-                    schemaVersion: 4,
+                    schemaVersion: DocumentSchemaVersion.current.rawValue,
                     contentHash: String(repeating: "e", count: 64),
                     syncStatus: .complete,
                     trashedAt: nil

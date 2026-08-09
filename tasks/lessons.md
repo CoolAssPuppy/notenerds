@@ -1,5 +1,7 @@
 # Lessons
 
+- After changing a shared schema version, classify every hard-coded old version before running the full suite. Assertions for newly produced data must use the current schema constant; explicit old numbers belong only in migration fixtures.
+- A saved Pencil stroke needs the rendered PencilKit point size, opacity, secondary scale, and threshold in addition to location, force, tilt, and time. Reconstructing Marker or Highlighter paths from a selected toolbar width changes their appearance after reopening the note. Test a mixed-instrument note before and after native serialization.
 - A shared service connection needs both its credential and its durable sync state on every device. Do not enable iCloud Keychain for a token while leaving the destination, remote mappings, pending work, and deletion records device-local.
 - After choosing an option from a toolbar popover, verify the next primary tool is tappable. A visible core button can still be blocked by an inspector that did not close.
 - Never send highlighter strokes through held-shape recognition. Test a real highlight over existing writing and confirm that Pencil lift keeps both strokes as ink without replacing the canvas drawing.
@@ -80,3 +82,4 @@
 - Synced deletion rules must distinguish recoverable app Trash from permanent deletion. Keep the remote item while it can be restored in the app, then remove it from the remote destination after Empty Trash.
 - Treat writing, note previews, and reopening saved notes as one release gate. Passing isolated persistence and Pencil callback tests is insufficient when the real library-to-editor flow still fails.
 - Decode external API query responses from the smallest documented example. If Notion omits a meeting parent, retrieve the meeting block before inserting a related link.
+- Treat a canvas identifier as part of the PencilKit view's identity. A reused UIKit coordinator can keep callbacks for an earlier canvas and write a later drawing into the wrong document. Test immediate drawing after every canvas switch and confirm all canvases after relaunch.

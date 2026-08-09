@@ -20,6 +20,7 @@
 - Local release verification now rejects a generated deployment target or device family that differs from `ship.toml`. CI uses the macOS 26 runner and Xcode 26.
 - The complete iOS 26.5 scheme passed 367 tests with 0 failures and 0 skipped tests. The 33 release-tool tests passed.
 - Strict SwiftLint passed across 214 files. Xcode static analysis, the unsigned Release build, the secret scan, release preflight, XcodeGen stability check, and `git diff --check` passed.
+- Apple accepted TestFlight build 13 and marked it valid. The Internal Testers group receives every build automatically. Delivery UUID: `b0cf7957-9815-4c98-8733-e4556ae8a545`.
 
 ## Keep drawing writes on the active canvas
 

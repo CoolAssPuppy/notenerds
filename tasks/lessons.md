@@ -84,3 +84,4 @@
 - Treat writing, note previews, and reopening saved notes as one release gate. Passing isolated persistence and Pencil callback tests is insufficient when the real library-to-editor flow still fails.
 - Decode external API query responses from the smallest documented example. If Notion omits a meeting parent, retrieve the meeting block before inserting a related link.
 - Treat a canvas identifier as part of the PencilKit view's identity. A reused UIKit coordinator can keep callbacks for an earlier canvas and write a later drawing into the wrong document. Test immediate drawing after every canvas switch and confirm all canvases after relaunch.
+- Release verification does not send a TestFlight build. When the user asks to cut or send a release, run the signed upload, wait for App Store Connect to mark the build valid, and confirm the intended tester group can receive it before reporting completion.

@@ -12,7 +12,7 @@ Note Nerds ships from a local Python command patterned after TripMaster. XcodeGe
 - CloudKit container: `iCloud.com.strategicnerds.notenerds`
 - Apple Developer team: `955GSY56UT`
 - Marketing version: `1.0.0`
-- Current TestFlight build: `12`
+- Current TestFlight build: `13`
 - Release mode: manual after approval
 
 Apple provides no App Store capability that exactly identifies Apple Intelligence-capable hardware. Note Nerds declares no substitute capability. Features that depend on Apple Intelligence must check their framework availability at runtime.

@@ -263,6 +263,8 @@ private actor RecordingNotionSyncAPI: NotionSyncAPI {
         return nil
     }
 
+    func trashNotebookPage(pageID: String) { fatalError("Unused") }
+
     func replaceManagedPage(
         pageID: String,
         oldRootID: String?,

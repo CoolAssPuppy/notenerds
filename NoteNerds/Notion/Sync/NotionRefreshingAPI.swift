@@ -56,6 +56,12 @@ actor NotionRefreshingAPI: NotionSyncAPI {
         }
     }
 
+    func trashNotebookPage(pageID: String) async throws {
+        try await withRefresh { api in
+            try await api.trashNotebookPage(pageID: pageID)
+        }
+    }
+
     func findManagedRootBlock(pageID: String, notebookID: String) async throws -> String? {
         try await withRefresh { api in
             try await api.findManagedRootBlock(pageID: pageID, notebookID: notebookID)

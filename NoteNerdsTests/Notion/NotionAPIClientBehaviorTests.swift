@@ -222,6 +222,24 @@ final class NotionAPIClientBehaviorTests: XCTestCase {
         )
     }
 
+    func testPermanentAppDeletionMovesTheBoundNotebookPageToNotionTrash() async throws {
+        let pageID = "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
+        let transport = StubNotionTransport(responses: [
+            .json(200, #"{"object":"page","id":"\#(pageID)","in_trash":true}"#)
+        ])
+        let client = NotionAPIClient(accessToken: "token", transport: transport)
+
+        try await client.trashNotebookPage(pageID: pageID)
+        let requests = await transport.requests
+        let request = try XCTUnwrap(requests.first)
+        let body = try jsonBody(request)
+
+        XCTAssertEqual(request.httpMethod, "PATCH")
+        XCTAssertEqual(request.url?.path, "/v1/pages/AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")
+        XCTAssertEqual(body["in_trash"] as? Bool, true)
+        XCTAssertEqual(Set(body.keys), ["in_trash"])
+    }
+
     func testUpdateNotebookPageReplacesPropertiesWithoutChangingItsParent() async throws {
         let pageID = "10101010-1010-1010-1010-101010101010"
         let transport = StubNotionTransport(responses: [

@@ -8,9 +8,14 @@ actor LocalDocumentStore {
     private let rootURL: URL
     private let serializer = NativeDocumentSerializer()
     private let fileManager = FileManager.default
+    private let readData: @Sendable (URL) throws -> Data
 
-    init(rootURL: URL) {
+    init(
+        rootURL: URL,
+        readData: @escaping @Sendable (URL) throws -> Data = { try Data(contentsOf: $0) }
+    ) {
         self.rootURL = rootURL
+        self.readData = readData
     }
 
     func save(_ package: NativeNotebookPackage) throws {
@@ -25,8 +30,11 @@ actor LocalDocumentStore {
 
     func load(notebookID: NotebookID) throws -> NativeNotebookPackage {
         let url = snapshotURL(for: notebookID)
-        guard fileManager.fileExists(atPath: url.path()) else { throw LocalDocumentStoreError.notebookNotFound }
-        return try serializer.decode(Data(contentsOf: url))
+        do {
+            return try serializer.decode(readData(url))
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            throw LocalDocumentStoreError.notebookNotFound
+        }
     }
 
     func append(_ operation: DocumentOperation, notebookID: NotebookID) throws {
@@ -51,8 +59,12 @@ actor LocalDocumentStore {
     func recover(notebookID: NotebookID) throws -> NativeNotebookPackage {
         var package = try load(notebookID: notebookID)
         let url = journalURL(for: notebookID)
-        guard fileManager.fileExists(atPath: url.path()) else { return package }
-        let data = try Data(contentsOf: url)
+        let data: Data
+        do {
+            data = try readData(url)
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            return package
+        }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .millisecondsSince1970
         let lines = data.split(separator: 0x0A)

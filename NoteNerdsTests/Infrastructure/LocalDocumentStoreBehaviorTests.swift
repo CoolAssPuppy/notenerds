@@ -13,6 +13,17 @@ final class LocalDocumentStoreBehaviorTests: XCTestCase {
         XCTAssertEqual(restored, package)
     }
 
+    func testReadableSnapshotLoadsWithoutAFileExistencePreflight() async throws {
+        let rootURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        let package = NativeNotebookPackage(schemaVersion: .current, notebook: DomainFixtures.notebook())
+        let encoded = try NativeDocumentSerializer().encode(package)
+        let store = LocalDocumentStore(rootURL: rootURL, readData: { _ in encoded })
+
+        let restored = try await store.load(notebookID: package.notebook.id)
+
+        XCTAssertEqual(restored, package)
+    }
+
     func testJournalReplaysCompletedStrokeAfterLastSnapshot() async throws {
         let rootURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         let store = LocalDocumentStore(rootURL: rootURL)

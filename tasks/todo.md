@@ -1,5 +1,48 @@
 # Current work
 
+## Restore fast writing, note previews, and saved-note loading
+
+- [x] Reproduce fast Pencil input falling behind with a failing integration test.
+- [x] Reproduce blank note previews and saved notes failing to open.
+- [x] Trace the shared data and rendering paths to their root causes.
+- [x] Fix the regressions without weakening planner containment or persistence.
+- [x] Run focused tests, the complete behavior suite, UI checks, strict lint, and project checks.
+- [x] Send a corrected TestFlight build, then commit and push it.
+
+### Review
+
+- TestFlight build 6 was uploaded before these regressions were reported and will not be promoted.
+- Completed strokes now become the Pencil canvas's canonical state before SwiftUI receives them, preventing a full PencilKit drawing replacement between rapid strokes.
+- Saved documents are read directly. Only a true missing-file error may use the library copy, so protected readable files cannot be mistaken for absent notes.
+- Library cards use the first canvas with visible content instead of showing a blank Canvas 1 for every multi-canvas notebook.
+- Focused regressions, the complete behavior suite, a terminate-and-relaunch content check, strict SwiftLint, release-tool tests, and whitespace checks pass.
+- Apple accepted TestFlight build 7, marked it valid, and accepted the English testing notes. Internal Testers receives valid builds automatically.
+
+## Delete Notion rows after Empty Trash
+
+- [x] Add failing tests for the Notion trash-page request and missing-notebook reconciliation.
+- [x] Trash the bound Notion row after permanent app deletion and remove stale sync state.
+- [x] Preserve Notion rows while notebooks remain in the app Trash.
+- [x] Run focused tests, the complete behavior suite, strict lint, and project checks.
+- [x] Include the change in the next TestFlight build, then commit and push it.
+
+### Review
+
+- Empty Trash moves each bound notebook page to Notion Trash and clears its local binding and queued work.
+- Moving a notebook to the app Trash keeps its Notion page available because the notebook can still be restored.
+
+## Stop Notion sync from trapping Settings
+
+- [x] Trace the syncing state, network waits, and cancellation path.
+- [x] Add a failing test that keeps connected workspace details available during an active sync.
+- [x] Keep connected Notion controls visible while sync progress is shown.
+- [x] Run focused tests, the complete behavior suite, strict lint, and project checks.
+- [x] Send the correction through TestFlight, then commit and push it.
+
+### Review
+
+- Settings keeps the connected workspace, destination, manual sync, and disconnect controls available while automatic sync is running. Sync progress appears as status within the same section.
+
 ## Send Pencil fixes through TestFlight
 
 - [x] Confirm the clean repository, current build number, signing, and App Store access.

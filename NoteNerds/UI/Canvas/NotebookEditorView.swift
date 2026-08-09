@@ -75,6 +75,7 @@ struct NotebookEditorView: View {
                 recognizedText: currentRecognizedText,
                 configuration: configuration,
                 canvasID: currentCanvas.id,
+                activeLayerID: activeLayer.id,
                 template: currentCanvas.template,
                 plannerRegions: plannerRegions,
                 selectedPlannerRegionID: selectedPlannerRegion?.id,

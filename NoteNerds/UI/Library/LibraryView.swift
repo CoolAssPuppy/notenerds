@@ -290,7 +290,7 @@ private struct NotebookThumbnail: View {
     let notebook: Notebook
 
     var body: some View {
-        CanvasContentThumbnail(canvas: notebook.canvases[0])
+        CanvasContentThumbnail(canvas: notebook.previewCanvas)
         .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
     }
 }

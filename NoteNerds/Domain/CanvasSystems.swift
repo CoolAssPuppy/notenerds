@@ -175,3 +175,13 @@ extension Canvas {
         contentBounds ?? CanvasRect(x: 9_500, y: 9_500, width: 1_024, height: 1_366)
     }
 }
+
+extension Notebook {
+    var previewCanvas: Canvas {
+        canvases.first { canvas in
+            canvas.layers.contains { layer in
+                layer.isVisible && !layer.objects.isEmpty
+            }
+        } ?? canvases[0]
+    }
+}

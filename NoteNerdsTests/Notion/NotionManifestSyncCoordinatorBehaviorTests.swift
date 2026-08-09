@@ -97,5 +97,6 @@ private actor ManifestSyncAPI: NotionSyncAPI {
         snapshot: NotionNotebookSnapshot,
         files: NotionNotebookRemoteFiles
     ) -> NotionPageBinding { fatalError("Unused") }
+    func trashNotebookPage(pageID: String) { fatalError("Unused") }
     func findManagedRootBlock(pageID: String, notebookID: String) -> String? { nil }
 }

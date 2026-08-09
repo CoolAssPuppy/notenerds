@@ -86,7 +86,8 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
             report: NotionPublishReport(
                 uploadedNotebookCount: 2,
                 skippedNotebookCount: 1,
-                didUploadManifest: true
+                didUploadManifest: true,
+                deletedNotebookCount: 1
             )
         )
         let model = NotionIntegrationModel(
@@ -105,8 +106,37 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         await model.sync(library)
 
         XCTAssertEqual(model.state, .connected(workspaceName: "Strategic Nerds"))
-        XCTAssertEqual(model.lastSyncSummary, "Sent 2 notebooks to Notion.")
+        XCTAssertEqual(model.lastSyncSummary, "Sent 2 notebooks and moved 1 notebook to Notion Trash.")
         XCTAssertEqual(publisher.publishedLibraries, [library])
+    }
+
+    func testActiveSyncKeepsConnectedWorkspaceAvailableToSettings() async throws {
+        let connection = storedConnection()
+        let provider = StubDestinationProvider()
+        let publisher = CancellableLibraryPublisher()
+        let model = NotionIntegrationModel(
+            isConfigured: true,
+            connectionManager: StubConnectionManager(current: connection, connected: connection),
+            destinationProviderFactory: { _ in provider },
+            registry: NotionSyncRegistry(store: IntegrationStateStore(state: NotionSyncState(
+                workspaceID: connection.credentials.workspaceID,
+                destination: provider.destination
+            ))),
+            publisher: publisher
+        )
+        await model.restore()
+        let sync = Task { await model.sync(LibraryState(notebooks: [DomainFixtures.notebook()])) }
+        while publisher.startedCount == 0 {
+            await Task.yield()
+        }
+        XCTAssertEqual(model.state, .syncing)
+        XCTAssertEqual(model.workspaceName, "Strategic Nerds")
+
+        sync.cancel()
+        await sync.value
+
+        XCTAssertEqual(publisher.cancelledCount, 1)
+        XCTAssertEqual(model.state, .connected(workspaceName: "Strategic Nerds"))
     }
 
     func testMissingBuildConfigurationIsUnavailableAndDoesNotAttemptOAuth() async {
@@ -461,7 +491,6 @@ private actor StubDestinationProvider: NotionDestinationProviding {
 
 private actor IntegrationStateStore: NotionSyncStateStoring {
     private var state: NotionSyncState?
-
     init(state: NotionSyncState? = nil) {
         self.state = state
     }

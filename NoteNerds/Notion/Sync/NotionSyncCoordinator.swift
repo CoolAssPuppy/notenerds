@@ -25,6 +25,7 @@ protocol NotionSyncAPI: Sendable {
         snapshot: NotionNotebookSnapshot,
         files: NotionNotebookRemoteFiles
     ) async throws -> NotionPageBinding
+    func trashNotebookPage(pageID: String) async throws
     func findManagedRootBlock(pageID: String, notebookID: String) async throws -> String?
     func replaceManagedPage(
         pageID: String,

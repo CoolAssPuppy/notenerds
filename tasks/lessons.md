@@ -73,3 +73,6 @@
 - Draw lasso feedback with vector layers. Invalidating a bitmap-backed view the size of the infinite canvas can hide the path and waste memory.
 - Pencil input regressions need PencilKit integration tests that drive begin, repeated drawing-change, and end callbacks. Cover rapid strokes and model refreshes during contact; helper-only checks miss the timing failure.
 - Match every nested field in a date-versioned API request to the current endpoint schema. A valid field from a related object, such as a data-source title, can make the whole request fail when placed inside a database-creation payload.
+- When a background operation is working but takes time, keep its normal settings and status visible. Replacing the whole section with a spinner makes healthy work look frozen.
+- Synced deletion rules must distinguish recoverable app Trash from permanent deletion. Keep the remote item while it can be restored in the app, then remove it from the remote destination after Empty Trash.
+- Treat writing, note previews, and reopening saved notes as one release gate. Passing isolated persistence and Pencil callback tests is insufficient when the real library-to-editor flow still fails.

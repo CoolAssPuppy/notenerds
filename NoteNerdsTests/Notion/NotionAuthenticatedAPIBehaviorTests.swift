@@ -152,6 +152,10 @@ private struct TokenAwareSyncAPI: NotionSyncAPI {
         return NotionPageBinding(pageID: pageID, url: nil)
     }
 
+    func trashNotebookPage(pageID: String) async throws {
+        try await recorder.record(token)
+    }
+
     func findManagedRootBlock(pageID: String, notebookID: String) async throws -> String? {
         try await recorder.record(token)
         return nil

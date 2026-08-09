@@ -77,6 +77,24 @@ extension NotionAPIClient {
         guard response.id == pageID else { throw NotionAPIError.invalidResponse }
         return NotionPageBinding(pageID: response.id, url: response.url)
     }
+
+    func trashNotebookPage(pageID: String) async throws {
+        guard UUID(uuidString: pageID) != nil else {
+            throw NotionAPIError.invalidIdentifier
+        }
+        let request = try makeRequest(
+            path: "pages/\(pageID)",
+            method: "PATCH",
+            body: .object(["in_trash": .bool(true)])
+        )
+        let response = try JSONDecoder().decode(
+            TrashedNotebookPageResponse.self,
+            from: try await send(request)
+        )
+        guard response.id == pageID, response.inTrash else {
+            throw NotionAPIError.invalidResponse
+        }
+    }
 }
 
 private struct NotebookQueryResponse: Decodable {
@@ -92,4 +110,14 @@ private struct NotebookQueryResponse: Decodable {
 private struct NotebookPageResponse: Decodable {
     let id: String
     let url: URL?
+}
+
+private struct TrashedNotebookPageResponse: Decodable {
+    let id: String
+    let inTrash: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case inTrash = "in_trash"
+    }
 }

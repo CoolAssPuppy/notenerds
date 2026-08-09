@@ -71,34 +71,14 @@ struct AppSettingsView: View {
             case .connecting:
                 progressRow("Connecting to Notion")
             case let .connected(workspaceName):
-                LabeledContent("Workspace", value: workspaceName)
-                NavigationLink {
-                    NotionDestinationPickerView(model: notion, library: model.library)
-                } label: {
-                    LabeledContent(
-                        "Notebook database",
-                        value: notion.destination == nil ? "Choose location" : "Connected"
-                    )
-                }
-                if notion.destination != nil {
-                    Button("Sync now", systemImage: "arrow.triangle.2.circlepath") {
-                        Task { await notion.sync(model.library) }
-                    }
-                    if let summary = notion.lastSyncSummary {
-                        Text(summary)
-                            .foregroundStyle(.secondary)
-                    }
-                    Button("Restore from Notion", systemImage: "arrow.down.doc") {
-                        Task { await prepareRestore() }
-                    }
-                }
-                Button("Disconnect Notion", systemImage: "link.badge.minus", role: .destructive) {
-                    isConfirmingDisconnect = true
-                }
+                connectedNotionRows(workspaceName: workspaceName, isSyncing: false)
             case .selectingDestination:
                 progressRow("Creating database")
             case .syncing:
-                progressRow("Sending notebooks to Notion")
+                connectedNotionRows(
+                    workspaceName: notion.workspaceName ?? "Connected",
+                    isSyncing: true
+                )
             case .preparingRestore:
                 progressRow("Checking Notion notebooks")
             case .reviewingRestore:
@@ -138,6 +118,40 @@ struct AppSettingsView: View {
             Text(title)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private func connectedNotionRows(workspaceName: String, isSyncing: Bool) -> some View {
+        LabeledContent("Workspace", value: workspaceName)
+        NavigationLink {
+            NotionDestinationPickerView(model: notion, library: model.library)
+        } label: {
+            LabeledContent(
+                "Notebook database",
+                value: notion.destination == nil ? "Choose location" : "Connected"
+            )
+        }
+        if notion.destination != nil {
+            if isSyncing {
+                progressRow("Sending notebooks to Notion")
+            }
+            Button("Sync now", systemImage: "arrow.triangle.2.circlepath") {
+                Task { await notion.sync(model.library) }
+            }
+            .disabled(isSyncing)
+            if let summary = notion.lastSyncSummary {
+                Text(summary)
+                    .foregroundStyle(.secondary)
+            }
+            Button("Restore from Notion", systemImage: "arrow.down.doc") {
+                Task { await prepareRestore() }
+            }
+            .disabled(isSyncing)
+        }
+        Button("Disconnect Notion", systemImage: "link.badge.minus", role: .destructive) {
+            isConfirmingDisconnect = true
+        }
+        .disabled(isSyncing)
     }
 
     private func prepareRestore() async {

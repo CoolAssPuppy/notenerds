@@ -57,6 +57,10 @@ final class NotionIntegrationModel: ObservableObject {
     private var automaticSyncTask: Task<Void, Never>?
     private var automaticSyncGeneration = 0
 
+    var workspaceName: String? {
+        connection?.credentials.workspaceName
+    }
+
     init(
         isConfigured: Bool,
         connectionManager: any NotionConnectionManaging,
@@ -342,10 +346,19 @@ final class NotionIntegrationModel: ObservableObject {
     }
 
     private static func syncSummary(_ report: NotionPublishReport) -> String {
-        if report.uploadedNotebookCount == 0 {
+        if report.uploadedNotebookCount == 0, report.deletedNotebookCount == 0 {
             return "Notion is up to date."
         }
-        let noun = report.uploadedNotebookCount == 1 ? "notebook" : "notebooks"
-        return "Sent \(report.uploadedNotebookCount) \(noun) to Notion."
+        if report.uploadedNotebookCount == 0 {
+            let noun = report.deletedNotebookCount == 1 ? "notebook" : "notebooks"
+            return "Moved \(report.deletedNotebookCount) \(noun) to Notion Trash."
+        }
+        let uploadedNoun = report.uploadedNotebookCount == 1 ? "notebook" : "notebooks"
+        guard report.deletedNotebookCount > 0 else {
+            return "Sent \(report.uploadedNotebookCount) \(uploadedNoun) to Notion."
+        }
+        let deletedNoun = report.deletedNotebookCount == 1 ? "notebook" : "notebooks"
+        return "Sent \(report.uploadedNotebookCount) \(uploadedNoun) and moved "
+            + "\(report.deletedNotebookCount) \(deletedNoun) to Notion Trash."
     }
 }

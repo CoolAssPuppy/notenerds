@@ -219,8 +219,8 @@ Uploads are attached within Notion's one-hour file-upload window. A failed attac
 
 - Moving a notebook to Note Nerds Trash sets `Sync Status` to `In Trash` and adds a trash date to the managed section.
 - Restoring the notebook returns the row to `Complete`.
-- Permanent local deletion leaves the Notion page in place during version 1.
-- A user can delete the Notion page through an explicit destructive action.
+- Permanently deleting a notebook, including Empty Trash, moves its linked Notion page to Notion Trash during the next full sync.
+- Notion keeps the page recoverable in its Trash. Its API does not permanently erase pages.
 
 ### Retry behavior
 

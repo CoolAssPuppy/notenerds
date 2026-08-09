@@ -24,6 +24,11 @@ final class SessionPersistenceUITests: XCTestCase {
         application.launch()
 
         XCTAssertTrue(application.buttons["Notebook, Untitled notebook"].waitForExistence(timeout: 3))
+        application.buttons["Notebook, Untitled notebook"].tap()
+        let reopenedCanvas = application.scrollViews["Infinite canvas"]
+        XCTAssertTrue(reopenedCanvas.waitForExistence(timeout: 3))
+        XCTAssertTrue((reopenedCanvas.value as? String)?.contains("Saved between sessions") == true)
+        application.buttons["Library"].tap()
         application.buttons["Library search button"].tap()
         let search = application.textFields["Library search"]
         XCTAssertTrue(search.waitForExistence(timeout: 2))

@@ -11,6 +11,7 @@ struct PencilCanvasView: UIViewRepresentable {
     let recognizedText: [String]
     let configuration: ToolConfiguration
     let canvasID: CanvasID
+    let activeLayerID: LayerID
     let template: CanvasTemplate
     let plannerRegions: [CanvasRegion]
     let selectedPlannerRegionID: String?
@@ -40,6 +41,7 @@ struct PencilCanvasView: UIViewRepresentable {
 
     func makeCoordinator() -> Coordinator {
         Coordinator(
+            activeLayerID: activeLayerID,
             onStrokesCompleted: onStrokesCompleted,
             onDrawingChanged: onDrawingChanged,
             onConvertStrokesToText: onConvertStrokesToText,
@@ -92,6 +94,7 @@ struct PencilCanvasView: UIViewRepresentable {
             isUsingTool: context.coordinator.isUsingTool
         )
         context.coordinator.configuration = configuration
+        context.coordinator.activeLayerID = activeLayerID
         context.coordinator.canonicalStrokes = strokes
         updatePlannerContext(context.coordinator)
         context.coordinator.configurePlannerSwipeRecognizers(
@@ -138,6 +141,7 @@ struct PencilCanvasView: UIViewRepresentable {
         var isTextPlacementOverlayEnabled = false
         var shapePlacementKind: RecognizedShapeKind?
         var configuration = ToolConfiguration.favoriteOne
+        var activeLayerID: LayerID
         var isUsingTool = false
         var latestPencilRoll = 0.0
         var latestPencilLocation: CGPoint?
@@ -164,6 +168,7 @@ struct PencilCanvasView: UIViewRepresentable {
         let onPlannerRegionPageRequested: @MainActor (Int) -> Void
 
         init(
+            activeLayerID: LayerID,
             onStrokesCompleted: @escaping @MainActor ([Stroke]) -> Void,
             onDrawingChanged: @escaping @MainActor ([Stroke]) -> Void,
             onConvertStrokesToText: @escaping @MainActor ([Stroke]) -> Void,
@@ -172,6 +177,7 @@ struct PencilCanvasView: UIViewRepresentable {
             onPencilDoubleTap: @escaping @MainActor () -> Void,
             onPlannerRegionPageRequested: @escaping @MainActor (Int) -> Void
         ) {
+            self.activeLayerID = activeLayerID
             self.onStrokesCompleted = onStrokesCompleted
             self.onDrawingChanged = onDrawingChanged
             self.onConvertStrokesToText = onConvertStrokesToText
@@ -231,7 +237,7 @@ struct PencilCanvasView: UIViewRepresentable {
                 guard !samples.isEmpty else { return nil }
                 return Stroke(
                     id: StrokeID(),
-                    layerID: LayerID(),
+                    layerID: activeLayerID,
                     samples: samples,
                     style: StrokeStyle(
                         instrument: instrument,
@@ -241,6 +247,7 @@ struct PencilCanvasView: UIViewRepresentable {
                     createdAt: Date()
                 )
             }
+            canonicalStrokes.append(contentsOf: addedStrokes)
             onStrokesCompleted(addedStrokes)
         }
 

@@ -2,6 +2,16 @@ import XCTest
 @testable import NoteNerds
 
 final class DocumentModelBehaviorTests: XCTestCase {
+    func testNotebookPreviewUsesFirstCanvasWithVisibleContent() throws {
+        let blankCanvas = Canvas(title: "Blank first canvas")
+        var writtenCanvas = Canvas(title: "Written second canvas")
+        let layerID = try XCTUnwrap(writtenCanvas.layers.first?.id)
+        writtenCanvas.layers[0].objects = [.stroke(DomainFixtures.stroke(layerID: layerID))]
+        let notebook = Notebook(title: "Notebook", canvases: [blankCanvas, writtenCanvas])
+
+        XCTAssertEqual(notebook.previewCanvas.id, writtenCanvas.id)
+    }
+
     func testPaperCatalogContainsEverySupportedPaperTypeInGalleryOrder() {
         XCTAssertEqual(
             CanvasTemplate.allCases.map(\.rawValue),

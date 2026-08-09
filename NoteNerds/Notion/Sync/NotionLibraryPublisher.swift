@@ -4,6 +4,19 @@ struct NotionPublishReport: Equatable, Sendable {
     let uploadedNotebookCount: Int
     let skippedNotebookCount: Int
     let didUploadManifest: Bool
+    let deletedNotebookCount: Int
+
+    init(
+        uploadedNotebookCount: Int,
+        skippedNotebookCount: Int,
+        didUploadManifest: Bool,
+        deletedNotebookCount: Int = 0
+    ) {
+        self.uploadedNotebookCount = uploadedNotebookCount
+        self.skippedNotebookCount = skippedNotebookCount
+        self.didUploadManifest = didUploadManifest
+        self.deletedNotebookCount = deletedNotebookCount
+    }
 }
 
 enum NotionPublishError: Error, Equatable, Sendable {
@@ -26,6 +39,7 @@ extension NotionLibraryPublishing {
 
 @MainActor
 final class NotionLibraryPublisher: NotionLibraryPublishing {
+    private let api: any NotionSyncAPI
     private let registry: NotionSyncRegistry
     private let notebookCoordinator: NotionSyncCoordinator
     private let manifestCoordinator: NotionManifestSyncCoordinator
@@ -37,6 +51,7 @@ final class NotionLibraryPublisher: NotionLibraryPublishing {
         registry: NotionSyncRegistry,
         now: @escaping @Sendable () -> Date = Date.init
     ) {
+        self.api = api
         self.registry = registry
         notebookCoordinator = NotionSyncCoordinator(api: api, registry: registry, now: now)
         manifestCoordinator = NotionManifestSyncCoordinator(api: api, registry: registry)
@@ -61,6 +76,11 @@ final class NotionLibraryPublisher: NotionLibraryPublishing {
             NotionLibraryManifestCodec.encode(manifest),
             contentHash: NotionLibraryManifestCodec.contentHash(manifest)
         )
+        let deletedCount = if notebookID == nil {
+            try await reconcileDeletedNotebooks(in: library, state: state)
+        } else {
+            0
+        }
 
         var uploadedCount = 0
         var skippedCount = 0
@@ -79,8 +99,36 @@ final class NotionLibraryPublisher: NotionLibraryPublishing {
         return NotionPublishReport(
             uploadedNotebookCount: uploadedCount,
             skippedNotebookCount: skippedCount,
-            didUploadManifest: manifestResult != .skippedUnchanged
+            didUploadManifest: manifestResult != .skippedUnchanged,
+            deletedNotebookCount: deletedCount
         )
+    }
+
+    private func reconcileDeletedNotebooks(
+        in library: LibraryState,
+        state: NotionSyncState
+    ) async throws -> Int {
+        let localNotebookIDs = Set(
+            library.notebooks.map { $0.id.rawValue.uuidString.lowercased() }
+        )
+        let missingBindings = state.bindings.filter {
+            !localNotebookIDs.contains($0.notebookID)
+        }
+        for binding in missingBindings {
+            do {
+                try await api.trashNotebookPage(pageID: binding.pageID)
+            } catch NotionAPIError.httpStatus(404) {
+                // The Notion page is already gone, so local sync state can be cleared.
+            }
+            try await registry.recordDeletion(notebookID: binding.notebookID)
+        }
+
+        let boundIDs = Set(missingBindings.map(\.notebookID))
+        let staleQueuedIDs = Set(state.queue.map(\.notebookID)).subtracting(localNotebookIDs)
+        for notebookID in staleQueuedIDs.subtracting(boundIDs) {
+            try await registry.recordDeletion(notebookID: notebookID)
+        }
+        return missingBindings.count
     }
 
     private func notebookOrder(_ first: Notebook, _ second: Notebook) -> Bool {

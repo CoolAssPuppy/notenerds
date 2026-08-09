@@ -77,6 +77,14 @@ actor NotionSyncRegistry {
         try await store.save(state)
     }
 
+    func recordDeletion(notebookID: String) async throws {
+        try Self.validateNotebookID(notebookID)
+        try await restoreIfNeeded()
+        state.bindings.removeAll { $0.notebookID == notebookID }
+        state.queue.removeAll { $0.notebookID == notebookID }
+        try await store.save(state)
+    }
+
     func needsSync(
         notebookID: String,
         contentHash: String,

@@ -62,6 +62,12 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
         XCTAssertEqual(publishedStrokes.map(\.count), [1, 1])
         XCTAssertEqual(publishedStrokes[0][0].samples.map(\.point), firstStroke.samples.map(\.point))
         XCTAssertEqual(publishedStrokes[1][0].samples.map(\.point), secondStroke.samples.map(\.point))
+        let storedStrokes = publishedStrokes.flatMap { $0 }
+        XCTAssertEqual(coordinator.canonicalStrokes, storedStrokes)
+        XCTAssertFalse(PencilCanvasModelReconciliation.requiresRedraw(
+            current: coordinator.canonicalStrokes,
+            incoming: storedStrokes
+        ))
     }
 
     func testExistingStrokeGeometryPublishesOnlyAfterToolUseEnds() {
@@ -154,6 +160,7 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
         onDrawingChanged: @escaping @MainActor ([Stroke]) -> Void = { _ in }
     ) -> PencilCanvasView.Coordinator {
         PencilCanvasView.Coordinator(
+            activeLayerID: LayerID(),
             onStrokesCompleted: onStrokesCompleted,
             onDrawingChanged: onDrawingChanged,
             onConvertStrokesToText: { _ in },

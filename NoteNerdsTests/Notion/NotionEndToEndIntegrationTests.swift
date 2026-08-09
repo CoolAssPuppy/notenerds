@@ -12,7 +12,15 @@ final class NotionEndToEndIntegrationTests: XCTestCase {
         let registry = NotionSyncRegistry(store: EndToEndStateStore(state: NotionSyncState(
             workspaceID: "workspace",
             destination: destination,
-            manifestPageID: manifestPageID
+            manifestPageID: manifestPageID,
+            bindings: [NotionNotebookBinding(
+                notebookID: "ffffffff-ffff-ffff-ffff-ffffffffffff",
+                pageID: "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
+                managedRootBlockID: nil,
+                contentHash: String(repeating: "a", count: 64),
+                syncedAt: DomainFixtures.fixedDate,
+                notionLastEditedAt: nil
+            )]
         )))
         let notion = LocalNotionService(manifestPageID: manifestPageID)
         let dates = SequenceDateProvider([
@@ -56,9 +64,85 @@ final class NotionEndToEndIntegrationTests: XCTestCase {
 
         let report = try await publisher.publish(library, notebookID: second.id)
         let uploadedIDs = await notion.uploadedNotebookIDs()
+        let trashedPageIDs = await notion.trashedNotebookPageIDs()
 
         XCTAssertEqual(report.uploadedNotebookCount, 1)
         XCTAssertEqual(uploadedIDs, [second.id.rawValue.uuidString.lowercased()])
+        XCTAssertTrue(trashedPageIDs.isEmpty)
+    }
+
+    func testFullPublishTrashesBoundPageForNotebookMissingAfterEmptyTrash() async throws {
+        let notebookID = "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD".lowercased()
+        let pageID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"
+        let destination = NotionDestination(
+            databaseID: "11111111-1111-1111-1111-111111111111",
+            dataSourceID: "22222222-2222-2222-2222-222222222222"
+        )
+        let registry = NotionSyncRegistry(store: EndToEndStateStore(state: NotionSyncState(
+            workspaceID: "workspace",
+            destination: destination,
+            manifestPageID: "33333333-3333-3333-3333-333333333333",
+            bindings: [NotionNotebookBinding(
+                notebookID: notebookID,
+                pageID: pageID,
+                managedRootBlockID: nil,
+                contentHash: String(repeating: "a", count: 64),
+                syncedAt: DomainFixtures.fixedDate,
+                notionLastEditedAt: nil
+            )],
+            queue: [NotionSyncQueueItem(
+                notebookID: notebookID,
+                enqueuedAt: DomainFixtures.fixedDate,
+                attemptCount: 2,
+                nextAttemptAt: DomainFixtures.fixedDate.addingTimeInterval(60),
+                lastFailure: .serviceUnavailable
+            )]
+        )))
+        let notion = LocalNotionService(manifestPageID: "33333333-3333-3333-3333-333333333333")
+
+        let report = try await NotionLibraryPublisher(api: notion, registry: registry)
+            .publish(LibraryState())
+        let state = try await registry.snapshot()
+        let trashedPageIDs = await notion.trashedNotebookPageIDs()
+
+        XCTAssertEqual(report.deletedNotebookCount, 1)
+        XCTAssertEqual(trashedPageIDs, [pageID])
+        XCTAssertNil(state.binding(notebookID: notebookID))
+        XCTAssertTrue(state.queue.isEmpty)
+    }
+
+    func testFullPublishKeepsBoundPageWhileNotebookRemainsInAppTrash() async throws {
+        var notebook = DomainFixtures.notebook()
+        notebook.trashedAt = DomainFixtures.fixedDate
+        let notebookID = notebook.id.rawValue.uuidString.lowercased()
+        let pageID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"
+        let destination = NotionDestination(
+            databaseID: "11111111-1111-1111-1111-111111111111",
+            dataSourceID: "22222222-2222-2222-2222-222222222222"
+        )
+        let registry = NotionSyncRegistry(store: EndToEndStateStore(state: NotionSyncState(
+            workspaceID: "workspace",
+            destination: destination,
+            manifestPageID: "33333333-3333-3333-3333-333333333333",
+            bindings: [NotionNotebookBinding(
+                notebookID: notebookID,
+                pageID: pageID,
+                managedRootBlockID: nil,
+                contentHash: String(repeating: "a", count: 64),
+                syncedAt: DomainFixtures.fixedDate,
+                notionLastEditedAt: nil
+            )]
+        )))
+        let notion = LocalNotionService(manifestPageID: "33333333-3333-3333-3333-333333333333")
+
+        let report = try await NotionLibraryPublisher(api: notion, registry: registry)
+            .publish(LibraryState(notebooks: [notebook]))
+        let state = try await registry.snapshot()
+        let trashedPageIDs = await notion.trashedNotebookPageIDs()
+
+        XCTAssertEqual(report.deletedNotebookCount, 0)
+        XCTAssertTrue(trashedPageIDs.isEmpty)
+        XCTAssertNotNil(state.binding(notebookID: notebookID))
     }
 
     // swiftlint:disable:next function_body_length
@@ -140,6 +224,7 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
     private var manifestUploadSequence = 0
     private var manifestRootID: String?
     private var notebookFiles: [String: NotebookFileRecord] = [:]
+    private var trashedPageIDs: [String] = []
     private var uploadSequence = 0
     private var rootSequence = 0
 
@@ -188,6 +273,11 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
     }
 
     func findManagedRootBlock(pageID: String, notebookID: String) -> String? { nil }
+
+    func trashNotebookPage(pageID: String) {
+        trashedPageIDs.append(pageID)
+        notebookFiles = notebookFiles.filter { $0.value.pageID != pageID }
+    }
 
     func replaceManagedPage(
         pageID: String,
@@ -248,6 +338,10 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
 
     func manifestUploadCount() -> Int {
         manifestUploadSequence
+    }
+
+    func trashedNotebookPageIDs() -> [String] {
+        trashedPageIDs
     }
 }
 

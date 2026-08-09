@@ -68,6 +68,7 @@
 		5379016DD94D82D97FE6F1A1 /* PlannerRegions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99583FD367323336DB18D3A2 /* PlannerRegions.swift */; };
 		546C6B30417A763A20D12AC8 /* NotebookEditorToolbarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58BEF9EF64CAA12B5A73E7EE /* NotebookEditorToolbarLayout.swift */; };
 		54719E2C857917B661D94CD3 /* NotionRestoreCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCD628FB567AE2C944C3ADAD /* NotionRestoreCoordinator.swift */; };
+		55D56AD35C185E05F7069C4C /* CanvasSelectionOutlineLayers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F478B70E62372610218328B5 /* CanvasSelectionOutlineLayers.swift */; };
 		55F2B56643FF8EABBAA08FA1 /* PencilCanvasView+PlannerPaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = A655A9D0F4C929D2166F65BA /* PencilCanvasView+PlannerPaging.swift */; };
 		566AD647E43921DF718CED65 /* NotionLibraryRestoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CAF88692C72CAFE1B640F7A /* NotionLibraryRestoreService.swift */; };
 		56747D43C1D2ADDC5E43D01E /* InMemorySyncProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0B9FA460544B213AA530BD /* InMemorySyncProvider.swift */; };
@@ -434,6 +435,7 @@
 		EF65F3796AA5EB842EEDC0F4 /* LocalNotionSyncStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotionSyncStateStore.swift; sourceTree = "<group>"; };
 		F27BE3F7D492118817933436 /* CanvasToolInspectors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolInspectors.swift; sourceTree = "<group>"; };
 		F3E85E913EA62D5B971CD272 /* Clipboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clipboard.swift; sourceTree = "<group>"; };
+		F478B70E62372610218328B5 /* CanvasSelectionOutlineLayers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSelectionOutlineLayers.swift; sourceTree = "<group>"; };
 		F5E16C35BC6348493A49B8E9 /* DocumentHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentHistory.swift; sourceTree = "<group>"; };
 		F79D8597DB1B9F7BE6ADB5DA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		F928A3CAA386FE4447917114 /* LibrarySearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySearchBar.swift; sourceTree = "<group>"; };
@@ -749,6 +751,7 @@
 				5B157EC5AA38C6D63875D759 /* CanvasMinimapView.swift */,
 				93379E7A35F9E89ADFED564E /* CanvasObjectOverlayView.swift */,
 				FB5F7F02BAD71FA8FFEC737F /* CanvasSearchHighlightView.swift */,
+				F478B70E62372610218328B5 /* CanvasSelectionOutlineLayers.swift */,
 				54175B0146804F079F2CE6A3 /* CanvasSelectionOverlayView.swift */,
 				F962DD1770D5E6A3E4B9E370 /* CanvasShapeInspector.swift */,
 				B4B59E0354ED02D080CAC071 /* CanvasTextPlacementOverlayView.swift */,
@@ -1068,6 +1071,7 @@
 				7939482E3CABB47443B415B7 /* CanvasObjectOverlayView.swift in Sources */,
 				5A356DBA3D5783A7B6F68A6A /* CanvasPNGExporter.swift in Sources */,
 				855EBC947621937198DA7929 /* CanvasSearchHighlightView.swift in Sources */,
+				55D56AD35C185E05F7069C4C /* CanvasSelectionOutlineLayers.swift in Sources */,
 				9A41432EEECE40AD7F46F177 /* CanvasSelectionOverlayView.swift in Sources */,
 				911CDE95255D524D10539F30 /* CanvasShapeInspector.swift in Sources */,
 				6D86412415A9F1F145D8E7A8 /* CanvasSystems.swift in Sources */,

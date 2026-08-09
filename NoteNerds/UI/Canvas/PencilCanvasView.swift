@@ -62,14 +62,6 @@ struct PencilCanvasView: UIViewRepresentable {
         )
         hoverRecognizer.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.pencil.rawValue)]
         canvasView.addGestureRecognizer(hoverRecognizer)
-        let hoverPreview = UIView()
-        hoverPreview.isHidden = true
-        hoverPreview.isUserInteractionEnabled = false
-        hoverPreview.backgroundColor = UIColor.label.withAlphaComponent(0.08)
-        hoverPreview.layer.borderColor = UIColor.label.withAlphaComponent(0.45).cgColor
-        hoverPreview.layer.borderWidth = 1
-        canvasView.addSubview(hoverPreview)
-        context.coordinator.hoverPreview = hoverPreview
         configureViewport(canvasView)
         addPlannerSwipeRecognizers(to: canvasView, coordinator: context.coordinator)
         updatePlannerContext(context.coordinator)
@@ -144,7 +136,6 @@ struct PencilCanvasView: UIViewRepresentable {
         var lastNavigationCommandID: UUID?
         var lastEditingCommandID: UUID?
         weak var objectSelectionOverlay: CanvasSelectionOverlayView?
-        weak var hoverPreview: UIView?
         weak var inlineTextEditor: InlineCanvasTextEditor?
         var overlayStrokes: [Stroke] = []
         var overlayObjects: [CanvasObject] = []
@@ -154,6 +145,7 @@ struct PencilCanvasView: UIViewRepresentable {
         var isTextPlacementOverlayEnabled = false
         var shapePlacementKind: RecognizedShapeKind?
         var configuration = ToolConfiguration.favoriteOne
+        var isUsingTool = false
         var latestPencilRoll = 0.0
         var latestPencilLocation: CGPoint?
         var paperType: PaperType?
@@ -197,6 +189,20 @@ struct PencilCanvasView: UIViewRepresentable {
         }
 
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+            guard !isApplyingModelDrawing, !isUsingTool else { return }
+            synchronizeDrawing(canvasView)
+        }
+
+        func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
+            isUsingTool = true
+        }
+
+        func canvasViewDidEndUsingTool(_ canvasView: PKCanvasView) {
+            isUsingTool = false
+            synchronizeDrawing(canvasView)
+        }
+
+        private func synchronizeDrawing(_ canvasView: PKCanvasView) {
             guard !isApplyingModelDrawing else { return }
             guard canvasView.drawing.strokes.count > knownStrokeCount else {
                 if canvasView.drawing.strokes.count <= knownStrokeCount {
@@ -289,21 +295,11 @@ struct PencilCanvasView: UIViewRepresentable {
 
         @objc func handlePencilHover(_ recognizer: UIHoverGestureRecognizer) {
             latestPencilRoll = Double(recognizer.rollAngle)
-            guard let preview = hoverPreview else { return }
             switch recognizer.state {
             case .began, .changed:
-                let diameter = configuration.tool == .eraser
-                    ? max(18, configuration.width.points * 8)
-                    : max(8, configuration.width.points * 4)
-                let location = recognizer.location(in: recognizer.view)
-                latestPencilLocation = location
-                preview.bounds = CGRect(x: 0, y: 0, width: diameter, height: diameter)
-                preview.center = location
-                preview.layer.cornerRadius = diameter / 2
-                preview.transform = CGAffineTransform(rotationAngle: recognizer.rollAngle)
-                preview.isHidden = false
+                latestPencilLocation = recognizer.location(in: recognizer.view)
             case .ended, .cancelled:
-                preview.isHidden = true
+                break
             default:
                 break
             }

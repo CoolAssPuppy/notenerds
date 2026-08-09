@@ -16,6 +16,7 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
     private(set) var selectedIDs: Set<ObjectID> = []
     private var lassoPoints: [CanvasPoint] = []
     private var isMovingSelection = false
+    private let outlineLayers = CanvasSelectionOutlineLayers()
     var hasSelection: Bool { !selectedIDs.isEmpty }
 
     init(
@@ -45,6 +46,8 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
         super.init(frame: frame)
         isOpaque = false
         backgroundColor = .clear
+        outlineLayers.add(to: layer)
+        refreshOutlines()
         configureGestures()
     }
 
@@ -57,29 +60,6 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
         guard !isLassoEnabled, shapePlacementKind == nil else { return true }
         let hitRegion = CanvasRect(x: point.x - 18, y: point.y - 18, width: 36, height: 36)
         return !spatialIndex.objects(in: hitRegion).isEmpty
-    }
-
-    override func draw(_ rect: CGRect) {
-        guard let context = UIGraphicsGetCurrentContext() else { return }
-        if let bounds = selectionBounds {
-            context.setStrokeColor(UIColor.tintColor.cgColor)
-            context.setLineWidth(2)
-            context.setLineDash(phase: 0, lengths: [7, 5])
-            context.stroke(bounds.cgRect.insetBy(dx: -6, dy: -6))
-            context.setFillColor(UIColor.systemBackground.cgColor)
-            for point in handlePoints(for: bounds) {
-                context.fillEllipse(in: CGRect(x: point.x - 6, y: point.y - 6, width: 12, height: 12))
-                context.strokeEllipse(in: CGRect(x: point.x - 6, y: point.y - 6, width: 12, height: 12))
-            }
-        }
-        if lassoPoints.count > 1 {
-            context.setStrokeColor(UIColor.tintColor.withAlphaComponent(0.8).cgColor)
-            context.setLineWidth(2)
-            context.setLineDash(phase: 0, lengths: [5, 4])
-            context.move(to: lassoPoints[0].cgPoint)
-            for point in lassoPoints.dropFirst() { context.addLine(to: point.cgPoint) }
-            context.strokePath()
-        }
     }
 
     func copySelection() {
@@ -114,13 +94,13 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
         onDelete(selectedIDs)
         selectedIDs = []
         onSelectionChanged(false)
-        setNeedsDisplay()
+        refreshOutlines()
     }
 
     func selectAllObjects() {
         selectedIDs = Set(objects.map(\.id))
         onSelectionChanged(!selectedIDs.isEmpty)
-        setNeedsDisplay()
+        refreshOutlines()
     }
 
     func moveSelection(to layerID: LayerID) {
@@ -148,6 +128,14 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
         }
     }
 
+    private func refreshOutlines() {
+        outlineLayers.update(
+            selectionBounds: selectionBounds?.cgRect,
+            handlePoints: selectionBounds.map(handlePoints) ?? [],
+            lassoPoints: lassoPoints.map(\.cgPoint)
+        )
+    }
+
     private func configureGestures() {
         let tap = UITapGestureRecognizer(target: self, action: #selector(didTap(_:)))
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(didDoubleTap(_:)))
@@ -169,14 +157,14 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
         }) {
             selectedIDs = [object.id]
             onSelectionChanged(true)
-            setNeedsDisplay()
+            refreshOutlines()
             UISelectionFeedbackGenerator().selectionChanged()
         } else if shapePlacementKind != nil {
             onPlaceShape(CanvasPoint(x: point.x, y: point.y))
         } else if isLassoEnabled {
             selectedIDs = []
             onSelectionChanged(false)
-            setNeedsDisplay()
+            refreshOutlines()
         }
     }
 
@@ -188,11 +176,11 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
             if !isMovingSelection && isLassoEnabled {
                 selectedIDs = []
                 lassoPoints = [CanvasPoint(x: location.x, y: location.y)]
-                setNeedsDisplay()
+                refreshOutlines()
             }
         case .changed where !isMovingSelection && isLassoEnabled:
             lassoPoints.append(CanvasPoint(x: location.x, y: location.y))
-            setNeedsDisplay()
+            refreshOutlines()
         case .ended where isMovingSelection:
             guard let bounds = selectionBounds else { return }
             let translation = recognizer.translation(in: self)
@@ -209,7 +197,7 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
             completeLasso()
         case .cancelled:
             lassoPoints = []
-            setNeedsDisplay()
+            refreshOutlines()
         default:
             break
         }
@@ -218,13 +206,14 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
     private func completeLasso() {
         guard lassoPoints.count >= 3 else {
             lassoPoints = []
+            refreshOutlines()
             return
         }
         let path = LassoPath(points: lassoPoints)
         selectedIDs = Set(objects.filter(path.selects).map(\.id))
         lassoPoints = []
         onSelectionChanged(!selectedIDs.isEmpty)
-        setNeedsDisplay()
+        refreshOutlines()
         if !selectedIDs.isEmpty { UISelectionFeedbackGenerator().selectionChanged() }
     }
 

@@ -34,9 +34,6 @@ extension PencilCanvasView {
         if let editor = coordinator.inlineTextEditor {
             canvasView.bringSubviewToFront(editor)
         }
-        if let hoverPreview = coordinator.hoverPreview {
-            canvasView.bringSubviewToFront(hoverPreview)
-        }
     }
 
     func updateObjectOverlays(in canvasView: PKCanvasView, coordinator: Coordinator) {

@@ -1,7 +1,45 @@
+import PencilKit
+import UIKit
 import XCTest
 @testable import NoteNerds
 
 final class CanvasToolbarBehaviorTests: XCTestCase {
+    @MainActor
+    func testPencilStrokePublishesOnlyAfterThePencilLeavesTheCanvas() {
+        let expectedStroke = DomainFixtures.stroke()
+        let canvasView = PKCanvasView()
+        canvasView.drawing = PencilCanvasRenderer.drawing(from: [expectedStroke])
+        var publishedStrokes: [[Stroke]] = []
+        let coordinator = makeCoordinator { publishedStrokes.append($0) }
+
+        coordinator.canvasViewDidBeginUsingTool(canvasView)
+        coordinator.canvasViewDrawingDidChange(canvasView)
+
+        XCTAssertTrue(publishedStrokes.isEmpty)
+
+        coordinator.canvasViewDidEndUsingTool(canvasView)
+
+        XCTAssertEqual(publishedStrokes.count, 1)
+        XCTAssertEqual(publishedStrokes[0].count, 1)
+        XCTAssertEqual(publishedStrokes[0][0].samples.count, expectedStroke.samples.count)
+    }
+
+    @MainActor
+    func testLassoUsesAVisibleVectorOutlineThatDoesNotAllocateACanvasSizedBitmap() {
+        let outline = CanvasLassoOutlineLayer()
+
+        outline.update(points: [
+            CGPoint(x: 40, y: 50),
+            CGPoint(x: 140, y: 160),
+            CGPoint(x: 220, y: 70)
+        ])
+
+        XCTAssertFalse(outline.isHidden)
+        XCTAssertEqual(outline.path?.boundingBox, CGRect(x: 40, y: 50, width: 180, height: 110))
+        XCTAssertGreaterThanOrEqual(outline.lineWidth, 3)
+        XCTAssertNotNil(outline.lineDashPattern)
+    }
+
     func testCompactToolbarKeepsEveryCoreDrawingControlVisible() {
         XCTAssertEqual(
             CanvasToolbarPresentation.actions(isExpanded: false),
@@ -103,6 +141,21 @@ final class CanvasToolbarBehaviorTests: XCTestCase {
         XCTAssertEqual(
             CanvasToolbarDocking.destination(for: CGPoint(x: 900, y: 420), in: size),
             .right
+        )
+    }
+
+    @MainActor
+    private func makeCoordinator(
+        onStrokesCompleted: @escaping @MainActor ([Stroke]) -> Void
+    ) -> PencilCanvasView.Coordinator {
+        PencilCanvasView.Coordinator(
+            onStrokesCompleted: onStrokesCompleted,
+            onDrawingChanged: { _ in },
+            onConvertStrokesToText: { _ in },
+            onViewportChanged: { _ in },
+            onPencilSqueeze: { _, _ in },
+            onPencilDoubleTap: {},
+            onPlannerRegionPageRequested: { _ in }
         )
     }
 }

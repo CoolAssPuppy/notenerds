@@ -1,5 +1,21 @@
 # Current work
 
+## Restore Pencil writing and lasso feedback
+
+- [x] Reproduce the missing lasso outline, Pencil target, slow ink, and dropped writing.
+- [x] Add failing behavior tests for visible lasso feedback and uninterrupted Pencil input.
+- [x] Restore the lasso outline and remove the Pencil target from normal writing.
+- [x] Remove the cause of delayed or missing live ink without weakening planner containment.
+- [ ] Run focused tests, full checks, and install the corrected app on the paired iPad.
+
+### Review
+
+- Live strokes remain in PencilKit until the Pencil leaves the canvas. The model and planner constraints receive only completed strokes.
+- The custom Pencil hover circle is gone. Pencil hover still records its location and roll for the squeeze menu.
+- The live lasso loop, selected boundary, and handles use vector layers instead of redrawing a bitmap-backed infinite-canvas view.
+- Focused canvas tests, the complete behavior suite, the lasso interaction test, a warnings-as-errors build, and strict SwiftLint pass.
+- The signed device build is ready. Installation remains pending because the paired iPad is unavailable to Xcode.
+
 ## Deploy to iPad and TestFlight
 
 - [x] Confirm the connected iPad, release credentials, signing assets, and clean repository state.

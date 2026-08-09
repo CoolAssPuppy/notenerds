@@ -69,3 +69,5 @@
 - Planner regions are viewports within one persistent canvas. Paper type, selected region, strokes, and text coordinates must survive redraw and relaunch, and content created in one region must stay in that region's document frame.
 - Confirm where the user runs releases before changing signing or secrets. When asked to copy another app's release process, compare its actual command and credentials first. Note Nerds releases run locally like TripMaster; GitHub only runs CI.
 - Before an App Store upload, verify that the 1024-pixel app icon has no alpha channel. Apple rejects the upload even when every visible pixel appears opaque.
+- Keep live Pencil input inside PencilKit until the Pencil leaves the canvas. Sending partial strokes through persistence or planner constraints during the gesture causes lag and missing samples.
+- Draw lasso feedback with vector layers. Invalidating a bitmap-backed view the size of the infinite canvas can hide the path and waste memory.

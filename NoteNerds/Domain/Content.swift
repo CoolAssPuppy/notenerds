@@ -67,12 +67,18 @@ struct StrokeSampleRendering: Hashable, Sendable {
     let threshold: Double?
 }
 
+struct PencilKitStrokeArchive: Codable, Hashable, Sendable {
+    let data: Data
+    let renderingFingerprint: UInt64
+}
+
 struct Stroke: Codable, Hashable, Sendable {
     let id: StrokeID
     var layerID: LayerID
     var samples: [StrokeSample]
     var style: StrokeStyle
     let createdAt: Date
+    var pencilKitArchive: PencilKitStrokeArchive?
 
     var objectID: ObjectID { ObjectID(rawValue: id.rawValue) }
     var bounds: CanvasRect { CanvasRect.enclosing(samples.map(\.point)) }

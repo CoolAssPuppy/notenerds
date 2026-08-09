@@ -14,13 +14,20 @@ enum PencilCanvasModelReconciliation {
 enum PencilCanvasRenderer {
     static func drawing(from strokes: [Stroke]) -> PKDrawing {
         let pencilStrokes = strokes.compactMap { stroke -> PKStroke? in
+            if let archivedStroke = PencilKitStrokeArchiveCodec.stroke(for: stroke) {
+                return archivedStroke
+            }
             guard !stroke.samples.isEmpty else { return nil }
             let points = stroke.samples.map { sample in
                 strokePoint(from: sample, style: stroke.style)
             }
             let path = PKStrokePath(controlPoints: points, creationDate: stroke.createdAt)
             let ink = PKInk(stroke.style.instrument.inkType, color: UIColor(stroke.style.color))
-            return PKStroke(ink: ink, path: path)
+            return PKStroke(
+                ink: ink,
+                path: path,
+                randomSeed: PencilKitStrokeArchiveCodec.randomSeed(for: stroke)
+            )
         }
         return PKDrawing(strokes: pencilStrokes)
     }
@@ -102,13 +109,16 @@ enum PencilCanvasSelectionTransform {
             transformedStroke.transform = pencilStroke.transform.concatenating(affineTransform)
             return transformedStroke
         }
-        let transformedCanonicalStrokes = canonicalStrokes.map { stroke in
+        let transformedCanonicalStrokes = canonicalStrokes.enumerated().map { index, stroke in
             guard objectIDs.contains(stroke.objectID),
                   case let .stroke(transformedStroke) = CanvasObject.stroke(stroke).applying(
                     transform,
                     around: center
                   ) else { return stroke }
-            return transformedStroke
+            return PencilKitStrokeArchiveCodec.preserving(
+                pencilStrokes[index],
+                in: transformedStroke
+            )
         }
         return PencilCanvasSelectionTransformResult(
             drawing: PKDrawing(strokes: pencilStrokes),

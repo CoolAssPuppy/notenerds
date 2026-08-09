@@ -127,13 +127,13 @@ extension PencilCanvasView {
                 : nonStrokeObjects,
             isLassoEnabled: configuration.tool == .lasso,
             onTransform: { objectIDs, transform, center in
-                coordinator.applySelectionTransform(
+                let transformedStrokes = coordinator.applySelectionTransform(
                     objectIDs: objectIDs,
                     transform: transform,
                     center: center,
                     in: canvasView
                 )
-                onTransformObjects(objectIDs, transform, center)
+                onTransformObjects(objectIDs, transform, center, transformedStrokes)
             },
             onDelete: onDeleteObjects,
             onPaste: onPasteObjects,

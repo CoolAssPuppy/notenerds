@@ -24,7 +24,7 @@ struct PencilCanvasView: UIViewRepresentable {
     let onStrokesCompleted: @MainActor ([Stroke]) -> Void
     let onDrawingChanged: @MainActor ([Stroke]) -> Void
     let onConvertStrokesToText: @MainActor ([Stroke]) -> Void
-    let onTransformObjects: @MainActor (Set<ObjectID>, SelectionTransform, CanvasPoint) -> Void
+    let onTransformObjects: @MainActor (Set<ObjectID>, SelectionTransform, CanvasPoint, [Stroke]) -> Void
     let onDeleteObjects: @MainActor (Set<ObjectID>) -> Void
     let onPasteObjects: @MainActor ([CanvasObject]) -> Void
     let onMoveObjectsToLayer: @MainActor (Set<ObjectID>, LayerID) -> Void
@@ -141,6 +141,7 @@ struct PencilCanvasView: UIViewRepresentable {
         var isTextPlacementOverlayEnabled = false
         var shapePlacementKind: RecognizedShapeKind?
         var configuration = ToolConfiguration.favoriteOne
+        var activeDrawingConfiguration: ToolConfiguration?
         var activeLayerID: LayerID
         var isUsingTool = false
         var latestPencilRoll = 0.0
@@ -194,24 +195,23 @@ struct PencilCanvasView: UIViewRepresentable {
 
         func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
             isUsingTool = true
+            activeDrawingConfiguration = configuration
         }
 
         func canvasViewDidEndUsingTool(_ canvasView: PKCanvasView) {
             isUsingTool = false
             synchronizeDrawing(canvasView)
+            activeDrawingConfiguration = nil
         }
 
         private func synchronizeDrawing(_ canvasView: PKCanvasView) {
             guard !isApplyingModelDrawing else { return }
             guard canvasView.drawing.strokes.count > knownStrokeCount else {
                 if canvasView.drawing.strokes.count <= knownStrokeCount {
-                    var changedStrokes: [Stroke] = []
-                    for (index, pencilStroke) in canvasView.drawing.strokes.enumerated()
-                    where canonicalStrokes.indices.contains(index) {
-                        changedStrokes.append(
-                            canonicalStroke(from: pencilStroke, preserving: canonicalStrokes[index])
-                        )
-                    }
+                    let changedStrokes = reconciledCanonicalStrokes(
+                        from: canvasView.drawing.strokes,
+                        preserving: canonicalStrokes
+                    )
                     knownStrokeCount = changedStrokes.count
                     canonicalStrokes = changedStrokes
                     onDrawingChanged(changedStrokes)
@@ -222,7 +222,8 @@ struct PencilCanvasView: UIViewRepresentable {
             }
             let addedPencilStrokes = canvasView.drawing.strokes.dropFirst(knownStrokeCount)
             knownStrokeCount = canvasView.drawing.strokes.count
-            guard let instrument = configuration.tool.instrument else { return }
+            let strokeConfiguration = activeDrawingConfiguration ?? configuration
+            guard let instrument = strokeConfiguration.tool.instrument else { return }
             let addedStrokes = addedPencilStrokes.compactMap { pencilStroke -> Stroke? in
                 let samples = pencilStroke.path.map { point in
                     canonicalSample(
@@ -232,38 +233,22 @@ struct PencilCanvasView: UIViewRepresentable {
                     )
                 }
                 guard !samples.isEmpty else { return nil }
-                return Stroke(
+                let stroke = Stroke(
                     id: StrokeID(),
                     layerID: activeLayerID,
                     samples: samples,
                     style: StrokeStyle(
                         instrument: instrument,
-                        width: configuration.width.points,
-                        color: configuration.color
+                        width: strokeConfiguration.width.points,
+                        color: strokeConfiguration.color
                     ),
-                    createdAt: Date()
+                    createdAt: Date(),
+                    pencilKitArchive: nil
                 )
+                return PencilKitStrokeArchiveCodec.preserving(pencilStroke, in: stroke)
             }
             canonicalStrokes.append(contentsOf: addedStrokes)
             onStrokesCompleted(addedStrokes)
-        }
-
-        private func canonicalStroke(from pencilStroke: PKStroke, preserving source: Stroke) -> Stroke {
-            let points = Array(pencilStroke.path)
-            let samples = points.enumerated().map { index, point in
-                canonicalSample(
-                    from: point,
-                    transformedBy: pencilStroke.transform,
-                    roll: source.samples.indices.contains(index) ? source.samples[index].roll : 0
-                )
-            }
-            return Stroke(
-                id: source.id,
-                layerID: source.layerID,
-                samples: samples,
-                style: source.style,
-                createdAt: source.createdAt
-            )
         }
 
         func pencilInteraction(
@@ -440,7 +425,7 @@ extension PencilCanvasView.Coordinator {
         transform: SelectionTransform,
         center: CanvasPoint,
         in canvasView: PKCanvasView
-    ) {
+    ) -> [Stroke] {
         let result = PencilCanvasSelectionTransform.applying(
             objectIDs: objectIDs,
             transform: transform,
@@ -453,6 +438,7 @@ extension PencilCanvasView.Coordinator {
         canonicalStrokes = result.canonicalStrokes
         knownStrokeCount = result.canonicalStrokes.count
         isApplyingModelDrawing = false
+        return result.canonicalStrokes.filter { objectIDs.contains($0.objectID) }
     }
 }
 

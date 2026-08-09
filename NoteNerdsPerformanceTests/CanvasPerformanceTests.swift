@@ -1,3 +1,4 @@
+import PencilKit
 import XCTest
 import UIKit
 @testable import NoteNerds
@@ -143,6 +144,35 @@ final class CanvasPerformanceTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testReopeningOneThousandArchivedPencilStrokesWithinOneSecond() throws {
+        let layerID = LayerID()
+        let strokes = (0..<1_000).map { index in
+            makeArchivedMarkerStroke(index: index, layerID: layerID)
+        }
+        var notebook = Notebook(title: "Pencil performance", canvases: [Canvas(title: "Canvas")])
+        notebook.canvases[0].layers[0] = Layer(
+            id: layerID,
+            name: "Writing",
+            objects: strokes.map(CanvasObject.stroke)
+        )
+        let serializer = NativeDocumentSerializer()
+        let package = NativeNotebookPackage(schemaVersion: .current, notebook: notebook)
+        let reopened = try serializer.decode(serializer.encode(package))
+        let reopenedStrokes = reopened.notebook.canvases[0].layers[0].objects.compactMap(\.strokeValue)
+        _ = PencilCanvasRenderer.drawing(from: Array(reopenedStrokes.prefix(10)))
+        let clock = ContinuousClock()
+
+        let durations = (0..<3).map { _ in
+            let start = clock.now
+            let drawing = PencilCanvasRenderer.drawing(from: reopenedStrokes)
+            XCTAssertEqual(drawing.strokes.count, 1_000)
+            return start.duration(to: clock.now)
+        }
+
+        XCTAssertLessThan(try XCTUnwrap(durations.min()), .seconds(1))
+    }
+
     func testPanAndZoomCoordinateUpdates() {
         let viewport = CanvasViewport(origin: CanvasPoint(x: 10_000, y: 10_000), zoom: 1.5)
 
@@ -205,6 +235,50 @@ final class CanvasPerformanceTests: XCTestCase {
             style: StrokeStyle(instrument: .ballpoint, width: 2, color: .black),
             createdAt: Date()
         )
+    }
+
+    private func makeArchivedMarkerStroke(index: Int, layerID: LayerID) -> Stroke {
+        let creationDate = Date(timeIntervalSince1970: 1_750_000_000 + Double(index))
+        let points = (0..<20).map { pointIndex in
+            PKStrokePoint(
+                location: CGPoint(x: CGFloat(pointIndex * 5), y: CGFloat(index * 2)),
+                timeOffset: Double(pointIndex) / 120,
+                size: CGSize(width: 5, height: 8),
+                opacity: 0.9,
+                force: 0.5,
+                azimuth: 1.1,
+                altitude: 0.7
+            )
+        }
+        let pencilStroke = PKStroke(
+            ink: PKInk(.marker, color: .black),
+            path: PKStrokePath(controlPoints: points, creationDate: creationDate),
+            randomSeed: UInt32(index + 1)
+        )
+        let samples = points.map { point in
+            StrokeSample(
+                point: CanvasPoint(x: point.location.x, y: point.location.y),
+                pressure: point.force,
+                altitude: point.altitude,
+                azimuth: point.azimuth,
+                roll: 0,
+                timeOffset: point.timeOffset,
+                rendering: StrokeSampleRendering(
+                    size: CanvasSize(width: point.size.width, height: point.size.height),
+                    opacity: point.opacity,
+                    secondaryScale: point.secondaryScale,
+                    threshold: point.threshold
+                )
+            )
+        }
+        let stroke = Stroke(
+            id: StrokeID(),
+            layerID: layerID,
+            samples: samples,
+            style: StrokeStyle(instrument: .marker, width: 3, color: .black),
+            createdAt: creationDate
+        )
+        return PencilKitStrokeArchiveCodec.preserving(pencilStroke, in: stroke)
     }
 
     private func deterministicUUIDString(index: Int) -> String {

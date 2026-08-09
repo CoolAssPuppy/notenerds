@@ -29,7 +29,7 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
         let completeStroke = stroke(sampleCount: 12, xOffset: 0)
         let canvasView = PKCanvasView()
         var publishedStrokes: [[Stroke]] = []
-        let coordinator = makeCoordinator { publishedStrokes.append($0) }
+        let coordinator = PencilStrokeTestFixture.coordinator { publishedStrokes.append($0) }
 
         coordinator.canvasViewDidBeginUsingTool(canvasView)
         for sampleCount in 1...completeStroke.samples.count {
@@ -54,7 +54,7 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
         let secondStroke = stroke(sampleCount: 10, xOffset: 100)
         let canvasView = PKCanvasView()
         var publishedStrokes: [[Stroke]] = []
-        let coordinator = makeCoordinator { publishedStrokes.append($0) }
+        let coordinator = PencilStrokeTestFixture.coordinator { publishedStrokes.append($0) }
 
         draw(firstStroke, withExisting: [], on: canvasView, coordinator: coordinator)
         draw(secondStroke, withExisting: [firstStroke], on: canvasView, coordinator: coordinator)
@@ -70,56 +70,13 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
         ))
     }
 
-    func testMarkerHighlightMarkerRetainsPencilKitRenderingAfterReopen() throws {
-        let purple = InkColor(red: 0.55, green: 0.16, blue: 0.82, alpha: 1)
-        let yellow = InkColor(red: 0.95, green: 0.78, blue: 0.2, alpha: 0.45)
-        let configurations = [
-            ToolConfiguration(tool: .marker, width: .medium, color: purple),
-            ToolConfiguration(tool: .highlighter, width: .thick, color: yellow),
-            ToolConfiguration(tool: .marker, width: .medium, color: .black)
-        ]
-        let originalStrokes = [
-            pencilStroke(color: purple, size: CGSize(width: 5, height: 8), opacity: 0.92),
-            pencilStroke(color: yellow, size: CGSize(width: 13, height: 7), opacity: 0.38),
-            pencilStroke(color: .black, size: CGSize(width: 4, height: 6), opacity: 0.86)
-        ]
-        let canvasView = PKCanvasView()
-        var completedStrokes: [Stroke] = []
-        let coordinator = makeCoordinator { completedStrokes.append(contentsOf: $0) }
-
-        for (index, pencilStroke) in originalStrokes.enumerated() {
-            coordinator.configuration = configurations[index]
-            coordinator.canvasViewDidBeginUsingTool(canvasView)
-            canvasView.drawing = PKDrawing(strokes: Array(originalStrokes.prefix(index)) + [pencilStroke])
-            coordinator.canvasViewDidEndUsingTool(canvasView)
-        }
-        var notebook = DomainFixtures.notebook()
-        notebook.canvases[0].layers[0].objects = completedStrokes.map(CanvasObject.stroke)
-        let package = NativeNotebookPackage(schemaVersion: .current, notebook: notebook)
-
-        let reopened = try NativeDocumentSerializer().decode(
-            NativeDocumentSerializer().encode(package)
-        )
-        let reopenedStrokes = reopened.notebook.canvases[0].layers[0].objects.compactMap(\.strokeValue)
-        let rendered = PencilCanvasRenderer.drawing(from: reopenedStrokes).strokes
-
-        XCTAssertEqual(rendered.count, originalStrokes.count)
-        for (original, restored) in zip(originalStrokes, rendered) {
-            XCTAssertEqual(restored.path.map(\.size), original.path.map(\.size))
-            XCTAssertEqual(restored.path.map(\.opacity), original.path.map(\.opacity))
-            XCTAssertEqual(restored.path.map(\.secondaryScale), original.path.map(\.secondaryScale))
-            XCTAssertEqual(restored.path.map(\.threshold), original.path.map(\.threshold))
-            XCTAssertEqual(restored.renderBounds, original.renderBounds)
-        }
-    }
-
     func testExistingStrokeGeometryPublishesOnlyAfterToolUseEnds() {
         let original = stroke(sampleCount: 6, xOffset: 0)
         let moved = stroke(sampleCount: 6, xOffset: 300)
         let canvasView = PKCanvasView()
         canvasView.drawing = PencilCanvasRenderer.drawing(from: [moved])
         var changedStrokes: [[Stroke]] = []
-        let coordinator = makeCoordinator(
+        let coordinator = PencilStrokeTestFixture.coordinator(
             onStrokesCompleted: { _ in },
             onDrawingChanged: { changedStrokes.append($0) }
         )
@@ -138,10 +95,77 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
         XCTAssertEqual(changedStrokes[0][0].samples.map(\.point), moved.samples.map(\.point))
     }
 
+    func testCompletedStrokeKeepsToolActiveWhenPencilContactBegan() throws {
+        let initialColor = InkColor(red: 0.8, green: 0.1, blue: 0.2, alpha: 1)
+        let initialConfiguration = ToolConfiguration(
+            tool: .ballpoint,
+            width: .thin,
+            color: initialColor
+        )
+        let canvasView = PKCanvasView()
+        var completedStrokes: [Stroke] = []
+        let coordinator = PencilStrokeTestFixture.coordinator {
+            completedStrokes.append(contentsOf: $0)
+        }
+        coordinator.configuration = initialConfiguration
+
+        coordinator.canvasViewDidBeginUsingTool(canvasView)
+        coordinator.configuration = ToolConfiguration(
+            tool: .marker,
+            width: .extraBold,
+            color: .black
+        )
+        canvasView.drawing = PKDrawing(strokes: [
+            PencilStrokeTestFixture.pencilStroke(
+                inkType: .pen,
+                color: initialColor,
+                size: CGSize(width: 1.5, height: 1.5),
+                opacity: 1,
+                randomSeed: 44
+            )
+        ])
+        coordinator.canvasViewDidEndUsingTool(canvasView)
+
+        let stroke = try XCTUnwrap(completedStrokes.first)
+        XCTAssertEqual(stroke.style.instrument, .ballpoint)
+        XCTAssertEqual(stroke.style.width, ToolWidth.thin.points)
+        XCTAssertEqual(stroke.style.color, initialColor)
+    }
+
+    func testObjectEraserKeepsTheIdentityAndStyleOfSurvivingStrokes() {
+        let sequence = PencilStrokeTestFixture.markerHighlightMarkerSequence()
+        let captured = PencilStrokeTestFixture.capture(
+            sequence.pencilStrokes,
+            configurations: sequence.configurations
+        )
+        let canvasView = PKCanvasView()
+        canvasView.drawing = PKDrawing(strokes: [
+            sequence.pencilStrokes[0],
+            sequence.pencilStrokes[2]
+        ])
+        var changedStrokes: [Stroke] = []
+        let coordinator = PencilStrokeTestFixture.coordinator(
+            onStrokesCompleted: { _ in },
+            onDrawingChanged: { changedStrokes = $0 }
+        )
+        coordinator.knownStrokeCount = captured.count
+        coordinator.canonicalStrokes = captured
+
+        coordinator.canvasViewDidBeginUsingTool(canvasView)
+        coordinator.canvasViewDidEndUsingTool(canvasView)
+
+        XCTAssertEqual(changedStrokes.map(\.id), [captured[0].id, captured[2].id])
+        XCTAssertEqual(changedStrokes.map(\.style), [captured[0].style, captured[2].style])
+        XCTAssertEqual(
+            PencilCanvasRenderer.drawing(from: changedStrokes).strokes.map(\.randomSeed),
+            [11, 33]
+        )
+    }
+
     func testPencilAccessoriesTrackHoverWithoutAddingAVisualTarget() {
         let canvasView = PKCanvasView()
         let existingSubviews = Set(canvasView.subviews.map(ObjectIdentifier.init))
-        let coordinator = makeCoordinator { _ in }
+        let coordinator = PencilStrokeTestFixture.coordinator { _ in }
 
         PencilCanvasInputAccessories.install(on: canvasView, coordinator: coordinator)
 
@@ -170,38 +194,6 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
         XCTAssertTrue(outlines.isSelectionAnimating)
         XCTAssertEqual(outlines.selectionPathBounds, CGRect(x: 8_994, y: 8_994, width: 612, height: 412))
         XCTAssertEqual(outlines.lassoPathBounds, CGRect(x: 9_100, y: 9_100, width: 400, height: 300))
-    }
-
-    func testLassoMovePreservesExactPencilKitPathsForSelectedAndNearbyWriting() {
-        let selected = uniquelyIdentified(stroke(sampleCount: 8, xOffset: 0))
-        let nearby = uniquelyIdentified(stroke(sampleCount: 10, xOffset: 100))
-        let drawing = PencilCanvasRenderer.drawing(from: [selected, nearby])
-        let originalSelected = drawing.strokes[0]
-        let originalNearby = drawing.strokes[1]
-        let transform = SelectionTransform(
-            scaleX: 1,
-            scaleY: 1,
-            rotation: 0,
-            translation: CanvasPoint(x: 40, y: 25)
-        )
-
-        let result = PencilCanvasSelectionTransform.applying(
-            objectIDs: [selected.objectID],
-            transform: transform,
-            center: CanvasPoint(x: 20, y: 20),
-            to: drawing,
-            canonicalStrokes: [selected, nearby]
-        )
-
-        XCTAssertEqual(result.drawing.strokes[0].path.map(\.location), originalSelected.path.map(\.location))
-        XCTAssertEqual(result.drawing.strokes[1].path.map(\.location), originalNearby.path.map(\.location))
-        XCTAssertEqual(result.drawing.strokes[1].transform, originalNearby.transform)
-        XCTAssertEqual(
-            result.drawing.strokes[0].renderBounds,
-            originalSelected.renderBounds.offsetBy(dx: 40, dy: 25)
-        )
-        XCTAssertEqual(result.canonicalStrokes[1], nearby)
-        XCTAssertEqual(result.canonicalStrokes[0].samples[0].point, CanvasPoint(x: 40, y: 25))
     }
 
     func testLassoOutlineUsesAnimatedMarchingAnts() {
@@ -236,54 +228,5 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
             )
         }
         return result
-    }
-
-    private func uniquelyIdentified(_ stroke: Stroke) -> Stroke {
-        Stroke(
-            id: StrokeID(),
-            layerID: stroke.layerID,
-            samples: stroke.samples,
-            style: stroke.style,
-            createdAt: stroke.createdAt
-        )
-    }
-
-    private func pencilStroke(color: InkColor, size: CGSize, opacity: CGFloat) -> PKStroke {
-        var points: [PKStrokePoint] = []
-        for index in 0..<8 {
-            let scalar = CGFloat(index)
-            let location = CGPoint(x: 100 + scalar * 9, y: 200 + scalar * 5)
-            let point = PKStrokePoint(
-                location: location,
-                timeOffset: Double(index) * 0.01,
-                size: size,
-                opacity: opacity,
-                force: 0.35 + scalar * 0.05,
-                azimuth: 1.1,
-                altitude: 0.7,
-                secondaryScale: 0.75 + scalar * 0.02
-            )
-            points.append(point)
-        }
-        return PKStroke(
-            ink: PKInk(.marker, color: UIColor(color)),
-            path: PKStrokePath(controlPoints: points, creationDate: DomainFixtures.fixedDate)
-        )
-    }
-
-    private func makeCoordinator(
-        onStrokesCompleted: @escaping @MainActor ([Stroke]) -> Void,
-        onDrawingChanged: @escaping @MainActor ([Stroke]) -> Void = { _ in }
-    ) -> PencilCanvasView.Coordinator {
-        PencilCanvasView.Coordinator(
-            activeLayerID: LayerID(),
-            onStrokesCompleted: onStrokesCompleted,
-            onDrawingChanged: onDrawingChanged,
-            onConvertStrokesToText: { _ in },
-            onViewportChanged: { _ in },
-            onPencilSqueeze: { _, _ in },
-            onPencilDoubleTap: {},
-            onPlannerRegionPageRequested: { _ in }
-        )
     }
 }

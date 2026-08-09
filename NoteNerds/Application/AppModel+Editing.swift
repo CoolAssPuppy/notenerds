@@ -18,6 +18,13 @@ struct ShapeInsertion {
     let canvasID: CanvasID
 }
 
+struct CanvasObjectTransformRequest {
+    let objectIDs: Set<ObjectID>
+    let transform: SelectionTransform
+    let center: CanvasPoint
+    let strokeReplacements: [Stroke]
+}
+
 extension AppModel {
     func addStroke(_ stroke: Stroke, to notebookID: NotebookID, canvasID: CanvasID, layerID: LayerID) {
         guard var notebook = library.notebook(id: notebookID) else { return }
@@ -115,9 +122,7 @@ extension AppModel {
     }
 
     func transformObjects(
-        _ objectIDs: Set<ObjectID>,
-        transform: SelectionTransform,
-        center: CanvasPoint,
+        _ request: CanvasObjectTransformRequest,
         notebookID: NotebookID,
         canvasID: CanvasID
     ) {
@@ -125,9 +130,10 @@ extension AppModel {
               let operation = try? DocumentOperation.transformObjects(
                   in: notebook,
                   canvasID: canvasID,
-                  objectIDs: objectIDs,
-                  transform: transform,
-                  center: center
+                  objectIDs: request.objectIDs,
+                  transform: request.transform,
+                  center: request.center,
+                  strokeReplacements: request.strokeReplacements
               ) else { return }
         execute(operation, on: notebookID)
     }

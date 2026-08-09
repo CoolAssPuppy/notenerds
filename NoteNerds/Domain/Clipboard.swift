@@ -11,7 +11,14 @@ struct SelectionClipboardPayload: Codable, Hashable, Sendable {
             translation: offset
         )
         return objects.map { object in
-            object.duplicated().applying(transform, around: .zero)
+            let pastedObject = object.duplicated().applying(transform, around: .zero)
+            guard case let .stroke(sourceStroke) = object,
+                  case let .stroke(pastedStroke) = pastedObject else { return pastedObject }
+            return .stroke(PencilKitStrokeArchiveCodec.translating(
+                sourceStroke,
+                to: pastedStroke,
+                by: offset
+            ))
         }
     }
 }
@@ -26,7 +33,8 @@ extension CanvasObject {
                 layerID: destinationLayerID,
                 samples: stroke.samples,
                 style: stroke.style,
-                createdAt: stroke.createdAt
+                createdAt: stroke.createdAt,
+                pencilKitArchive: stroke.pencilKitArchive
             ))
         case let .shape(shape):
             return .shape(RecognizedShape(

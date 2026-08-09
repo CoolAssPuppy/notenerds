@@ -85,3 +85,4 @@
 - Decode external API query responses from the smallest documented example. If Notion omits a meeting parent, retrieve the meeting block before inserting a related link.
 - Treat a canvas identifier as part of the PencilKit view's identity. A reused UIKit coordinator can keep callbacks for an earlier canvas and write a later drawing into the wrong document. Test immediate drawing after every canvas switch and confirm all canvases after relaunch.
 - Release verification does not send a TestFlight build. When the user asks to cut or send a release, run the signed upload, wait for App Store Connect to mark the build valid, and confirm the intended tester group can receive it before reporting completion.
+- A drawing persistence regression test must verify the reopened PencilKit drawing after real tool changes and view reconstruction. Checking saved model fields alone can miss a renderer that rebuilds the same stroke with a different width.

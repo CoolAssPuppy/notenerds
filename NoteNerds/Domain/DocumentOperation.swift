@@ -44,14 +44,24 @@ enum DocumentOperation: Codable, Hashable, Sendable {
         canvasID: CanvasID,
         objectIDs: Set<ObjectID>,
         transform: SelectionTransform,
-        center: CanvasPoint
+        center: CanvasPoint,
+        strokeReplacements: [Stroke] = []
     ) throws -> DocumentOperation {
         let before = try notebook.placements(of: objectIDs, in: canvasID)
+        let replacementByID = Dictionary(
+            uniqueKeysWithValues: strokeReplacements.map { ($0.objectID, $0) }
+        )
         let after = before.map { placement in
-            ObjectPlacement(
+            let transformedObject: CanvasObject
+            if let replacement = replacementByID[placement.object.id] {
+                transformedObject = .stroke(replacement)
+            } else {
+                transformedObject = placement.object.applying(transform, around: center)
+            }
+            return ObjectPlacement(
                 layerID: placement.layerID,
                 index: placement.index,
-                object: placement.object.applying(transform, around: center)
+                object: transformedObject
             )
         }
         return .replaceObjects(canvasID: canvasID, before: before, after: after)

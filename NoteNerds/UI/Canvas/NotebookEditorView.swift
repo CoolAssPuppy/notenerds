@@ -107,11 +107,14 @@ struct NotebookEditorView: View {
                 onConvertStrokesToText: { strokes in
                     model.convertStrokesToText(Set(strokes.map(\.id)), in: notebook.id, canvasID: currentCanvas.id)
                 },
-                onTransformObjects: { objectIDs, transform, center in
+                onTransformObjects: { objectIDs, transform, center, transformedStrokes in
                     model.transformObjects(
-                        objectIDs,
-                        transform: transform,
-                        center: center,
+                        CanvasObjectTransformRequest(
+                            objectIDs: objectIDs,
+                            transform: transform,
+                            center: center,
+                            strokeReplacements: transformedStrokes
+                        ),
                         notebookID: notebook.id,
                         canvasID: currentCanvas.id
                     )

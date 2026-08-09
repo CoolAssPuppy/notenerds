@@ -1,5 +1,24 @@
 # Current work
 
+## Preserve Marker width after reopening a notebook
+
+- [x] Reproduce the reported thin-to-thick Marker change through save, leave, and reopen.
+- [x] Add a failing behavior test that checks reopened PencilKit rendering after Marker, Highlighter, and Marker tool changes.
+- [x] Fix the persistence or reconstruction path without changing live Pencil input.
+- [x] Run focused drawing tests and the complete test suite.
+- [x] Run strict lint, static analysis, release checks, and diff checks.
+- [ ] Record the result, commit, push, and upload a corrected TestFlight build.
+
+### Marker reopen review
+
+- PencilKit stored a scale on each live stroke. Note Nerds flattened that scale into point locations but saved the unscaled point size. Reopening rebuilt an identity-transform stroke, which made Marker writing about three times wider.
+- New writing now saves the exact native PencilKit stroke together with the editable Note Nerds samples. The native data includes the transform, random seed, mask, ink, and other rendering state. Files created before this change remain readable.
+- The same exact data now survives lasso transforms, object and precision erasing, copy, duplicate, serialization, and relaunch. Tool selection is captured when Pencil contact begins, so a toolbar change during a stroke cannot change the saved instrument.
+- The reported Marker, Highlighter, Marker sequence now has a rendered-pixel regression test. Related tests cover nonidentity transforms, overlapping ink, stale archives, legacy notes, lasso movement, eraser identity, precision-erased copies, and same-seed duplicates.
+- The complete iOS 26.5 scheme passed 374 tests with 0 failures and 0 skipped tests. A 1,000-stroke native PencilKit reopen performance check passed its one-second budget.
+- Strict SwiftLint passed across 218 files. All 33 release-tool tests, Xcode static analysis, the secret scan, and `git diff --check` passed.
+- Strokes already saved incorrectly by build 13 do not contain the discarded native transform. Build 14 prevents new corruption but cannot reconstruct that missing transform with certainty.
+
 ## Require iOS 26 and remove older-OS code
 
 - [x] Add a failing release-policy test for the iOS 26 minimum and obsolete runtime branches.

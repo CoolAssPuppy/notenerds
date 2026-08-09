@@ -1,6 +1,6 @@
 # Notion integration implementation plan
 
-Status: Implemented locally. Live workspace verification is pending.
+Status: Implemented and syncing in a connected workspace. Full live restore and disconnect verification is pending.
 
 Date: August 8, 2026
 
@@ -440,10 +440,11 @@ Current contract references:
 
 ## Acceptance criteria
 
-- [ ] A user can connect and disconnect a Notion workspace through OAuth.
+- [x] A user can connect a Notion workspace through OAuth.
+- [ ] A user can disconnect from the live workspace while existing Notion pages remain.
 - [x] Tokens remain outside source control and app logs.
-- [ ] A user can choose a Notion parent page.
-- [ ] Note Nerds creates one database with the documented schema.
+- [x] A user can choose a Notion parent page.
+- [x] Note Nerds creates one database with the documented schema.
 - [x] Every notebook maps to exactly one row.
 - [x] Every row contains the correct `Folder` path and stable folder identifier.
 - [x] Every notebook page contains all canvases in order.
@@ -472,7 +473,9 @@ Local verification on August 8, 2026 includes:
 - no third-party runtime package references
 - 13 release-tool tests
 
-The unchecked acceptance items require the connected development workspace and remain release gates.
+Live use on August 9, 2026 confirmed OAuth, parent selection, database creation, and notebook publishing after the destination-request correction.
+
+The unchecked acceptance items require a complete restore and disconnect run in the connected development workspace.
 
 ## Deferred work
 

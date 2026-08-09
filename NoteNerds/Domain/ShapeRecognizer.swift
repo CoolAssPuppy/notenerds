@@ -15,7 +15,9 @@ struct ShapeRecognizer: Sendable {
     private let minimumHoldDuration = 0.5
 
     func recognize(_ stroke: Stroke, holdDuration: TimeInterval) -> RecognizedShape? {
-        guard holdDuration >= minimumHoldDuration, stroke.samples.count >= 2 else { return nil }
+        guard stroke.style.instrument != .highlighter,
+              holdDuration >= minimumHoldDuration,
+              stroke.samples.count >= 2 else { return nil }
         let points = stroke.samples.map(\.point)
         let bounds = CanvasRect.enclosing(points)
         let diagonal = hypot(bounds.size.width, bounds.size.height)

@@ -87,6 +87,23 @@ final class SelectionAndShapeBehaviorTests: XCTestCase {
         XCTAssertEqual(shape?.originalStroke, roughLine)
     }
 
+    func testHeldHighlighterStrokeRemainsInkOverExistingWriting() {
+        let layerID = LayerID()
+        let highlight = Stroke(
+            id: StrokeID(),
+            layerID: layerID,
+            samples: [sample(x: 0, y: 0), sample(x: 40, y: 2), sample(x: 100, y: 0)],
+            style: StrokeStyle(
+                instrument: .highlighter,
+                width: 6,
+                color: InkColor(red: 0.95, green: 0.78, blue: 0.2, alpha: 0.45)
+            ),
+            createdAt: DomainFixtures.fixedDate
+        )
+
+        XCTAssertNil(ShapeRecognizer().recognize(highlight, holdDuration: 0.6))
+    }
+
     func testShortHoldDoesNotReplaceFreehandStroke() {
         XCTAssertNil(ShapeRecognizer().recognize(DomainFixtures.stroke(), holdDuration: 0.1))
     }

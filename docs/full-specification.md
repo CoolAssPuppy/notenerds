@@ -1,5 +1,9 @@
 # Product specification: Native infinite-canvas notes for iPad
 
+Status: Retained after the August 9, 2026 completion audit.
+
+Most specified product behavior is implemented and tested. Final acceptance remains for physical iPad Pencil and toolbar behavior, two-device production CloudKit behavior, the complete hardware accessibility pass, and the full connected Notion restore and disconnect workflow. Delete this specification only after those checks pass and every requirement receives a final review.
+
 ## 1. Product vision
 
 Build a premium, native iPad note-taking and drawing application inspired heavily by the interaction model, simplicity, organization, and visual language of reMarkable.

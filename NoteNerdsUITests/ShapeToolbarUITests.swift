@@ -2,6 +2,34 @@ import XCTest
 
 @MainActor
 final class ShapeToolbarUITests: XCTestCase {
+    func testHeldHighlighterStaysInkAndKeepsWritingUnderneath() {
+        let application = makeApplication()
+        application.launch()
+        application.buttons["New notebook"].tap()
+        let canvas = application.scrollViews["Infinite canvas"]
+        canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.38, dy: 0.45)).press(
+            forDuration: 0.1,
+            thenDragTo: canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.62, dy: 0.45))
+        )
+        application.buttons["Drawing tools"].tap()
+        XCTAssertTrue(application.buttons["Highlighter"].waitForExistence(timeout: 2))
+        application.buttons["Highlighter"].tap()
+
+        canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.38, dy: 0.45)).press(
+            forDuration: 0.1,
+            thenDragTo: canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.62, dy: 0.45)),
+            withVelocity: .default,
+            thenHoldForDuration: 0.7
+        )
+
+        let highlightRemainedInk = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value CONTAINS '2 ink strokes'"),
+            object: canvas
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [highlightRemainedInk], timeout: 3), .completed)
+        XCTAssertTrue((canvas.value as? String)?.contains("0 other objects") == true)
+    }
+
     func testCompactLassoMovesInkAndPersistsItAfterRelaunch() {
         let application = makeApplication()
         application.launch()

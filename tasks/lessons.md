@@ -1,5 +1,6 @@
 # Lessons
 
+- Never send highlighter strokes through held-shape recognition. Test a real highlight over existing writing and confirm that Pencil lift keeps both strokes as ink without replacing the canvas drawing.
 - Move lassoed PencilKit strokes by changing their existing transforms. Rebuilding a whole drawing from saved samples can alter both selected and nearby handwriting. Test the exact PencilKit paths, true polygon selection, movement, and relaunch persistence.
 - Lead all Note Nerds marketing with simplicity: open a notebook, write the thought, and continue. Present tools, organization, and sync as quiet support for writing. Never lead with a feature inventory.
 - Use a restrained paper-notebook tone for Note Nerds. Emphasize calm, focus, familiar writing, and the absence of setup or clutter. Keep every sentence original and never name the reference brand.
@@ -61,7 +62,6 @@
 - Regression tests for collections must find items by stable identity or safely unwrap them. A missing item should produce an XCTest assertion failure, never an out-of-bounds trap.
 - Model planner sections as stable viewports derived from paper geometry. Keep one canvas, one object graph, and one layer stack so rotation and phone paging cannot split a notebook's data.
 - Confirm the target device families before building phone-specific behavior. An iPhone layout is incomplete while the app target still declares iPad-only support.
-- Device builds must use the project build-setting names `NOTION_CLIENT_ID_B64` and `NOTION_CLIENT_SECRET_B64`. Verify the built Info.plist contains two nonempty decoded configuration values before installing it. A signed build can still omit service configuration.
 - Never build a dictionary from persisted user identifiers with a trapping initializer. Validate duplicates, repair legacy data during restore, and return typed sync errors for any invalid data that remains.
 - Check an external API's documented filename and MIME-type allowlist before choosing an attachment format. A correct upload protocol still fails when the service rejects the file type.
 - After fixing a device-only crash, confirm the installed binary UUID or install time changed before asking the user to retest. Source fixes do not protect a device that still runs the previous build.

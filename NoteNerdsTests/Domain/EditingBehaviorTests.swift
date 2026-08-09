@@ -161,6 +161,53 @@ final class EditingBehaviorTests: XCTestCase {
         XCTAssertEqual(notebook.canvases[0].layers[0].objects[0], .stroke(stroke))
     }
 
+    @MainActor
+    func testCompletingAHighlightKeepsUnderlyingWritingAndAvoidsCanvasReplacement() throws {
+        let notebook = DomainFixtures.notebook()
+        let canvas = notebook.canvases[0]
+        let layer = canvas.layers[0]
+        let underlyingWriting = try XCTUnwrap(layer.objects[0].strokeValue)
+        let highlight = Stroke(
+            id: StrokeID(),
+            layerID: layer.id,
+            samples: [
+                timedSample(x: 0, y: 20, time: 0),
+                timedSample(x: 120, y: 20, time: 0.1),
+                timedSample(x: 120, y: 20, time: 0.7)
+            ],
+            style: StrokeStyle(
+                instrument: .highlighter,
+                width: 6,
+                color: InkColor(red: 0.95, green: 0.78, blue: 0.2, alpha: 0.45)
+            ),
+            createdAt: DomainFixtures.fixedDate
+        )
+        let fileURL = FileManager.default.temporaryDirectory
+            .appending(path: UUID().uuidString)
+            .appending(path: "library.json")
+        let model = AppModel(
+            repository: LocalLibraryRepository(fileURL: fileURL),
+            automaticallyRestore: false
+        )
+        model.library = LibraryState(notebooks: [notebook])
+
+        let didSnapShape = model.addStrokes(
+            [highlight],
+            to: notebook.id,
+            canvasID: canvas.id,
+            layerID: layer.id
+        )
+
+        let storedObjects = try XCTUnwrap(model.notebook(notebook.id)?.canvases[0].layers[0].objects)
+        let storedStrokes = storedObjects.compactMap(\.strokeValue)
+        XCTAssertFalse(didSnapShape)
+        XCTAssertEqual(storedObjects, [.stroke(underlyingWriting), .stroke(highlight)])
+        XCTAssertFalse(PencilCanvasModelReconciliation.requiresRedraw(
+            current: [underlyingWriting, highlight],
+            incoming: storedStrokes
+        ))
+    }
+
     func testEraserRemembersStrokeAndPrecisionModes() {
         var palette = ToolPaletteState()
         palette.select(.eraser)
@@ -179,6 +226,17 @@ final class EditingBehaviorTests: XCTestCase {
             bounds: CanvasRect(x: x, y: y, width: 60, height: 30),
             sourceStrokeIDs: [],
             recognizerVersion: "test"
+        )
+    }
+
+    private func timedSample(x: Double, y: Double, time: TimeInterval) -> StrokeSample {
+        StrokeSample(
+            point: CanvasPoint(x: x, y: y),
+            pressure: 0.5,
+            altitude: 1,
+            azimuth: 0,
+            roll: 0,
+            timeOffset: time
         )
     }
 }

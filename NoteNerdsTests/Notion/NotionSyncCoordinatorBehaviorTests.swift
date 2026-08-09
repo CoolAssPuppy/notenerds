@@ -15,6 +15,9 @@ final class NotionSyncCoordinatorBehaviorTests: XCTestCase {
 
         XCTAssertEqual(result, .uploaded(pageID: Self.pageID))
         XCTAssertEqual(events.filter { $0.hasPrefix("upload:") }.count, 4)
+        XCTAssertTrue(events.contains(
+            "upload:\(payload.snapshot.row.notebookID.lowercased()).notenerds.json"
+        ))
         XCTAssertTrue(events.contains("find:\(payload.snapshot.row.notebookID)"))
         XCTAssertTrue(events.contains("create:\(payload.snapshot.row.notebookID)"))
         XCTAssertFalse(events.contains(where: { $0.hasPrefix("update:") }))

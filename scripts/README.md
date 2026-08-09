@@ -6,6 +6,7 @@
 
 ```bash
 ./scripts/ship.py simulator
+./scripts/ship.py archive
 ./scripts/ship.py info
 ./scripts/ship.py verify
 ./scripts/ship.py verify --release
@@ -16,7 +17,11 @@
 
 ### `simulator`
 
-Regenerates the Xcode project, selects the newest compatible iPad simulator, builds Debug, installs the app, and opens it.
+Regenerates the Xcode project, selects the newest compatible iPhone or iPad simulator, builds Debug, installs the app, and opens it.
+
+### `archive`
+
+Regenerates the Xcode project, creates a signed Release archive, and exports an IPA without uploading it. Use this before the first TestFlight run to check App Store signing and capabilities.
 
 ### `info`
 
@@ -30,11 +35,10 @@ Checks Xcode, XcodeGen, the project, version settings, and compatible iPad simul
 
 Bumps the build number, regenerates the project, creates a signed device archive, exports an IPA, and uploads it to TestFlight. The release notes are saved under `dist/` for the TestFlight “What to Test” field.
 
-Use `--build-number` in CI to provide a unique number:
+The command runs locally and assigns the next build number:
 
 ```bash
 ./scripts/ship.py testflight \
-  --build-number 1042 \
   --notes "Check drawing, text, search, and PDF export"
 ```
 
@@ -94,11 +98,10 @@ Required release secrets:
 | `ASC_KEY_ID` | App Store Connect API key identifier |
 | `ASC_ISSUER_ID` | App Store Connect issuer identifier |
 | `ASC_APP_ID` | Numeric Apple ID for the Note Nerds app record |
-| `ASC_PRIVATE_KEY` | Full contents of the App Store Connect `.p8` private key |
 | `NOTION_CLIENT_ID` | Public Notion integration client identifier |
 | `NOTION_CLIENT_SECRET` | Public Notion integration client secret embedded in release builds |
 
-The local upload command expects the private key at `~/.private_keys/AuthKey_<ASC_KEY_ID>.p8`. The GitHub release workflow builds this file from `ASC_PRIVATE_KEY` for the duration of the job.
+The local upload command expects the private key at `~/.private_keys/AuthKey_<ASC_KEY_ID>.p8`.
 
 The build command encodes the Notion values and passes them only through the `xcodebuild` child process environment. The values stay out of command arguments, Xcode configuration files, and build logs.
 
@@ -122,6 +125,15 @@ Archives, IPAs, export settings, release notes, and logs are written under `dist
 
 `.github/workflows/ci.yml` runs on pushes and pull requests. It checks the Python release code, regenerates the Xcode project, rejects project drift, runs SwiftLint, runs all behavior tests, and launches the app through one UI check.
 
-`.github/workflows/release.yml` is manual. It accepts a release destination, version, notes, and review choice. It fetches credentials from Doppler, gives every run a unique build number, and retains logs and the exported IPA for 14 days.
+GitHub does not archive, sign, or upload Note Nerds. Releases run from the local command.
 
-The release workflow requires a GitHub environment named `app-store` with `DOPPLER_TOKEN` stored as an environment secret.
+## First TestFlight setup
+
+Complete these local steps before the first upload:
+
+1. Keep the shared App Store Connect key at `~/.private_keys/AuthKey_<ASC_KEY_ID>.p8` with file mode `600`.
+2. Keep an active Apple Distribution identity in the login keychain.
+3. Install an App Store provisioning profile for `com.strategicnerds.notenerds` in Xcode.
+4. Run `./scripts/ship.py archive`. A successful run creates `dist/export-preflight/NoteNerds.ipa` without uploading it.
+5. Run `./scripts/ship.py testflight --notes "What testers should check"`.
+6. After the first build finishes processing, create an internal TestFlight group and add the intended testers.

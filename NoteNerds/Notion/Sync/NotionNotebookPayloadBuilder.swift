@@ -24,23 +24,24 @@ struct NotionNotebookPayloadBuilder: Sendable {
     ) async throws -> NotionNotebookPayload {
         let assets = try referencedAssets(for: notebook, in: library)
         let archive = self.archive
-        let (nativeArchive, snapshot) = try await Task.detached(priority: .userInitiated) {
-            let nativeArchive = try archive.encode(
+        let (nativeFile, snapshot) = try await Task.detached(priority: .userInitiated) {
+            let encodedArchive = try archive.encode(
                 package: NativeNotebookPackage(schemaVersion: .current, notebook: notebook),
                 assets: assets,
                 exportedAt: exportedAt
             )
+            let nativeFile = try NotionTransportFile.encode(encodedArchive)
             let snapshot = try NotionNotebookMapper.snapshot(
                 for: notebook,
                 in: library,
-                contentHash: NotionContentHasher.sha256Hex(of: nativeArchive)
+                contentHash: NotionContentHasher.sha256Hex(of: nativeFile)
             )
-            return (nativeArchive, snapshot)
+            return (nativeFile, snapshot)
         }.value
         return try await renderPayload(
             notebook: notebook,
             assets: assets,
-            nativeArchive: nativeArchive,
+            nativeArchive: nativeFile,
             snapshot: snapshot
         )
     }

@@ -126,6 +126,94 @@ final class PaperLayoutBehaviorTests: XCTestCase {
         )
     }
 
+    func testPlannerTextFrameIsKeptInsideItsSelectedRegion() throws {
+        let today = try XCTUnwrap(
+            PlannerRegionCatalog.regions(for: .dailyPlanner).first { $0.id == "today" }
+        )
+        let proposedFrame = CanvasRect(
+            x: today.frame.maxX - 20,
+            y: today.frame.maxY - 10,
+            width: 360,
+            height: 88
+        )
+
+        let constrained = PlannerRegionContentPolicy.constrainedFrame(
+            proposedFrame,
+            to: today.frame
+        )
+
+        XCTAssertGreaterThanOrEqual(constrained.minX, today.frame.minX)
+        XCTAssertGreaterThanOrEqual(constrained.minY, today.frame.minY)
+        XCTAssertLessThanOrEqual(constrained.maxX, today.frame.maxX)
+        XCTAssertLessThanOrEqual(constrained.maxY, today.frame.maxY)
+    }
+
+    func testPlannerTextSessionUsesTheAvailableRegionWidth() throws {
+        let today = try XCTUnwrap(
+            PlannerRegionCatalog.regions(for: .dailyPlanner).first { $0.id == "today" }
+        )
+
+        let session = CanvasTextEditingSession.new(
+            layerID: LayerID(),
+            insertionPoint: CanvasPoint(x: today.frame.maxX - 10, y: today.frame.minY + 80),
+            constrainedTo: today.frame
+        )
+
+        XCTAssertGreaterThanOrEqual(session.textBlock.frame.minX, today.frame.minX)
+        XCTAssertLessThanOrEqual(session.textBlock.frame.maxX, today.frame.maxX)
+    }
+
+    func testPlannerStrokesRemainInsideTheirStartingRegion() throws {
+        for paperType in [PaperType.dailyPlanner, .weeklyPlanner] {
+            let region = try XCTUnwrap(PlannerRegionCatalog.regions(for: paperType).first)
+            var stroke = DomainFixtures.stroke()
+            let originalID = stroke.id
+            let originalLayerID = stroke.layerID
+            let originalStyle = stroke.style
+            var first = stroke.samples[0]
+            first.point = CanvasPoint(x: region.frame.minX + 20, y: region.frame.minY + 20)
+            var outside = first
+            outside.point = CanvasPoint(x: region.frame.maxX + 200, y: region.frame.maxY + 200)
+            stroke.samples = [first, outside]
+
+            let constrained = PlannerRegionContentPolicy.constrainedStroke(stroke, to: region.frame)
+
+            XCTAssertEqual(constrained.id, originalID)
+            XCTAssertEqual(constrained.layerID, originalLayerID)
+            XCTAssertEqual(constrained.style, originalStyle)
+            XCTAssertTrue(constrained.samples.allSatisfy { sample in
+                sample.point.x >= region.frame.minX
+                    && sample.point.x <= region.frame.maxX
+                    && sample.point.y >= region.frame.minY
+                    && sample.point.y <= region.frame.maxY
+            })
+        }
+    }
+
+    func testPendingSearchCanvasTakesPriorityOverStoredCanvas() {
+        let storedCanvasID = CanvasID()
+        let pendingCanvasID = CanvasID()
+
+        let index = NotebookCanvasOpeningPolicy.initialIndex(
+            canvasIDs: [storedCanvasID, pendingCanvasID],
+            pendingCanvasID: pendingCanvasID,
+            storedCanvasID: storedCanvasID
+        )
+
+        XCTAssertEqual(index, 1)
+    }
+
+    func testSameCountStrokeChangesStillRequireCanvasRedraw() {
+        var original = DomainFixtures.stroke()
+        original.samples[0].point = CanvasPoint(x: 9_300, y: 9_300)
+        original.samples = [original.samples[0]]
+        var moved = original
+        moved.samples[0].point = CanvasPoint(x: 9_500, y: 9_500)
+
+        XCTAssertTrue(PencilCanvasModelReconciliation.requiresRedraw(current: [original], incoming: [moved]))
+        XCTAssertFalse(PencilCanvasModelReconciliation.requiresRedraw(current: [original], incoming: [original]))
+    }
+
     @MainActor
     func testPlannerPapersRenderAtTheirCanonicalAspectRatio() throws {
         let size = CGSize(width: 384, height: 512)

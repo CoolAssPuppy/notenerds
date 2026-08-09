@@ -8,7 +8,7 @@ final class RadialPaletteBehaviorTests: XCTestCase {
 
         XCTAssertEqual(
             items.map(\.label),
-            ["Writing tools", "Eraser", "Lasso", "Undo", "Redo", "Width", "Color"]
+            ["Writing tools", "Width", "Color", "Eraser", "Lasso", "Undo", "Redo"]
         )
         XCTAssertEqual(item(named: "Writing tools", in: items)?.action.destination, .drawingTools)
         XCTAssertEqual(item(named: "Eraser", in: items)?.action.destination, .eraserModes)

@@ -7,17 +7,22 @@ scheme = "NoteNerds"
 ios_root = "."
 xcodeproj = "NoteNerds.xcodeproj"
 project_yml = "project.yml"
+xcodegen_version = "2.46.0"
 dist_dir = "dist"
 min_ios = "18.0"
-device_family = "2"
+device_family = "1,2"
 
 [asc]
 key_dir = "~/.private_keys"
 
+[signing]
+certificate = "Apple Distribution"
+profile_name = "Note Nerds App Store"
+
 [doppler]
 project = "notenerds"
 config = "prd"
-secrets = ["ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_APP_ID", "ASC_PRIVATE_KEY", "NOTION_CLIENT_ID", "NOTION_CLIENT_SECRET"]
+secrets = ["ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_APP_ID", "NOTION_CLIENT_ID", "NOTION_CLIENT_SECRET"]
 
 [release]
 release_type = "MANUAL"

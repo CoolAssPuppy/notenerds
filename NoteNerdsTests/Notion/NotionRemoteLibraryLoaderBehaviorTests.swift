@@ -28,7 +28,7 @@ final class NotionRemoteLibraryLoaderBehaviorTests: XCTestCase {
         )
         let api = LoaderRestoreAPI(
             manifestData: try NotionLibraryManifestCodec.encode(manifest),
-            archive: archive,
+            archive: try NotionTransportFile.encode(archive),
             notebookID: notebook.id.rawValue.uuidString.lowercased()
         )
 
@@ -69,7 +69,7 @@ final class NotionRemoteLibraryLoaderBehaviorTests: XCTestCase {
         )
         let api = LoaderRestoreAPI(
             manifestData: try NotionLibraryManifestCodec.encode(manifest),
-            archive: archive,
+            archive: try NotionTransportFile.encode(archive),
             notebookID: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
         )
 
@@ -107,7 +107,7 @@ final class NotionRemoteLibraryLoaderBehaviorTests: XCTestCase {
         )
         let api = LoaderRestoreAPI(
             manifestData: try NotionLibraryManifestCodec.encode(manifest),
-            archive: archive,
+            archive: try NotionTransportFile.encode(archive),
             notebookID: notebook.id.rawValue.uuidString.lowercased(),
             contentHash: String(repeating: "0", count: 64)
         )

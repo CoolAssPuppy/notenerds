@@ -80,4 +80,86 @@ final class AppSessionPersistenceBehaviorTests: XCTestCase {
         }
         XCTAssertEqual(restoredText, ["Saved between sessions"])
     }
+
+    func testPlannerPaperAndRegionContentRestoreInANewApplicationModel() async throws {
+        let directoryURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+        let repository = LocalLibraryRepository(fileURL: directoryURL.appending(path: "library.json"))
+        let documentStore = LocalDocumentStore(rootURL: directoryURL.appending(path: "Documents"))
+        let firstSession = AppModel(
+            repository: repository,
+            documentStore: documentStore,
+            automaticallyRestore: false
+        )
+        await firstSession.restoreLibrary()
+        firstSession.createNotebook()
+        let notebookID = try XCTUnwrap(firstSession.selectedNotebookID)
+        let initialCanvas = try XCTUnwrap(firstSession.notebook(notebookID)?.canvases.first)
+        let today = try addPlannerContent(
+            to: firstSession,
+            notebookID: notebookID,
+            canvas: initialCanvas
+        )
+        await firstSession.checkpointDocuments()
+
+        let nextSession = AppModel(
+            repository: repository,
+            documentStore: documentStore,
+            automaticallyRestore: false
+        )
+        await nextSession.restoreLibrary()
+
+        let restoredCanvas = try XCTUnwrap(nextSession.notebook(notebookID)?.canvases.first)
+        XCTAssertEqual(restoredCanvas.template, .dailyPlanner)
+        XCTAssertEqual(restoredCanvas.layers.flatMap(\.objects).count, 2)
+        let restoredText = try XCTUnwrap(restoredCanvas.layers.flatMap(\.objects).compactMap { object -> TextBlock? in
+            guard case let .text(text) = object else { return nil }
+            return text
+        }.first)
+        XCTAssertLessThanOrEqual(restoredText.frame.maxX, today.frame.maxX)
+        XCTAssertLessThanOrEqual(restoredText.frame.maxY, today.frame.maxY)
+    }
+
+    private func addPlannerContent(
+        to session: AppModel,
+        notebookID: NotebookID,
+        canvas: Canvas
+    ) throws -> CanvasRegion {
+        session.changeTemplate(.dailyPlanner, notebookID: notebookID, canvasID: canvas.id)
+        let today = try XCTUnwrap(
+            PlannerRegionCatalog.regions(for: .dailyPlanner).first { $0.id == "today" }
+        )
+        let layerID = canvas.layers[0].id
+        let textSession = CanvasTextEditingSession.new(
+            layerID: layerID,
+            insertionPoint: CanvasPoint(x: today.frame.maxX - 10, y: today.frame.minY + 80),
+            constrainedTo: today.frame
+        )
+        session.addTextBlock(
+            TextBlockInsertion(textBlock: textSession.textBlock, canvasID: canvas.id),
+            notebookID: notebookID
+        )
+        var plannerStroke = DomainFixtures.stroke(layerID: layerID)
+        plannerStroke.samples[0].point = CanvasPoint(
+            x: today.frame.minX + today.frame.size.width / 2,
+            y: today.frame.minY + today.frame.size.height / 2
+        )
+        plannerStroke.samples = [plannerStroke.samples[0]]
+        session.addStroke(plannerStroke, to: notebookID, canvasID: canvas.id, layerID: layerID)
+        return today
+    }
+}
+
+private extension TextBlockInsertion {
+    init(textBlock: TextBlock, canvasID: CanvasID) {
+        self.init(
+            text: textBlock.text,
+            fontSize: textBlock.fontSize,
+            alignment: textBlock.alignment,
+            fontName: textBlock.fontName,
+            frame: textBlock.frame,
+            layerID: textBlock.layerID,
+            canvasID: canvasID
+        )
+    }
 }

@@ -127,15 +127,6 @@ enum RadialPalettePresentation {
             action: .open(.drawingTools)
         ),
         RadialPaletteItem(
-            id: "eraser",
-            label: "Eraser",
-            symbol: "eraser",
-            action: .open(.eraserModes)
-        ),
-        RadialPaletteItem(id: "lasso", label: "Lasso", symbol: "lasso", action: .tool(.lasso)),
-        RadialPaletteItem(id: "undo", label: "Undo", symbol: "arrow.uturn.backward", action: .undo),
-        RadialPaletteItem(id: "redo", label: "Redo", symbol: "arrow.uturn.forward", action: .redo),
-        RadialPaletteItem(
             id: "width",
             label: "Width",
             symbol: "lineweight",
@@ -146,7 +137,16 @@ enum RadialPalettePresentation {
             label: "Color",
             symbol: "circle.fill",
             action: .open(.colors)
-        )
+        ),
+        RadialPaletteItem(
+            id: "eraser",
+            label: "Eraser",
+            symbol: "eraser",
+            action: .open(.eraserModes)
+        ),
+        RadialPaletteItem(id: "lasso", label: "Lasso", symbol: "lasso", action: .tool(.lasso)),
+        RadialPaletteItem(id: "undo", label: "Undo", symbol: "arrow.uturn.backward", action: .undo),
+        RadialPaletteItem(id: "redo", label: "Redo", symbol: "arrow.uturn.forward", action: .redo)
     ]
 
     private static let eraserItems = [

@@ -2,6 +2,8 @@ import CoreGraphics
 
 enum CanvasToolbarAction: Equatable {
     case drawing
+    case width
+    case color
     case eraser
     case lasso
     case text
@@ -23,9 +25,9 @@ enum CanvasToolbarPresentation {
     }
 
     static func actions(isExpanded: Bool) -> [CanvasToolbarAction] {
-        let essentials: [CanvasToolbarAction] = [.drawing, .eraser]
+        let essentials: [CanvasToolbarAction] = [.drawing, .width, .color, .eraser, .lasso]
         guard isExpanded else { return essentials }
-        return essentials + [.lasso, .text, .shapes, .undo, .redo, .layers]
+        return essentials + [.text, .shapes, .undo, .redo, .layers]
     }
 
     static func chevronSymbol(orientation: CanvasToolbarOrientation) -> String {

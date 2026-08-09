@@ -169,6 +169,7 @@
 		C4D1D93D861AEEA624BBD5A8 /* RadialPaletteBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 856C12459DD709D6C820CB7B /* RadialPaletteBehavior.swift */; };
 		C56C623261FD5888F757CB0E /* BoundedFileReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF2532B93A1B252A7DCF48B4 /* BoundedFileReader.swift */; };
 		C5B0B408EE2FBB089026ED7B /* ImageImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD12F5C626F1BEFF57B61729 /* ImageImporter.swift */; };
+		C659C5102C9F553C51BCAA21 /* NotebookEditorExporting.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0157B1A373B98F51F7CB7F8 /* NotebookEditorExporting.swift */; };
 		C65F3DA3EC2C8581BC4DD1DA /* LocalDocumentStoreBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60D4D9C48BD56DBA2A636A1 /* LocalDocumentStoreBehaviorTests.swift */; };
 		C6AE6CB7B7A08995A39599E5 /* NotionFileUploadBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6CA986D5D18418792683148 /* NotionFileUploadBehaviorTests.swift */; };
 		C88A3A2F37B79BB01DD3CC6D /* PencilCanvasView+Overlays.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DA1D780A74CDA492B700E2 /* PencilCanvasView+Overlays.swift */; };
@@ -397,6 +398,7 @@
 		CF052B050A86CA20C3C73123 /* TextBlock+Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TextBlock+Typography.swift"; sourceTree = "<group>"; };
 		CF2532B93A1B252A7DCF48B4 /* BoundedFileReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundedFileReader.swift; sourceTree = "<group>"; };
 		D00F088E12370DBB52913B39 /* NotionTransportArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionTransportArchive.swift; sourceTree = "<group>"; };
+		D0157B1A373B98F51F7CB7F8 /* NotebookEditorExporting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookEditorExporting.swift; sourceTree = "<group>"; };
 		D1802D43991C50106A28A91E /* ActivityShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityShareSheet.swift; sourceTree = "<group>"; };
 		D21D4A9D7E588BA73AB62C6B /* NotionCredentialStoreBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionCredentialStoreBehaviorTests.swift; sourceTree = "<group>"; };
 		D365DEC6CA5B3B7C060EA482 /* ToolInspectorBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolInspectorBehaviorTests.swift; sourceTree = "<group>"; };
@@ -759,6 +761,7 @@
 				3867AC699833D85ACCDD24FE /* InlineCanvasTextEditor.swift */,
 				E1B259B05F6D44A43B20E3FC /* LayerStackPresentation.swift */,
 				C2ACC802EA6BAF4A0E604393 /* NotebookEditorContent.swift */,
+				D0157B1A373B98F51F7CB7F8 /* NotebookEditorExporting.swift */,
 				E35EB2C2F188E167E1AABDB4 /* NotebookEditorLayerActions.swift */,
 				B096BCFBC6F4E22CF4A39B59 /* NotebookEditorPencilActions.swift */,
 				D37466B17E80958B0968FF09 /* NotebookEditorPlannerPaging.swift */,
@@ -1019,9 +1022,9 @@
 			projectRoot = "";
 			targets = (
 				9387D81FAD749A8FA93D6F0A /* NoteNerds */,
-				9689FF62577AE7AA8A71231B /* NoteNerdsPerformanceTests */,
 				DDC1C960D1A38A0BC16FCE2B /* NoteNerdsTests */,
 				28F783F5F0A8E9F108EDB56B /* NoteNerdsUITests */,
+				9689FF62577AE7AA8A71231B /* NoteNerdsPerformanceTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1107,6 +1110,7 @@
 				3E580782D61AF5D780FC7DBF /* NativeNotebookArchive.swift in Sources */,
 				E1CB87263375713F5666BEB3 /* NoteNerdsApp.swift in Sources */,
 				631A8F8D0AC884C07B2CC159 /* NotebookEditorContent.swift in Sources */,
+				C659C5102C9F553C51BCAA21 /* NotebookEditorExporting.swift in Sources */,
 				9C8AC1A39C30BFE192E085C6 /* NotebookEditorLayerActions.swift in Sources */,
 				003E99BA5023C098585AF3EB /* NotebookEditorPencilActions.swift in Sources */,
 				F4F6934E00D8C4FA9A0F1450 /* NotebookEditorPlannerPaging.swift in Sources */,

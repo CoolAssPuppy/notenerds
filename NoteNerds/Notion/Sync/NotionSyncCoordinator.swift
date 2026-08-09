@@ -106,16 +106,24 @@ actor NotionSyncCoordinator {
             notebookID: notebookID,
             existingBinding: existingBinding
         )
+        let syncedAt = now()
         let plan = try NotionManagedPageBuilder.plan(
             snapshot: payload.snapshot,
-            previewUploadIDs: uploads.previewIDs
+            previewUploadIDs: uploads.previewIDs,
+            files: uploads.files,
+            syncedAt: syncedAt
         )
         let managedRootID = try await api.replaceManagedPage(
             pageID: page.pageID,
             oldRootID: oldRootID,
             plan: plan
         )
-        try await recordSuccess(payload, pageID: page.pageID, rootID: managedRootID)
+        try await recordSuccess(
+            payload,
+            pageID: page.pageID,
+            rootID: managedRootID,
+            syncedAt: syncedAt
+        )
         return .uploaded(pageID: page.pageID)
     }
 
@@ -125,8 +133,8 @@ actor NotionSyncCoordinator {
     ) async throws -> UploadedRepresentations {
         let nativeID = try await api.uploadFile(
             data: payload.nativeArchive,
-            filename: "\(notebookID.lowercased()).notenerds",
-            contentType: "application/octet-stream"
+            filename: "\(notebookID.lowercased()).notenerds.json",
+            contentType: "application/json"
         )
         let pdfID = try await api.uploadFile(
             data: payload.pdf,
@@ -164,7 +172,8 @@ actor NotionSyncCoordinator {
     private func recordSuccess(
         _ payload: NotionNotebookPayload,
         pageID: String,
-        rootID: String
+        rootID: String,
+        syncedAt: Date
     ) async throws {
         try await registry.recordSuccess(
             NotionNotebookBinding(
@@ -172,7 +181,7 @@ actor NotionSyncCoordinator {
                 pageID: pageID,
                 managedRootBlockID: rootID,
                 contentHash: payload.snapshot.row.contentHash,
-                syncedAt: now(),
+                syncedAt: syncedAt,
                 notionLastEditedAt: nil
             )
         )

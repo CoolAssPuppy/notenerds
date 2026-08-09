@@ -27,4 +27,4 @@ fi
 doppler setup --project "$PROJECT" --config "$CONFIG" --no-interactive
 
 echo "Doppler project ready: $PROJECT/$CONFIG"
-echo "Add ASC_KEY_ID, ASC_ISSUER_ID, ASC_APP_ID, and ASC_PRIVATE_KEY after creating the app and API key."
+echo "Add ASC_KEY_ID, ASC_ISSUER_ID, and ASC_APP_ID after creating the app and API key."

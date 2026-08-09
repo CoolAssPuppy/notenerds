@@ -14,7 +14,8 @@ final class NotionPayloadBuilderTests: XCTestCase {
             library: library,
             exportedAt: DomainFixtures.fixedDate
         )
-        let restored = try NotionTransportArchive().decode(payload.nativeArchive)
+        let encodedArchive = try NotionTransportFile.decode(payload.nativeArchive)
+        let restored = try NotionTransportArchive().decode(encodedArchive)
 
         XCTAssertEqual(restored.package, NativeNotebookPackage(schemaVersion: .current, notebook: notebook))
         XCTAssertEqual(restored.assets, [])
@@ -92,7 +93,8 @@ final class NotionPayloadBuilderTests: XCTestCase {
             library: library,
             exportedAt: DomainFixtures.fixedDate
         )
-        let restored = try NotionTransportArchive().decode(payload.nativeArchive)
+        let encodedArchive = try NotionTransportFile.decode(payload.nativeArchive)
+        let restored = try NotionTransportArchive().decode(encodedArchive)
 
         XCTAssertEqual(restored.assets.map(\.id), [referencedID])
     }

@@ -1,6 +1,12 @@
 import PencilKit
 import UIKit
 
+enum PencilCanvasModelReconciliation {
+    static func requiresRedraw(current: [Stroke], incoming: [Stroke]) -> Bool {
+        current != incoming
+    }
+}
+
 enum PencilCanvasRenderer {
     static func drawing(from strokes: [Stroke]) -> PKDrawing {
         let pencilStrokes = strokes.compactMap { stroke -> PKStroke? in

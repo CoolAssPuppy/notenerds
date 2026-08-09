@@ -17,9 +17,9 @@ struct NotebookEditorView: View {
     @State var isTextToolActive = false
     @State var selectedShapeKind: RecognizedShapeKind?
     @State private var isFileImporterPresented = false
-    @State private var exportDocument: NotebookExportDocument?
-    @State private var exportContentType = UTType.pdf
-    @State private var exportFilename = "Notebook"
+    @State var exportDocument: NotebookExportDocument?
+    @State var exportContentType = UTType.pdf
+    @State var exportFilename = "Notebook"
     @State private var navigationCommand: CanvasNavigationCommand?
     @State private var visibleCanvasBounds = CanvasRect(x: 9_500, y: 9_500, width: 1_024, height: 1_366)
     @State private var isMinimapVisible = false
@@ -29,7 +29,7 @@ struct NotebookEditorView: View {
     @State var plannerRegionSelection = PlannerRegionSelection()
     @State private var isCanvasBrowserPresented = false
     @State private var paperPickerPurpose: PaperPickerPurpose?
-    @State private var sharedFile: SharedFile?
+    @State var sharedFile: SharedFile?
     @GestureState var toolbarDragTranslation = CGSize.zero
     @GestureState var isToolbarDragging = false
     @AppStorage("defaultPaperType") private var defaultPaperTypeRawValue = PaperType.blankWhite.rawValue
@@ -39,11 +39,21 @@ struct NotebookEditorView: View {
         CanvasToolbarOrientation.vertical.rawValue
     @AppStorage("favoriteToolOne") private var favoriteOneData = ""
     @AppStorage("favoriteToolTwo") private var favoriteTwoData = ""
+    @AppStorage private var lastViewedCanvasID: String
     init(model: AppModel, notebook: Notebook) {
         self.model = model
         self.notebook = notebook
+        let lastViewedCanvasKey = "lastViewedCanvasID.\(notebook.id.rawValue.uuidString.lowercased())"
+        _lastViewedCanvasID = AppStorage(wrappedValue: "", lastViewedCanvasKey)
         let targetCanvasID = model.pendingSearchNavigation?.canvasID
-        let initialIndex = notebook.canvases.firstIndex { $0.id == targetCanvasID } ?? 0
+        let storedCanvasID = UserDefaults.standard.string(forKey: lastViewedCanvasKey)
+            .flatMap(UUID.init(uuidString:))
+            .map(CanvasID.init(rawValue:))
+        let initialIndex = NotebookCanvasOpeningPolicy.initialIndex(
+            canvasIDs: notebook.canvases.map(\.id),
+            pendingCanvasID: targetCanvasID,
+            storedCanvasID: storedCanvasID
+        )
         _canvasIndex = State(initialValue: initialIndex)
 #if DEBUG
         if let origin = PencilSqueezeBehavior.radialMenuTestOrigin(arguments: ProcessInfo.processInfo.arguments) {
@@ -75,8 +85,9 @@ struct NotebookEditorView: View {
                 isTextToolActive: isTextToolActive,
                 shapePlacementKind: selectedShapeKind,
                 onStrokesCompleted: { strokes in
+                    let constrainedStrokes = constrainStrokesToPlannerRegions(strokes)
                     let didSnapShape = model.addStrokes(
-                        strokes,
+                        constrainedStrokes,
                         to: notebook.id,
                         canvasID: currentCanvas.id,
                         layerID: activeLayer.id,
@@ -86,7 +97,7 @@ struct NotebookEditorView: View {
                 },
                 onDrawingChanged: { strokes in
                     model.replaceVisibleStrokes(
-                        strokes,
+                        constrainStrokesToPlannerRegions(strokes),
                         in: notebook.id,
                         canvasID: currentCanvas.id,
                         layerID: activeLayer.id
@@ -248,6 +259,9 @@ struct NotebookEditorView: View {
             ActivityShareSheet(items: [file.url])
         }
         .onChange(of: notebook.canvases.count) { _, count in canvasIndex = min(canvasIndex, max(0, count - 1)) }
+        .onChange(of: currentCanvas.id) { _, canvasID in
+            lastViewedCanvasID = canvasID.rawValue.uuidString.lowercased()
+        }
         .dropDestination(for: URL.self) { urls, _ in
             for url in urls {
                 model.importFile(at: url, into: notebook.id, canvasID: currentCanvas.id, layerID: activeLayer.id)
@@ -374,24 +388,29 @@ struct NotebookEditorView: View {
 
     private func placeText(at point: CanvasPoint) {
         guard isTextToolActive, textEditingSession == nil else { return }
-        textEditingSession = .new(layerID: activeLayer.id, insertionPoint: point)
+        textEditingSession = .new(
+            layerID: activeLayer.id,
+            insertionPoint: point,
+            constrainedTo: plannerContentRegion(at: point)?.frame
+        )
     }
 
     private func commitText(_ textBlock: TextBlock) {
+        let constrainedTextBlock = constrainTextBlockToPlannerRegion(textBlock)
         let isExistingText = currentCanvas.layers
             .flatMap(\.objects)
-            .contains { $0.id == textBlock.id }
+            .contains { $0.id == constrainedTextBlock.id }
         if isExistingText {
-            model.updateTextBlock(textBlock, canvasID: currentCanvas.id, notebookID: notebook.id)
+            model.updateTextBlock(constrainedTextBlock, canvasID: currentCanvas.id, notebookID: notebook.id)
         } else {
             model.addTextBlock(
                 TextBlockInsertion(
-                    text: textBlock.text,
-                    fontSize: textBlock.fontSize,
-                    alignment: textBlock.alignment,
-                    fontName: textBlock.fontName,
-                    frame: textBlock.frame,
-                    layerID: textBlock.layerID,
+                    text: constrainedTextBlock.text,
+                    fontSize: constrainedTextBlock.fontSize,
+                    alignment: constrainedTextBlock.alignment,
+                    fontName: constrainedTextBlock.fontName,
+                    frame: constrainedTextBlock.frame,
+                    layerID: constrainedTextBlock.layerID,
                     canvasID: currentCanvas.id
                 ),
                 notebookID: notebook.id
@@ -418,55 +437,6 @@ struct NotebookEditorView: View {
 }
 
 private extension NotebookEditorView {
-    func preparePDFExport() {
-        do {
-            exportDocument = NotebookExportDocument(
-                data: try NotebookPDFExporter().export(notebook, assets: model.assets(in: notebook))
-            )
-            exportContentType = .pdf
-            exportFilename = notebook.title
-        } catch {
-            model.presentedError = error.localizedDescription
-        }
-    }
-
-    func preparePNGExport() {
-        do {
-            exportDocument = NotebookExportDocument(
-                data: try CanvasPNGExporter().export(currentCanvas, region: currentCanvas.exportBounds)
-            )
-            exportContentType = .png
-            exportFilename = "\(notebook.title) - \(currentCanvas.title)"
-        } catch {
-            model.presentedError = error.localizedDescription
-        }
-    }
-
-    func prepareNativeExport() {
-        do {
-            let package = NativeNotebookPackage(schemaVersion: .current, notebook: notebook)
-            let wrapper = try NativeNotebookArchive().fileWrapper(package: package, assets: model.assets(in: notebook))
-            exportDocument = NotebookExportDocument(wrapper: wrapper)
-            exportContentType = NotebookExportDocument.nativeType
-            exportFilename = notebook.title
-        } catch {
-            model.presentedError = error.localizedDescription
-        }
-    }
-
-    func preparePDFShare() {
-        do {
-            let data = try NotebookPDFExporter().export(notebook, assets: model.assets(in: notebook))
-            let url = FileManager.default.temporaryDirectory
-                .appending(path: notebook.title)
-                .appendingPathExtension("pdf")
-            try data.write(to: url, options: .atomic)
-            sharedFile = SharedFile(url: url)
-        } catch {
-            model.presentedError = error.localizedDescription
-        }
-    }
-
     func sendEditingCommand(_ action: CanvasEditingAction) {
         editingCommand = CanvasEditingCommand(action: action)
     }
@@ -487,14 +457,5 @@ private extension NotebookEditorView {
             try? await Task.sleep(for: .seconds(2))
             highlightedStrokeIDs = []
         }
-    }
-}
-
-extension NotebookEditorView {
-    private var exportPresentation: Binding<Bool> {
-        Binding(
-            get: { exportDocument != nil },
-            set: { if !$0 { exportDocument = nil } }
-        )
     }
 }

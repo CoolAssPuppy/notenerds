@@ -121,3 +121,40 @@ enum PlannerViewportPolicy {
         return min(1, usableWidth / PlannerPageLayout.pageSize.width)
     }
 }
+
+enum PlannerRegionContentPolicy {
+    static func region(containing point: CanvasPoint, in regions: [CanvasRegion]) -> CanvasRegion? {
+        regions.first { region in
+            point.x >= region.frame.minX
+                && point.x <= region.frame.maxX
+                && point.y >= region.frame.minY
+                && point.y <= region.frame.maxY
+        }
+    }
+
+    static func constrainedFrame(_ frame: CanvasRect, to region: CanvasRect?) -> CanvasRect {
+        guard let region else { return frame }
+        let width = min(frame.size.width, region.size.width)
+        let height = min(frame.size.height, region.size.height)
+        return CanvasRect(
+            x: min(max(frame.minX, region.minX), region.maxX - width),
+            y: min(max(frame.minY, region.minY), region.maxY - height),
+            width: width,
+            height: height
+        )
+    }
+
+    static func constrainedStroke(_ stroke: Stroke, to region: CanvasRect?) -> Stroke {
+        guard let region else { return stroke }
+        var constrained = stroke
+        constrained.samples = stroke.samples.map { sample in
+            var updated = sample
+            updated.point = CanvasPoint(
+                x: min(max(sample.point.x, region.minX), region.maxX),
+                y: min(max(sample.point.y, region.minY), region.maxY)
+            )
+            return updated
+        }
+        return constrained
+    }
+}

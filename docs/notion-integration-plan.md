@@ -96,6 +96,8 @@ These components remain separate from `SyncProvider`. CloudKit synchronizes Note
 
 The native archive uses the notebook's modification date as deterministic archive metadata. Separate sync attempts for unchanged notebook content and assets therefore produce identical bytes and the same content hash. The sync registry skips the upload when that hash already has a successful binding in the selected destination.
 
+Notion accepts a fixed set of file extensions and MIME types. Note Nerds wraps the bounded binary archive in a deterministic Base64 JSON document and uploads it as `<notebook-id>.notenerds.json` with `application/json`. Restore verifies the row hash over those exact JSON bytes, decodes the wrapper, then performs the existing archive bounds, path, schema, and checksum validation. Legacy `NNARCH01` binary attachments remain readable.
+
 ### Native OAuth callback
 
 Note Nerds follows Sync Bar's Notion OAuth model. The app starts a one-shot TCP listener bound only to `127.0.0.1:53117`, then opens Notion's authorization page in the system browser. Notion returns the temporary code to `http://localhost:53117/oauth/notion`. The app validates the request method, path, Host header, and random OAuth state before exchanging the code directly with Notion.
@@ -154,6 +156,8 @@ The managed section contains:
 7. Paper type and layer count.
 8. A PDF file block.
 9. A native notebook file block.
+
+The PDF uses Notion's native PDF block. The native notebook uses a file block. Both reference the same uploads attached to the database row.
 
 Each generated canvas section includes its stable canvas ID in a small code block so restore diagnostics can identify a damaged section. Exact restore uses the native attachment.
 

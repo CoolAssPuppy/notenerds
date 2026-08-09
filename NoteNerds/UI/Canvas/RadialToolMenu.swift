@@ -26,7 +26,7 @@ struct RadialToolMenu: View {
                 maximumItemCount: RadialPalettePresentation.maximumItemCount
             )
             ZStack {
-                dismissBackground
+                dismissBackground(around: layout.anchor)
                 anchorMarker(at: layout.anchor)
                 squeezeRipple(at: layout.anchor)
                 itemCluster(layout: layout)
@@ -44,10 +44,13 @@ struct RadialToolMenu: View {
         .accessibilityLabel("Quick tools")
     }
 
-    private var dismissBackground: some View {
+    private func dismissBackground(around anchor: CGPoint) -> some View {
         Color.clear
             .contentShape(Rectangle())
-            .onTapGesture { isVisible = false }
+            .onTapGesture { location in
+                let distance = hypot(location.x - anchor.x, location.y - anchor.y)
+                if distance > 32 { isVisible = false }
+            }
     }
 
     private func anchorMarker(at point: CGPoint) -> some View {
@@ -160,9 +163,7 @@ struct RadialToolMenu: View {
 
     private func backButton(at point: CGPoint) -> some View {
         Button("Back", systemImage: "chevron.backward") {
-            guard let parent = page.parent else { return }
-            UISelectionFeedbackGenerator().selectionChanged()
-            page = parent
+            returnToParentPage()
         }
         .labelStyle(.iconOnly)
         .font(.system(size: 16, weight: .semibold))
@@ -172,6 +173,13 @@ struct RadialToolMenu: View {
         .shadow(color: .black.opacity(0.12), radius: 8, y: 5)
         .position(point)
         .accessibilityLabel("Back")
+        .highPriorityGesture(TapGesture().onEnded(returnToParentPage))
+    }
+
+    private func returnToParentPage() {
+        guard let parent = page.parent else { return }
+        UISelectionFeedbackGenerator().selectionChanged()
+        page = parent
     }
 
     private var items: [RadialPaletteItem] {

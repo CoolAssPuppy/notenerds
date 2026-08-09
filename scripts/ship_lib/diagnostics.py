@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import os
 import shutil
+import subprocess
 from pathlib import Path
 
 from . import asc, config, log, version, xcode
@@ -21,6 +22,24 @@ def _check_tool(tool: str, *, required: bool) -> int:
     status = "MISSING" if required else "not installed (optional)"
     print(f"  {tool:14s} {status}")
     return int(required)
+
+
+def _check_xcodegen_version(required_version: str) -> int:
+    try:
+        result = subprocess.run(
+            ["xcodegen", "--version"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return 1
+    installed_version = result.stdout.strip().removeprefix("Version: ")
+    if installed_version == required_version:
+        print(f"  xcodegen ver   {installed_version}")
+        return 0
+    print(f"  xcodegen ver   {installed_version} (requires {required_version})")
+    return 1
 
 
 def _check_project(cfg: config.ShipConfig) -> int:
@@ -95,6 +114,7 @@ def cmd_verify(cfg: config.ShipConfig, args: argparse.Namespace) -> int:
     log.step("Tools (required)")
     for tool in ("xcodebuild", "xcrun", "xcodegen"):
         errors += _check_tool(tool, required=True)
+    errors += _check_xcodegen_version(cfg.project.xcodegen_version)
 
     log.step("Tools (optional)")
     for tool in ("xcbeautify", "doppler"):
@@ -129,6 +149,7 @@ def cmd_info(cfg: config.ShipConfig, args: argparse.Namespace) -> int:
     row("Team", project.team_id)
     row("Scheme", project.scheme)
     row("Min iOS", project.min_ios)
+    row("XcodeGen", project.xcodegen_version)
     row("Devices", "iPad" if project.device_family == "2" else project.device_family)
     row("Version", current.marketing)
     row("Build", current.build)

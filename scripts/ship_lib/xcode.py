@@ -211,17 +211,29 @@ def _sim_sort_key(s: Simulator) -> tuple:
     return (_runtime_score(s.runtime), _name_score(s.name))
 
 
+def device_prefixes(device_family: str) -> tuple[str, ...]:
+    families = {value.strip() for value in device_family.split(",")}
+    prefixes = tuple(
+        prefix
+        for family, prefix in (("1", "iPhone"), ("2", "iPad"))
+        if family in families
+    )
+    if not prefixes:
+        sys.exit(f"Unsupported TARGETED_DEVICE_FAMILY value: {device_family}")
+    return prefixes
+
+
 def list_simulators(device_family: str) -> list[Simulator]:
     raw = capture(["xcrun", "simctl", "list", "devices", "available", "--json"])
     data = json.loads(raw)
     out: list[Simulator] = []
+    prefixes = device_prefixes(device_family)
     for runtime, devices in data.get("devices", {}).items():
         if "iOS" not in runtime:
             continue
         for d in devices:
             name = d.get("name", "")
-            prefix = "iPad" if device_family == "2" else "iPhone"
-            if not name.startswith(prefix):
+            if not name.startswith(prefixes):
                 continue
             if not d.get("isAvailable", True):
                 continue

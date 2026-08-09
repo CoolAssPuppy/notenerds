@@ -125,6 +125,16 @@ extension NotionAPIClient {
                 !part.isEmpty && part.unicodeScalars.allSatisfy(allowed.contains)
         }
         guard isSafeType else { throw NotionAPIError.invalidContentType }
+        let supportedExtension = switch contentType.lowercased() {
+        case "application/json": "json"
+        case "application/pdf": "pdf"
+        case "image/png": "png"
+        default: ""
+        }
+        guard !supportedExtension.isEmpty,
+              URL(fileURLWithPath: filename).pathExtension.lowercased() == supportedExtension else {
+            throw NotionAPIError.invalidContentType
+        }
         guard !data.isEmpty else { throw NotionAPIError.emptyFile }
         guard Int64(data.count) <= maximumFileSize else { throw NotionAPIError.payloadTooLarge }
     }

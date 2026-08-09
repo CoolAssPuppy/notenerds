@@ -19,6 +19,7 @@ class ProjectConfig:
     dist_dir: Path
     min_ios: str
     device_family: str
+    xcodegen_version: str
     project_yml: Path | None = None
 
 
@@ -28,6 +29,12 @@ class AscConfig:
 
     def key_path(self, key_id: str) -> Path:
         return self.key_dir / f"AuthKey_{key_id}.p8"
+
+
+@dataclass(frozen=True)
+class SigningConfig:
+    certificate: str
+    profile_name: str
 
 
 @dataclass(frozen=True)
@@ -53,6 +60,7 @@ class EnvFilesConfig:
 class ShipConfig:
     project: ProjectConfig
     asc: AscConfig
+    signing: SigningConfig
     doppler: DopplerConfig
     release: ReleaseConfig
     env_files: EnvFilesConfig
@@ -94,11 +102,18 @@ def load(start: Path | None = None) -> ShipConfig:
         dist_dir=(ios_root / p["dist_dir"]).resolve(),
         min_ios=p["min_ios"],
         device_family=p.get("device_family", "1,2"),
+        xcodegen_version=p.get("xcodegen_version", ""),
     )
 
     asc_raw = raw.get("asc", {})
     asc = AscConfig(
         key_dir=Path(asc_raw.get("key_dir", "~/.private_keys")).expanduser().resolve()
+    )
+
+    signing_raw = raw.get("signing") or _missing("signing", toml_path)
+    signing = SigningConfig(
+        certificate=signing_raw["certificate"],
+        profile_name=signing_raw["profile_name"],
     )
 
     d = raw.get("doppler", {})
@@ -124,6 +139,7 @@ def load(start: Path | None = None) -> ShipConfig:
     return ShipConfig(
         project=project,
         asc=asc,
+        signing=signing,
         doppler=doppler,
         release=release,
         env_files=env_files,

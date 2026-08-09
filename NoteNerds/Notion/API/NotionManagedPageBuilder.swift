@@ -16,11 +16,14 @@ enum NotionManagedPageBuilder {
 
     static func plan(
         snapshot: NotionNotebookSnapshot,
-        previewUploadIDs: [String: String]
+        previewUploadIDs: [String: String],
+        files: NotionNotebookRemoteFiles,
+        syncedAt: Date
     ) throws -> NotionManagedPagePlan {
         var children = [
             code(marker),
-            paragraph("Notebook ID: \(snapshot.row.notebookID)")
+            paragraph("Notebook ID: \(snapshot.row.notebookID)"),
+            callout(metadata(snapshot: snapshot, syncedAt: syncedAt))
         ]
         for canvas in snapshot.canvases {
             guard let previewID = previewUploadIDs[canvas.canvasID] else {
@@ -40,6 +43,8 @@ enum NotionManagedPageBuilder {
             )
             try appendSection(title: "PDF text", values: canvas.embeddedPDFText, to: &children)
         }
+        children.append(pdf(uploadID: files.pdfUploadID, caption: "PDF"))
+        children.append(file(uploadID: files.nativeUploadID, caption: "Native notebook"))
         return NotionManagedPagePlan(
             root: .object([
                 "type": .string("toggle"),
@@ -47,6 +52,21 @@ enum NotionManagedPageBuilder {
             ]),
             children: children
         )
+    }
+
+    private static func metadata(snapshot: NotionNotebookSnapshot, syncedAt: Date) -> String {
+        var lines = [
+            "Note Nerds copy",
+            "Last synced: \(timestamp(syncedAt))",
+            "Status: \(snapshot.row.syncStatus.rawValue)",
+            "Modified: \(timestamp(snapshot.row.modifiedAt))",
+            "Folder: \(folderSummary(snapshot.row.folderPath))",
+            "Canvases: \(snapshot.row.canvasCount)"
+        ]
+        if let trashedAt = snapshot.row.trashedAt {
+            lines.append("Trash date: \(timestamp(trashedAt))")
+        }
+        return lines.joined(separator: "\n")
     }
 
     private static func appendSection(
@@ -75,6 +95,13 @@ enum NotionManagedPageBuilder {
         ])
     }
 
+    private static func callout(_ text: String) -> NotionJSONValue {
+        .object([
+            "type": .string("callout"),
+            "callout": .object(["rich_text": .array([richText(text)])])
+        ])
+    }
+
     private static func code(_ text: String) -> NotionJSONValue {
         .object([
             "type": .string("code"),
@@ -95,11 +122,44 @@ enum NotionManagedPageBuilder {
         ])
     }
 
+    private static func file(uploadID: String, caption: String) -> NotionJSONValue {
+        .object([
+            "type": .string("file"),
+            "file": .object([
+                "type": .string("file_upload"),
+                "file_upload": .object(["id": .string(uploadID)]),
+                "caption": .array([richText(caption)])
+            ])
+        ])
+    }
+
+    private static func pdf(uploadID: String, caption: String) -> NotionJSONValue {
+        .object([
+            "type": .string("pdf"),
+            "pdf": .object([
+                "type": .string("file_upload"),
+                "file_upload": .object(["id": .string(uploadID)]),
+                "caption": .array([richText(caption)])
+            ])
+        ])
+    }
+
     private static func richText(_ text: String) -> NotionJSONValue {
         .object([
             "type": .string("text"),
             "text": .object(["content": .string(text)])
         ])
+    }
+
+    private static func timestamp(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.string(from: date)
+    }
+
+    private static func folderSummary(_ folderPath: String) -> String {
+        guard !folderPath.isEmpty else { return "My Notebooks" }
+        return String(folderPath.prefix(1_000))
     }
 }
 

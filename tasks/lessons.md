@@ -1,10 +1,10 @@
 # Lessons
 
 - Device builds must use the project build-setting names `NOTION_CLIENT_ID_B64` and `NOTION_CLIENT_SECRET_B64`. Verify the built Info.plist contains two nonempty decoded configuration values before installing it. A signed build can still omit service configuration.
-- Define the canvas toolbar by tool identity. Writing, Eraser, Lasso, Text, Shapes, and Layers are tools. Ink color, stroke width, eraser mode, pen variant, and shape variant are choices inside those tools. Undo and Redo are editing commands. Never present a choice as a peer of a tool.
+- The main canvas toolbar and radial root share this order: Writing, stroke width, ink color, Eraser, Lasso. Pen variants stay inside Writing. Eraser mode and shape variants stay inside their inspectors.
 - A radial menu needs complete circles with equal radius and equal angular spacing. Multiple rings need different angular phases so they read as rings instead of spokes or branches. Verify the rendered button centers, not only the item count.
 - When the user approves artwork in Paper, export that exact node into the asset catalog before deployment. Do not substitute an older or recreated icon.
-- Keep the persistent and expanded canvas toolbar limited to core editing categories. Pen variants, width choices, colors, eraser modes, and shape choices belong inside their category inspector or radial submenu.
+- Keep Writing, stroke width, ink color, Lasso, and Eraser visible in compact and expanded toolbar states. Never change core toolbar membership without explicit user approval.
 - A Pencil radial menu must keep option selection inside the radial interaction. Controls with inspectors should open anchored radial choice pages, including additional option levels when one choice needs more detail.
 
 - Keep the product name as “Note Nerds” in the app target, display name, document format, cloud configuration, accessibility copy, icons, and interface text.
@@ -56,3 +56,9 @@
 - Confirm the target device families before building phone-specific behavior. An iPhone layout is incomplete while the app target still declares iPad-only support.
 - Device builds must use the project build-setting names `NOTION_CLIENT_ID_B64` and `NOTION_CLIENT_SECRET_B64`. Verify the built Info.plist contains two nonempty decoded configuration values before installing it. A signed build can still omit service configuration.
 - Never build a dictionary from persisted user identifiers with a trapping initializer. Validate duplicates, repair legacy data during restore, and return typed sync errors for any invalid data that remains.
+- Check an external API's documented filename and MIME-type allowlist before choosing an attachment format. A correct upload protocol still fails when the service rejects the file type.
+- After fixing a device-only crash, confirm the installed binary UUID or install time changed before asking the user to retest. Source fixes do not protect a device that still runs the previous build.
+- Remove settings that duplicate direct manipulation. A movable toolbar should remember its current placement; settings should contain only defaults and behavior that cannot be changed where it is used.
+- Lasso is a primary editing tool. Keep it visible in the compact toolbar and verify selection, movement, and persistence through a real canvas interaction.
+- Planner regions are viewports within one persistent canvas. Paper type, selected region, strokes, and text coordinates must survive redraw and relaunch, and content created in one region must stay in that region's document frame.
+- Confirm where the user runs releases before changing signing or secrets. When asked to copy another app's release process, compare its actual command and credentials first. Note Nerds releases run locally like TripMaster; GitHub only runs CI.

@@ -29,6 +29,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True, metavar="<command>")
 
     sub.add_parser("simulator", help="Build for the latest compatible simulator and launch.")
+    sub.add_parser(
+        "archive",
+        help="Archive and export a signed IPA without uploading it.",
+    )
     sub.add_parser("info", help="Print resolved config and current version/build.")
     verify = sub.add_parser("verify", help="Check tools, project, simulators, and release access.")
     verify.add_argument(
@@ -97,6 +101,7 @@ def dispatch(args: argparse.Namespace) -> int:
 
     handlers = {
         "simulator": cmd_simulator,
+        "archive": cmd_archive,
         "testflight": cmd_testflight,
         "app-store": cmd_app_store,
         "bump": cmd_bump,
@@ -170,12 +175,8 @@ def _archive_and_export(
 ) -> Path:
     """Archive Release for generic iOS, export IPA. Returns the IPA path.
 
-    Both xcodebuild invocations receive the ASC API key so they can
-    fetch / create the Apple Distribution certificate and provisioning
-    profiles on the fly. Without these flags the export step fails
-    with "No signing certificate 'iOS Distribution' found" the first
-    time the local keychain doesn't already have the dist cert
-    (e.g. on a fresh machine or after a cert rotation).
+    The archive uses automatic development signing. Export uses the Apple
+    Distribution identity and App Store profile installed on this Mac.
     """
     if archive_path.exists():
         shutil.rmtree(archive_path)
@@ -212,7 +213,11 @@ def _archive_and_export(
     ))
 
     plist = exportplist.write_app_store(
-        cfg.project.team_id, dest_dir=cfg.project.dist_dir
+        team_id=cfg.project.team_id,
+        bundle_id=cfg.project.bundle_id,
+        profile_name=cfg.signing.profile_name,
+        certificate=cfg.signing.certificate,
+        dest_dir=cfg.project.dist_dir,
     )
 
     log.step("Exporting IPA")
@@ -222,8 +227,6 @@ def _archive_and_export(
         "-archivePath", str(archive_path),
         "-exportPath", str(export_dir),
         "-exportOptionsPlist", str(plist),
-        "-allowProvisioningUpdates",
-        *auth_args,
     ], log_path=log_path, beautify=True)
 
     ipa = export_dir / f"{cfg.project.name}.ipa"
@@ -298,6 +301,32 @@ def cmd_simulator(cfg: config.ShipConfig, args: argparse.Namespace) -> int:
     xcode.launch_app(sim.udid, cfg.project.bundle_id)
     log.ok(f"Launched {cfg.project.name} on {sim.name}")
     log.info(f"Build log: {log_path.relative_to(cfg.repo_root)}")
+    return 0
+
+
+# =============================================================================
+# archive preflight
+# =============================================================================
+def cmd_archive(cfg: config.ShipConfig, args: argparse.Namespace) -> int:
+    del args
+    xcode.require("xcodebuild")
+    xcode.require("xcrun")
+    asc_env = secrets.require("ASC_KEY_ID", "ASC_ISSUER_ID")
+    xcode.regenerate_xcodegen(cfg.project.ios_root, cfg.project.project_yml)
+
+    dist = _ensure_dist(cfg)
+    current = version.read(_version_path(cfg))
+    stamp = f"{current.marketing}-{current.build}-preflight"
+    ipa = _archive_and_export(
+        cfg,
+        archive_path=dist / f"{cfg.project.name}-{stamp}.xcarchive",
+        export_dir=dist / "export-preflight",
+        log_path=dist / "archive-preflight.log",
+        asc_key_id=asc_env["ASC_KEY_ID"],
+        asc_issuer_id=asc_env["ASC_ISSUER_ID"],
+    )
+    log.ok(f"Signed IPA preflight passed: {ipa.relative_to(cfg.repo_root)}")
+    log.info("The IPA was not uploaded.")
     return 0
 
 

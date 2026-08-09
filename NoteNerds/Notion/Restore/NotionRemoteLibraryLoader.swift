@@ -6,7 +6,7 @@ protocol NotionRemoteLibraryLoading: Sendable {
 
 actor NotionRemoteLibraryLoader: NotionRemoteLibraryLoading {
     private static let maximumManifestByteCount = 10 * 1_024 * 1_024
-    private static let maximumArchiveByteCount = 1_124 * 1_024 * 1_024
+    private static let maximumArchiveByteCount = NotionTransportFile.maximumFileByteCount
 
     private let api: any NotionRestoreAPI
     private let registry: NotionSyncRegistry
@@ -47,12 +47,13 @@ actor NotionRemoteLibraryLoader: NotionRemoteLibraryLoading {
             guard NotionContentHasher.sha256Hex(of: archiveData) == currentFile.contentHash else {
                 throw NotionRestoreError.contentHashMismatch
             }
-            let decoded = try archive.decode(archiveData)
+            let encodedArchive = try NotionTransportFile.decode(archiveData)
+            let decoded = try archive.decode(encodedArchive)
             let archiveNotebookID = decoded.package.notebook.id.rawValue.uuidString.lowercased()
             guard archiveNotebookID == currentFile.notebookID else {
                 throw NotionRestoreError.notebookIDMismatch
             }
-            archives.append(archiveData)
+            archives.append(encodedArchive)
         }
         return NotionRemoteLibrarySnapshot(
             manifestData: manifestData,

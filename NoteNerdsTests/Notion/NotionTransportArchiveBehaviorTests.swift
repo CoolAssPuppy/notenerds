@@ -2,6 +2,32 @@ import XCTest
 @testable import NoteNerds
 
 final class NotionTransportArchiveBehaviorTests: XCTestCase {
+    func testSupportedJSONTransportFileRoundTripsTheBinaryArchiveDeterministically() throws {
+        let archive = try encodedArchive()
+
+        let first = try NotionTransportFile.encode(archive)
+        let second = try NotionTransportFile.encode(archive)
+
+        XCTAssertEqual(first, second)
+        XCTAssertNotNil(try JSONSerialization.jsonObject(with: first) as? [String: Any])
+        XCTAssertEqual(try NotionTransportFile.decode(first), archive)
+        XCTAssertEqual(try NotionTransportFile.decode(archive), archive)
+    }
+
+    func testSupportedJSONTransportFileRejectsMalformedAndOversizedPayloads() throws {
+        let malformed = Data(#"{"schemaVersion":1,"encoding":"base64","archive":"%%%"}"#.utf8)
+
+        XCTAssertThrowsError(try NotionTransportFile.decode(malformed)) { error in
+            XCTAssertEqual(error as? NotionTransportFileError, .invalidArchive)
+        }
+        XCTAssertThrowsError(
+            try NotionTransportFile.decode(Data(repeating: 0x20, count: 128), maximumByteCount: 64),
+            "A configured bound must reject the transport before JSON decoding"
+        ) { error in
+            XCTAssertEqual(error as? NotionTransportFileError, .fileTooLarge)
+        }
+    }
+
     func testTransportArchiveIsOneDeterministicFileThatRestoresEveryAsset() throws {
         let package = NativeNotebookPackage(schemaVersion: .current, notebook: DomainFixtures.notebook())
         let first = DocumentAsset.fixture(idSuffix: "01", text: "first", contentType: "image/png")

@@ -9,11 +9,27 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from ship_lib import config, exportplist, secrets, version, xcode
-from ship_lib.commands import _next_build, cmd_simulator
+from ship_lib import config, diagnostics, exportplist, secrets, version, xcode
+from ship_lib.commands import _next_build, cmd_archive, cmd_simulator
 
 
 class PipelineBehaviorTests(unittest.TestCase):
+    def test_ci_pins_the_expected_xcodegen_archive(self) -> None:
+        repository = Path(__file__).resolve().parents[2]
+        workflow = (repository / ".github/workflows/ci.yml").read_text()
+
+        self.assertIn("XCODEGEN_VERSION: 2.46.0", workflow)
+        self.assertIn(
+            "4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806",
+            workflow,
+        )
+        self.assertNotIn("brew install xcodegen", workflow)
+
+    def test_github_does_not_run_app_store_releases(self) -> None:
+        repository = Path(__file__).resolve().parents[2]
+
+        self.assertFalse((repository / ".github/workflows/release.yml").exists())
+
     def test_ci_rejects_remote_packages_without_rejecting_empty_xcode_sections(self) -> None:
         workflow = (
             Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml"
@@ -28,7 +44,10 @@ class PipelineBehaviorTests(unittest.TestCase):
         self.assertEqual(ship_config.project.name, "NoteNerds")
         self.assertEqual(ship_config.project.bundle_id, "com.strategicnerds.notenerds")
         self.assertEqual(ship_config.project.team_id, "955GSY56UT")
-        self.assertEqual(ship_config.project.device_family, "2")
+        self.assertEqual(ship_config.project.xcodegen_version, "2.46.0")
+        self.assertEqual(ship_config.project.device_family, "1,2")
+        self.assertEqual(ship_config.signing.profile_name, "Note Nerds App Store")
+        self.assertEqual(ship_config.signing.certificate, "Apple Distribution")
         self.assertEqual(ship_config.doppler.project, "notenerds")
         self.assertTrue(ship_config.project.xcodeproj.is_dir())
         self.assertTrue(ship_config.project.project_yml.is_file())
@@ -52,14 +71,25 @@ class PipelineBehaviorTests(unittest.TestCase):
             self.assertIn('MARKETING_VERSION: "1.2.0"', project_yml.read_text())
             self.assertIn('CURRENT_PROJECT_VERSION: "9"', project_yml.read_text())
 
-    def test_export_options_use_automatic_app_store_signing(self) -> None:
+    def test_export_options_use_the_local_note_nerds_signing_assets(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            output = exportplist.write_app_store("955GSY56UT", Path(directory))
+            output = exportplist.write_app_store(
+                team_id="955GSY56UT",
+                bundle_id="com.strategicnerds.notenerds",
+                profile_name="Note Nerds App Store",
+                certificate="Apple Distribution",
+                dest_dir=Path(directory),
+            )
             payload = plistlib.loads(output.read_bytes())
 
             self.assertEqual(payload["method"], "app-store-connect")
             self.assertEqual(payload["teamID"], "955GSY56UT")
-            self.assertEqual(payload["signingStyle"], "automatic")
+            self.assertEqual(payload["signingStyle"], "manual")
+            self.assertEqual(payload["signingCertificate"], "Apple Distribution")
+            self.assertEqual(
+                payload["provisioningProfiles"],
+                {"com.strategicnerds.notenerds": "Note Nerds App Store"},
+            )
             self.assertTrue(payload["uploadSymbols"])
 
     def test_existing_environment_wins_over_dotenv_and_doppler(self) -> None:
@@ -80,6 +110,13 @@ class PipelineBehaviorTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             _next_build(8, 8)
 
+    def test_release_preflight_rejects_a_different_xcodegen_version(self) -> None:
+        with patch(
+            "ship_lib.diagnostics.subprocess.run",
+            return_value=SimpleNamespace(stdout="Version: 2.45.4\n"),
+        ):
+            self.assertEqual(diagnostics._check_xcodegen_version("2.46.0"), 1)
+
     def test_latest_ipad_prefers_thirteen_inch_pro_over_chip_number(self) -> None:
         runtime = "com.apple.CoreSimulator.SimRuntime.iOS-26-5"
         devices = [
@@ -92,6 +129,9 @@ class PipelineBehaviorTests(unittest.TestCase):
             selected = xcode.latest_simulator("2")
 
         self.assertEqual(selected.udid, "pro")
+
+    def test_universal_app_accepts_iphone_and_ipad_simulators(self) -> None:
+        self.assertEqual(xcode.device_prefixes("1,2"), ("iPhone", "iPad"))
 
     def test_notion_build_environment_encodes_values_without_command_arguments(self) -> None:
         client_id = "client/id"
@@ -155,6 +195,32 @@ class PipelineBehaviorTests(unittest.TestCase):
                 set(build_environments[0]),
                 {"NOTION_CLIENT_ID_B64", "NOTION_CLIENT_SECRET_B64"},
             )
+
+    def test_archive_preflight_exports_an_ipa_without_uploading_it(self) -> None:
+        loaded = config.load(Path(__file__).resolve().parents[2])
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            ipa = temporary / "dist/export-preflight/NoteNerds.ipa"
+            ipa.parent.mkdir(parents=True)
+            ipa.touch()
+            project = replace(loaded.project, dist_dir=temporary / "dist")
+            ship_config = replace(loaded, project=project, repo_root=temporary)
+
+            with (
+                patch("ship_lib.commands.xcode.require"),
+                patch("ship_lib.commands.xcode.regenerate_xcodegen"),
+                patch("ship_lib.commands.secrets.require", return_value={
+                    "ASC_KEY_ID": "key-id",
+                    "ASC_ISSUER_ID": "issuer-id",
+                }),
+                patch("ship_lib.commands._archive_and_export", return_value=ipa) as archive,
+                patch("ship_lib.commands._upload_to_asc") as upload,
+            ):
+                result = cmd_archive(ship_config, SimpleNamespace())
+
+            self.assertEqual(result, 0)
+            archive.assert_called_once()
+            upload.assert_not_called()
 
 
 if __name__ == "__main__":

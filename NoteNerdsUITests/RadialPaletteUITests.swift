@@ -12,13 +12,11 @@ final class RadialPaletteUITests: XCTestCase {
         application.buttons["Show more tools"].tap()
 
         for category in [
-            "Drawing tools", "Eraser",
+            "Drawing tools", "Stroke width", "Ink color", "Eraser",
             "Lasso", "Add text", "Shapes", "Undo", "Redo", "Layers"
         ] {
             XCTAssertTrue(application.buttons[category].exists)
         }
-        XCTAssertFalse(application.buttons["Stroke width"].exists)
-        XCTAssertFalse(application.buttons["Ink color"].exists)
         for choice in [
             "Ballpoint", "Fineliner", "Mechanical pencil", "Pencil", "Marker",
             "Highlighter", "Brush", "Calligraphy pen", "Handwriting to text"
@@ -36,9 +34,9 @@ final class RadialPaletteUITests: XCTestCase {
             ]
             application.launch()
             application.buttons["New notebook"].tap()
-            application.buttons["Drawing tools"].tap()
             XCTAssertTrue(application.buttons["Stroke width"].exists)
             XCTAssertTrue(application.buttons["Ink color"].exists)
+            application.buttons["Drawing tools"].tap()
             let handwriting = application.buttons["Handwriting to text"]
             XCTAssertTrue(handwriting.waitForExistence(timeout: 2))
             handwriting.tap()
@@ -78,7 +76,6 @@ final class RadialPaletteUITests: XCTestCase {
             XCTAssertTrue(widthApplication.buttons[width].exists)
         }
         widthApplication.buttons["Bold"].tap()
-        widthApplication.buttons["Drawing tools"].tap()
         XCTAssertEqual(widthApplication.buttons["Stroke width"].value as? String, "Bold")
     }
 
@@ -108,7 +105,6 @@ final class RadialPaletteUITests: XCTestCase {
         XCTAssertTrue(eraserApplication.otherElements["Quick tools"].exists)
         eraserApplication.buttons["Fine"].tap()
         XCTAssertEqual(eraserApplication.buttons["Eraser"].value as? String, "Precision")
-        eraserApplication.buttons["Drawing tools"].tap()
         XCTAssertEqual(eraserApplication.buttons["Stroke width"].value as? String, "Fine")
     }
 

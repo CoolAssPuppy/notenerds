@@ -2,10 +2,10 @@ import XCTest
 @testable import NoteNerds
 
 final class CanvasToolbarBehaviorTests: XCTestCase {
-    func testCompactToolbarShowsOnlyEssentialTools() {
+    func testCompactToolbarKeepsEveryCoreDrawingControlVisible() {
         XCTAssertEqual(
             CanvasToolbarPresentation.actions(isExpanded: false),
-            [.drawing, .eraser]
+            [.drawing, .width, .color, .eraser, .lasso]
         )
     }
 
@@ -13,10 +13,52 @@ final class CanvasToolbarBehaviorTests: XCTestCase {
         XCTAssertEqual(
             CanvasToolbarPresentation.actions(isExpanded: true),
             [
-                .drawing, .eraser,
-                .lasso, .text, .shapes, .undo, .redo,
+                .drawing, .width, .color, .eraser, .lasso,
+                .text, .shapes, .undo, .redo,
                 .layers
             ]
+        )
+    }
+
+    func testInkOnlyCanvasStillCreatesASelectionOverlayForLasso() {
+        XCTAssertTrue(
+            CanvasOverlayPresentation.requiresSelectionOverlay(
+                strokeCount: 1,
+                nonStrokeObjectCount: 0,
+                isLassoEnabled: true,
+                isShapePlacementEnabled: false
+            )
+        )
+        XCTAssertFalse(
+            CanvasOverlayPresentation.requiresSelectionOverlay(
+                strokeCount: 1,
+                nonStrokeObjectCount: 0,
+                isLassoEnabled: false,
+                isShapePlacementEnabled: false
+            )
+        )
+    }
+
+    func testLassoOverlayRefreshesAfterSameCountStrokeGeometryChanges() {
+        var original = DomainFixtures.stroke()
+        original.samples[0].point = CanvasPoint(x: 120, y: 180)
+        original.samples = [original.samples[0]]
+        var moved = original
+        moved.samples[0].point = CanvasPoint(x: 420, y: 480)
+
+        XCTAssertTrue(
+            CanvasOverlayModelReconciliation.requiresRefresh(
+                currentStrokes: [original],
+                incomingStrokes: [moved],
+                isLassoEnabled: true
+            )
+        )
+        XCTAssertFalse(
+            CanvasOverlayModelReconciliation.requiresRefresh(
+                currentStrokes: [original],
+                incomingStrokes: [moved],
+                isLassoEnabled: false
+            )
         )
     }
 

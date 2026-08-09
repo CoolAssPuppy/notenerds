@@ -1,21 +1,19 @@
 # Build and deployment
 
-Note Nerds ships through a Python command patterned after Tripmaster. XcodeGen remains the source for project structure, Doppler stores release credentials, GitHub checks every change, and App Store releases start through a manual workflow.
+Note Nerds ships from a local Python command patterned after TripMaster. XcodeGen defines the project structure, Doppler provides release values, and GitHub checks code changes.
 
 ## Current release target
 
 - Product: Note Nerds
-- Platform: iPadOS
-- Minimum version: iPadOS 18.0
-- Device family: iPad only
+- Platform: iOS and iPadOS
+- Minimum version: iOS and iPadOS 18.0
+- Device family: iPhone and iPad
 - Bundle identifier: `com.strategicnerds.notenerds`
 - CloudKit container: `iCloud.com.strategicnerds.notenerds`
 - Apple Developer team: `955GSY56UT`
 - Initial marketing version: `1.0.0`
 - Initial build number: `1`
 - Release mode: manual after approval
-
-The specification places iPhone support after version 1. The current target does not install on iPhone, so App Store Connect does not require iPhone screenshots for this release.
 
 ## What is already configured
 
@@ -29,7 +27,6 @@ The specification places iPhone support after version 1. The current target does
 - TestFlight upload
 - App Store Connect version creation, build attachment, release notes, and review submission
 - Pull request and main-branch CI
-- Manual GitHub release workflow
 - Doppler project settings for `notenerds/prd`
 
 ## One-time Apple setup
@@ -61,14 +58,11 @@ Use these values:
 
 Record the numeric Apple ID shown under App Information. It becomes `ASC_APP_ID`.
 
-### Create the App Store Connect API key
+### Configure the App Store Connect API key
 
-1. Open Users and Access, then Integrations, then App Store Connect API.
-2. Create a key named `note-nerds-release`.
-3. Grant App Manager access. Use Admin only if cloud signing cannot manage the distribution certificate with App Manager access.
-4. Record the Key ID and Issuer ID.
-5. Download the `.p8` file. Apple permits one download.
-6. Save it locally as `~/.private_keys/AuthKey_<ASC_KEY_ID>.p8` with file mode `600`.
+1. Reuse the App Store Connect key used by TripMaster.
+2. Store its Key ID and Issuer ID in Doppler.
+3. Save its `.p8` file locally as `~/.private_keys/AuthKey_<ASC_KEY_ID>.p8` with file mode `600`.
 
 ## Doppler setup
 
@@ -91,9 +85,6 @@ doppler secrets set ASC_ISSUER_ID="<issuer id>" \
 doppler secrets set ASC_APP_ID="<numeric Apple ID>" \
   --project notenerds --config prd
 
-doppler secrets set ASC_PRIVATE_KEY="$(cat ~/.private_keys/AuthKey_<key id>.p8)" \
-  --project notenerds --config prd
-
 doppler secrets set NOTION_CLIENT_ID="<Notion client id>" \
   --project notenerds --config prd
 
@@ -104,25 +95,6 @@ doppler secrets set NOTION_CLIENT_SECRET="<Notion client secret>" \
 Do not add empty or sample values. The release preflight should fail until the real values exist.
 
 Set `http://localhost:53117/oauth/notion` as the exact redirect URI for the public Notion integration. The release command injects encoded client values through the `xcodebuild` child process environment. They do not appear in command arguments or build logs.
-
-## GitHub release access
-
-The repository remote is `CoolAssPuppy/notenerds`.
-
-1. Create a GitHub environment named `app-store`.
-2. Add required reviewers if releases should need approval.
-3. Create a read-only Doppler service token scoped to `notenerds/prd`:
-
-```bash
-doppler configs tokens create github-actions \
-  --project notenerds \
-  --config prd \
-  --plain
-```
-
-4. Save the token as the `DOPPLER_TOKEN` secret in the `app-store` GitHub environment.
-
-Doppler’s GitHub integration can also synchronize the production config to that environment. Keep Doppler as the source for later secret changes.
 
 ## Local verification
 
@@ -149,22 +121,10 @@ The command finds the newest iPad simulator accepted by the current Xcode instal
 
 ## TestFlight release
 
-Local:
-
 ```bash
 ./scripts/ship.py testflight \
   --notes "Check Apple Pencil drawing, inline text, search, and PDF export."
 ```
-
-GitHub:
-
-1. Open Actions, then Release.
-2. Choose Run workflow.
-3. Select `testflight`.
-4. Enter “What to Test” notes.
-5. Run the workflow.
-
-The workflow assigns a build number from the GitHub run number, starting at 1001. This avoids duplicate builds across clean CI machines.
 
 ## First App Store release
 
@@ -186,18 +146,17 @@ In App Store Connect:
 5. Add the processed build to version 1.0.0.
 6. Confirm the version shows Ready for Review.
 
-After one manual submission succeeds, the release workflow can submit later versions through the App Store Connect API.
+After one manual submission succeeds, the local command can submit later versions through the App Store Connect API.
 
-## Automated App Store release
+## Later App Store releases
 
-Run the GitHub Release workflow with:
+Run the local command with the new version and release notes:
 
-- Channel: `app-store`
-- Version: the new marketing version
-- Notes: the customer-facing changes
-- Submit review: enabled only after all App Store metadata is complete
-
-When Submit review is disabled, the workflow uploads the build and stops. This is the safe default.
+```bash
+./scripts/ship.py app-store \
+  --version 1.1.0 \
+  --notes "Customer-facing changes."
+```
 
 ## Release record
 
@@ -217,6 +176,6 @@ git push origin main --follow-tags
 - Upload failure: search the reported `ITMS` code and correct the named metadata or bundle issue.
 - Build processing failure: check Apple’s processing email and the TestFlight build page.
 - Submission failure after upload: attach the uploaded build and submit it through App Store Connect.
-- Duplicate build number: rerun the GitHub workflow. The next run gets a higher number.
+- Duplicate build number: run the local command again. It assigns the next build number.
 
 The release command never stores passwords or private keys in the repository. `dist/`, `.env`, `.p8`, and the managed Python environment are ignored.

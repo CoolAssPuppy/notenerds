@@ -4,9 +4,6 @@ struct AppSettingsView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var notion: NotionIntegrationModel
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("canvasToolbarOrientation") private var toolbarOrientation =
-        CanvasToolbarOrientation.vertical.rawValue
-    @AppStorage("isToolbarOnLeft") private var isToolbarOnLeft = true
     @AppStorage("defaultPaperType") private var defaultPaperTypeRawValue = PaperType.blankWhite.rawValue
     @State private var isPaperGalleryPresented = false
     @State private var isConfirmingDisconnect = false
@@ -16,7 +13,7 @@ struct AppSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                canvasSection
+                paperSection
                 notionSection
                 privacySection
             }
@@ -52,15 +49,8 @@ struct AppSettingsView: View {
         }
     }
 
-    private var canvasSection: some View {
-        Section("Canvas") {
-            Picker("Editing tools", selection: $toolbarOrientation) {
-                ForEach(CanvasToolbarOrientation.allCases, id: \.self) { orientation in
-                    Label(orientation.label, systemImage: orientation.symbol).tag(orientation.rawValue)
-                }
-            }
-            Toggle("Vertical tools on left", isOn: $isToolbarOnLeft)
-                .disabled(toolbarOrientation != CanvasToolbarOrientation.vertical.rawValue)
+    private var paperSection: some View {
+        Section("Paper") {
             Button("Default paper", systemImage: "doc.text.image") {
                 isPaperGalleryPresented = true
             }

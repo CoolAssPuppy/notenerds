@@ -37,7 +37,7 @@ final class RadialMenuPlacementUITests: XCTestCase {
         let quickTools = application.otherElements["Quick tools"]
         let anchor = application.otherElements["Radial menu anchor"]
         let rootLabels = [
-            "Writing tools", "Eraser", "Lasso", "Undo", "Redo", "Width", "Color"
+            "Writing tools", "Width", "Color", "Eraser", "Lasso", "Undo", "Redo"
         ]
         XCTAssertTrue(anchor.waitForExistence(timeout: 2))
         let rootButtons = rootLabels.map { quickTools.buttons[$0] }

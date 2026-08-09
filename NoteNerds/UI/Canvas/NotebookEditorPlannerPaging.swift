@@ -1,5 +1,23 @@
 import SwiftUI
 
+enum NotebookCanvasOpeningPolicy {
+    static func initialIndex(
+        canvasIDs: [CanvasID],
+        pendingCanvasID: CanvasID?,
+        storedCanvasID: CanvasID?
+    ) -> Int {
+        if let pendingCanvasID,
+           let index = canvasIDs.firstIndex(of: pendingCanvasID) {
+            return index
+        }
+        if let storedCanvasID,
+           let index = canvasIDs.firstIndex(of: storedCanvasID) {
+            return index
+        }
+        return 0
+    }
+}
+
 extension NotebookEditorView {
     var plannerRegions: [CanvasRegion] {
         PlannerRegionCatalog.regions(for: currentCanvas.template)
@@ -33,5 +51,27 @@ extension NotebookEditorView {
         guard plannerRegions.indices.contains(index) else { return }
         plannerRegionSelection.select(regionID: plannerRegions[index].id, for: currentCanvas.id)
         UISelectionFeedbackGenerator().selectionChanged()
+    }
+
+    func plannerContentRegion(at point: CanvasPoint) -> CanvasRegion? {
+        if isPlannerRegionPagingPresented { return selectedPlannerRegion }
+        return PlannerRegionContentPolicy.region(containing: point, in: plannerRegions)
+    }
+
+    func constrainStrokesToPlannerRegions(_ strokes: [Stroke]) -> [Stroke] {
+        strokes.map { stroke in
+            guard let firstPoint = stroke.samples.first?.point else { return stroke }
+            return PlannerRegionContentPolicy.constrainedStroke(
+                stroke,
+                to: plannerContentRegion(at: firstPoint)?.frame
+            )
+        }
+    }
+
+    func constrainTextBlockToPlannerRegion(_ textBlock: TextBlock) -> TextBlock {
+        var constrained = textBlock
+        let region = plannerContentRegion(at: textBlock.frame.origin)
+        constrained.frame = PlannerRegionContentPolicy.constrainedFrame(textBlock.frame, to: region?.frame)
+        return constrained
     }
 }

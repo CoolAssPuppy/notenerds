@@ -52,8 +52,8 @@ final class NotionFileUploadBehaviorTests: XCTestCase {
 
         let result = try await client.uploadFile(
             data: payload,
-            filename: "notebook.notenerds",
-            contentType: "application/octet-stream"
+            filename: "notebook.notenerds.json",
+            contentType: "application/json"
         )
         let requests = await transport.allRequests()
 
@@ -66,8 +66,8 @@ final class NotionFileUploadBehaviorTests: XCTestCase {
             let expectedSize = partIndex == 2 ? 7 : tenMegabytes
             try assertMultipart(
                 requests[partIndex + 1],
-                filename: "notebook.notenerds",
-                contentType: "application/octet-stream",
+                filename: "notebook.notenerds.json",
+                contentType: "application/json",
                 payloadSize: expectedSize,
                 partNumber: partIndex + 1
             )
@@ -103,6 +103,13 @@ final class NotionFileUploadBehaviorTests: XCTestCase {
             contentType: "application/pdf",
             expected: .emptyFile
         )
+        await assertUploadError(
+            client: client,
+            data: Data("archive".utf8),
+            filename: "notebook.notenerds",
+            contentType: "application/octet-stream",
+            expected: .invalidContentType
+        )
     }
 
     func testUploadRejectsMismatchedOrIncompleteNotionResponses() async throws {
@@ -133,8 +140,8 @@ final class NotionFileUploadBehaviorTests: XCTestCase {
 
         _ = try await client.uploadFile(
             data: payload,
-            filename: "notebook.notenerds",
-            contentType: "application/octet-stream"
+            filename: "notebook.notenerds.json",
+            contentType: "application/json"
         )
         let streamed = await transport.streamedBodies
 

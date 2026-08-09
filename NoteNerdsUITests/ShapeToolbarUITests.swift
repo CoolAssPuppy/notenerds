@@ -2,6 +2,31 @@ import XCTest
 
 @MainActor
 final class ShapeToolbarUITests: XCTestCase {
+    func testCompactLassoSelectsInkOnAnInkOnlyCanvas() {
+        let application = makeApplication()
+        application.launch()
+        application.buttons["New notebook"].tap()
+
+        XCTAssertTrue(application.buttons["Lasso"].waitForExistence(timeout: 2))
+        let canvas = application.scrollViews["Infinite canvas"]
+        let start = canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.42, dy: 0.42))
+        let end = canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.58, dy: 0.48))
+        start.press(forDuration: 0.1, thenDragTo: end)
+        let strokeAppeared = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value CONTAINS '1 ink strokes'"),
+            object: canvas
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [strokeAppeared], timeout: 3), .completed)
+
+        application.buttons["Lasso"].tap()
+        canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.38, dy: 0.38)).press(
+            forDuration: 0.1,
+            thenDragTo: canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.62, dy: 0.54))
+        )
+
+        XCTAssertEqual(application.buttons["Selection actions"].value as? String, "Selection active")
+    }
+
     func testShapeToolCreatesAndSelectsAClassicShapeOnTheCanvas() {
         let application = makeApplication()
         application.launch()

@@ -9,7 +9,9 @@ final class NotionManagedPageBehaviorTests: XCTestCase {
             previewUploadIDs: [
                 snapshot.canvases[0].canvasID: "11111111-1111-1111-1111-111111111111",
                 snapshot.canvases[1].canvasID: "22222222-2222-2222-2222-222222222222"
-            ]
+            ],
+            files: remoteFiles,
+            syncedAt: DomainFixtures.fixedDate
         )
         let root = try jsonObject(plan.root)
         let rootToggle = try XCTUnwrap(root["toggle"] as? [String: Any])
@@ -24,6 +26,16 @@ final class NotionManagedPageBehaviorTests: XCTestCase {
         XCTAssertTrue(serializedChildren.contains("Reference text"))
         XCTAssertTrue(serializedChildren.contains("11111111-1111-1111-1111-111111111111"))
         XCTAssertTrue(serializedChildren.contains("22222222-2222-2222-2222-222222222222"))
+        XCTAssertTrue(serializedChildren.contains("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+        XCTAssertTrue(serializedChildren.contains("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+        XCTAssertTrue(serializedChildren.contains("Last synced"))
+        XCTAssertTrue(serializedChildren.contains(iso8601(DomainFixtures.fixedDate)))
+        XCTAssertTrue(serializedChildren.contains("Note Nerds copy"))
+        XCTAssertTrue(serializedChildren.contains("Native notebook"))
+        XCTAssertTrue(serializedChildren.contains("PDF"))
+        XCTAssertEqual(serializedChildren.components(separatedBy: #""type":"file""#).count - 1, 1)
+        XCTAssertEqual(serializedChildren.components(separatedBy: #""type":"pdf""#).count - 1, 1)
+        XCTAssertEqual(serializedChildren.components(separatedBy: #""type":"callout""#).count - 1, 1)
         let firstRange = try XCTUnwrap(serializedChildren.range(of: "Opening"))
         let secondRange = try XCTUnwrap(serializedChildren.range(of: "Details"))
         XCTAssertLessThan(firstRange.lowerBound, secondRange.lowerBound)
@@ -48,7 +60,9 @@ final class NotionManagedPageBehaviorTests: XCTestCase {
         )
         let plan = try NotionManagedPageBuilder.plan(
             snapshot: snapshot,
-            previewUploadIDs: [snapshot.canvases[0].canvasID: "11111111-1111-1111-1111-111111111111"]
+            previewUploadIDs: [snapshot.canvases[0].canvasID: "11111111-1111-1111-1111-111111111111"],
+            files: remoteFiles,
+            syncedAt: DomainFixtures.fixedDate
         )
         let textChunks = try plan.children.flatMap(paragraphText)
 
@@ -60,13 +74,54 @@ final class NotionManagedPageBehaviorTests: XCTestCase {
         let snapshot = NotionNotebookSnapshot.fixture()
 
         XCTAssertThrowsError(
-            try NotionManagedPageBuilder.plan(snapshot: snapshot, previewUploadIDs: [:])
+            try NotionManagedPageBuilder.plan(
+                snapshot: snapshot,
+                previewUploadIDs: [:],
+                files: remoteFiles,
+                syncedAt: DomainFixtures.fixedDate
+            )
         ) { error in
             XCTAssertEqual(
                 error as? NotionManagedPageError,
                 .missingPreview(snapshot.canvases[0].canvasID)
             )
         }
+    }
+
+    func testManagedPageShowsTrashStatusAndDate() throws {
+        let original = NotionNotebookSnapshot.fixture()
+        let trashDate = DomainFixtures.fixedDate.addingTimeInterval(60)
+        let snapshot = NotionNotebookSnapshot(
+            row: NotionNotebookRow(
+                name: original.row.name,
+                folderPath: original.row.folderPath,
+                folderID: original.row.folderID,
+                notebookID: original.row.notebookID,
+                modifiedAt: original.row.modifiedAt,
+                canvasCount: original.row.canvasCount,
+                tags: original.row.tags,
+                isFavorite: original.row.isFavorite,
+                schemaVersion: original.row.schemaVersion,
+                contentHash: original.row.contentHash,
+                syncStatus: .inTrash,
+                trashedAt: trashDate
+            ),
+            canvases: original.canvases
+        )
+
+        let plan = try NotionManagedPageBuilder.plan(
+            snapshot: snapshot,
+            previewUploadIDs: [
+                snapshot.canvases[0].canvasID: "11111111-1111-1111-1111-111111111111",
+                snapshot.canvases[1].canvasID: "22222222-2222-2222-2222-222222222222"
+            ],
+            files: remoteFiles,
+            syncedAt: DomainFixtures.fixedDate
+        )
+        let serializedChildren = try plan.children.map(jsonString).joined(separator: "\n")
+
+        XCTAssertTrue(serializedChildren.contains("Status: In Trash"))
+        XCTAssertTrue(serializedChildren.contains("Trash date: \(iso8601(trashDate))"))
     }
 
     private func jsonObject(_ value: NotionJSONValue) throws -> [String: Any] {
@@ -93,7 +148,18 @@ final class NotionManagedPageBehaviorTests: XCTestCase {
             (item["text"] as? [String: String])?["content"]
         }
     }
+
+    private func iso8601(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.string(from: date)
+    }
 }
+
+private let remoteFiles = NotionNotebookRemoteFiles(
+    nativeUploadID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    pdfUploadID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+)
 
 private extension NotionNotebookSnapshot {
     static func fixture() -> NotionNotebookSnapshot {

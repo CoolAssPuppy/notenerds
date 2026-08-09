@@ -6,7 +6,8 @@ Configured by scripts/ship.toml; secrets come from the process environment,
 .env, or Doppler.
 
 Commands:
-    ship simulator                    Build for the latest iPad simulator and launch.
+    ship simulator                    Build for a compatible simulator and launch.
+    ship archive                      Archive and export without uploading.
     ship testflight [--notes "..."]   Bump build, archive, upload to TestFlight.
     ship app-store --version 1.2.3    Bump version+build, upload, submit for review.
                    [--notes "..."] [--release-type AFTER_APPROVAL|MANUAL|SCHEDULED]

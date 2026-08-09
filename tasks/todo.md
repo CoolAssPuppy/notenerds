@@ -1,6 +1,76 @@
 # Current work
 
-## Keep tool choices out of the canvas toolbar
+## Restore the core canvas toolbar
+
+- [x] Confirm the current toolbar and Writing inspector behavior.
+- [x] Add failing tests for Writing, stroke width, ink color, Lasso, and Eraser in the compact toolbar.
+- [x] Restore stroke width and ink color inspectors to the main toolbar.
+- [x] Remove stroke width and ink color from the Writing inspector.
+- [x] Match the radial root order to the main toolbar.
+- [x] Verify compact, expanded, vertical, and horizontal toolbar behavior.
+
+### Review
+
+- The main toolbar keeps Writing, stroke width, ink color, Eraser, and Lasso visible in that order in compact and expanded states.
+- The Writing inspector contains writing variants, Draw with finger, and favorites. Stroke width and ink color have their own main toolbar controls.
+- The radial root uses the same five-tool order, followed by Undo and Redo.
+- The complete behavior suite and five focused interface paths pass. Strict lint reports 0 violations, and `git diff --check` passes.
+
+## TestFlight pipeline readiness
+
+- [x] Compare TripMaster's local release command with the Note Nerds port.
+- [x] Confirm Note Nerds releases run locally and GitHub only runs CI.
+- [x] Add behavior tests that reject a GitHub TestFlight release workflow.
+- [x] Remove the GitHub release workflow and its setup instructions.
+- [x] Run the local signed archive without uploading a build.
+- [x] Run the release-tool tests and repository checks.
+- [x] Remove the unneeded certificate and provisioning-profile values from Doppler.
+- [x] Document the local TestFlight command and required local files.
+
+### Review
+
+- Note Nerds releases now run locally through `./scripts/ship.py`, like TripMaster. GitHub only runs CI and has no release workflow.
+- The local release preflight uses the shared App Store Connect key, the Apple Distribution identity in the login keychain, and the installed `Note Nerds App Store` provisioning profile.
+- The signed archive and IPA export pass. The preflight created `dist/export-preflight/NoteNerds.ipa` and did not upload it.
+- XcodeGen was updated locally to the required 2.46.0 release. All 18 release-tool tests, Python compilation, shell parsing, and whitespace checks pass.
+- `IOS_DISTRIBUTION_P12_BASE64`, `IOS_DISTRIBUTION_P12_PASSWORD`, and `IOS_PROVISIONING_PROFILE_BASE64` were deleted from Doppler `dev`, `stg`, and `prd` after the local export passed.
+
+## Canvas settings, lasso, and planner reliability
+
+- [x] Audit the settings, lasso overlay, canvas redraw, planner regions, and reopen behavior.
+- [x] Add behavior tests for compact Lasso access, ink-only selection, same-count stroke redraw, planner bounds, and saved planner content.
+- [x] Remove toolbar placement controls from Settings while keeping the default paper choice.
+- [x] Keep Lasso visible in the compact toolbar and make ink-only selection work.
+- [x] Preserve same-count stroke changes during canvas redraw.
+- [x] Keep planner text and strokes inside their selected regions.
+- [x] Reopen each notebook on its last viewed canvas so planner paper and content return together.
+- [x] Run focused behavior and interface tests.
+- [x] Run the full test, lint, analysis, and warnings-as-errors build checks.
+
+### Review
+
+- Settings now keeps the default paper choice and removes fixed toolbar placement controls.
+- The compact toolbar contains Writing, stroke width, ink color, Eraser, and Lasso. Ink-only pages can be selected with a real Lasso drag, and the selection overlay refreshes when stroke geometry changes.
+- Daily and Weekly planner text and ink remain inside the region where they begin. Planner paper, typed text, and the last viewed canvas survive a full application relaunch.
+- The complete suite passed with 317 tests and 0 failures. Strict lint passed with 0 violations. Static analysis, the warnings-as-errors simulator build, and `git diff --check` passed.
+
+## Stop the device crash during automatic Notion sync
+
+- [x] Retrieve and inspect the newest Note Nerds device crash report.
+- [x] Match the crash to the duplicate-canvas payload regression.
+- [x] Run the payload rejection and persisted-library repair tests.
+- [x] Build with warnings treated as errors and verify the Notion configuration is present.
+- [x] Install the corrected build on the connected iPad.
+- [ ] Launch the build and verify settings and notebook actions without a newer crash report.
+
+### Review
+
+- The 10:55 PM crash is an automatic Notion sync trap in `Dictionary(uniqueKeysWithValues:)` while creating canvas previews.
+- The corrected payload builder returns a typed duplicate-canvas error, and startup repairs legacy duplicate canvas identifiers before sync.
+- Both focused regression groups pass. The simulator settings check also passes.
+- The corrected device build installed at 11:29 PM. The iPad is locked, so iPadOS has denied each launch request.
+
+## Prior toolbar grouping decision (superseded)
 
 - [x] Record the corrected toolbar rule in `tasks/lessons.md`.
 - [x] Add failing behavior and interface tests for the exact core-tool set.
@@ -10,11 +80,7 @@
 
 ### Review
 
-- Compact shows Writing and Eraser. The chevron remains fixed.
-- Expanded adds Lasso, Text, Shapes, Undo, Redo, and Layers.
-- Writing contains pen variants, color, stroke width, favorites, and Draw with finger.
-- Eraser contains its mode and precision width. Shapes contains shape choices.
-- Focused behavior tests and five iPad interface paths pass in vertical and horizontal layouts.
+- This decision was superseded. The current main toolbar and radial root keep Writing, stroke width, ink color, Eraser, and Lasso in the same order.
 
 ## Notion completion audit
 
@@ -37,7 +103,7 @@
 - The signed development build is installed and open on the connected iPad mini.
 - Live workspace mutation, restore, and disconnect verification remains pending.
 
-## Separate toolbar categories from their choices
+## Prior toolbar category decision (superseded)
 
 - [x] Record the correction in `tasks/lessons.md`.
 - [x] Add a failing behavior test that permits only core editing categories in the expanded toolbar.
@@ -47,9 +113,7 @@
 
 ### Review
 
-- Collapsed contains Writing tools, Eraser, and the chevron.
-- Expanded adds only Lasso, Text, Shapes, Undo, Redo, and Layers. Color, width, pen variants, eraser modes, and shape variants remain inside their tools.
-- Focused behavior and interface tests pass. Saved simulator screenshots confirm both toolbar states.
+- This decision was superseded. Stroke width and ink color are core main-toolbar controls, alongside Writing, Eraser, and Lasso.
 
 ## True radial Pencil menus and approved Paper icon
 
@@ -454,7 +518,7 @@
 ### Review
 
 - Paper contains compact, expanded, and docked toolbar states plus the hold, direct-drag, and spring-snap motion specification.
-- The compact toolbar keeps Writing and Eraser. The chevron adds the remaining core tools and editing commands, then rotates 180 degrees when expanded.
+- The compact toolbar keeps Writing, stroke width, ink color, Eraser, and Lasso. The chevron adds Text, Shapes, Undo, Redo, and Layers, then rotates 180 degrees when expanded.
 - A 220-millisecond hold starts direct dragging. Releasing near the top docks the toolbar horizontally; releasing elsewhere docks it vertically to the nearest side.
 - Expansion and docking choices persist. Reduce Motion replaces the spring movement with a short linear transition.
 - The Pencil squeeze menu uses an 80-point ring centered on the current Pencil position, falls back to the latest hover position, and has no center tool.
@@ -478,3 +542,22 @@
 - Payload creation now returns a typed error for invalid identifiers. Startup repairs legacy notebooks, preserves every canvas, saves fresh identifiers once, and keeps those identifiers in later sessions.
 - Both focused regressions pass. Strict SwiftLint reports 0 violations. The signed device build compiles with warnings treated as errors and contains the expected Notion configuration.
 - The repaired build is installed. iPadOS denied the automated launch while the device was locked, so the final crash-log check remains pending.
+
+## Notion page and attachment contract
+
+- [x] Compare the managed notebook page with every block required by the implementation plan.
+- [x] Add failing tests for sync metadata, trash state, and visible native attachments.
+- [x] Add the Note Nerds callout, sync metadata, native PDF block, and native notebook file block.
+- [x] Check the current Notion file-upload restrictions against official documentation.
+- [x] Add failing tests for a supported, deterministic JSON transport file.
+- [x] Upload the native notebook as `.notenerds.json` with `application/json`.
+- [x] Preserve exact hash verification, bounded decoding, and legacy binary restore.
+- [x] Run the focused transport, upload, sync, restore, managed-page, and end-to-end tests.
+- [ ] Run the complete regression and release gates.
+- [ ] Install and verify the corrected attachment format against the connected live workspace.
+
+### Review
+
+- The prior `.notenerds` and `application/octet-stream` pair is absent from Notion's supported file-upload list. This could stop every notebook publish before page creation.
+- The upload is now valid JSON with a supported extension and MIME type. The inner archive format and exact restore checks remain unchanged.
+- Notebook pages now include the planned callout, last-sync metadata, trash state, native PDF block, native notebook file block, ordered canvases, previews, and searchable text.

@@ -266,6 +266,8 @@ Local files remain authoritative for immediate interaction. Search, drawing, ope
 
 Notion is an optional publish and restore destination. CloudKit remains the device sync provider. After OAuth, the user chooses a Notion page and Note Nerds creates a database plus a companion library-manifest page there.
 
+Each notebook row includes ordered canvas previews, searchable text, a PDF, and a restorable `.notenerds.json` attachment. The JSON wrapper uses a Notion-supported file type and contains the checksum-verified native archive.
+
 Release builds read `NOTION_CLIENT_ID` and `NOTION_CLIENT_SECRET` from Doppler through the release command. The Notion integration must use this exact redirect URI:
 
 ```text

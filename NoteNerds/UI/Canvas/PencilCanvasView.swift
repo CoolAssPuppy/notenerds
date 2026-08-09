@@ -96,12 +96,16 @@ struct PencilCanvasView: UIViewRepresentable {
         updateInlineTextEditor(in: canvasView, coordinator: context.coordinator)
         bringCanvasOverlaysToFront(in: canvasView, coordinator: context.coordinator)
         canvasView.drawingPolicy = isFingerDrawingEnabled ? .anyInput : .pencilOnly
-        canvasView.drawingGestureRecognizer.isEnabled = !isTextToolActive && shapePlacementKind == nil
+        canvasView.drawingGestureRecognizer.isEnabled = isDrawingGestureEnabled
         canvasView.delegate = context.coordinator
         return canvasView
     }
 
     func updateUIView(_ canvasView: PKCanvasView, context: Context) {
+        let shouldRedraw = PencilCanvasModelReconciliation.requiresRedraw(
+            current: context.coordinator.canonicalStrokes,
+            incoming: strokes
+        )
         context.coordinator.configuration = configuration
         context.coordinator.canonicalStrokes = strokes
         updatePlannerContext(context.coordinator)
@@ -109,18 +113,22 @@ struct PencilCanvasView: UIViewRepresentable {
             touchCount: isFingerDrawingEnabled ? 2 : 1
         )
         canvasView.drawingPolicy = isFingerDrawingEnabled ? .anyInput : .pencilOnly
-        canvasView.drawingGestureRecognizer.isEnabled = !isTextToolActive && shapePlacementKind == nil
+        canvasView.drawingGestureRecognizer.isEnabled = isDrawingGestureEnabled
         if context.coordinator.paperType != template {
             applyPaper(to: canvasView, coordinator: context.coordinator)
         }
-        context.coordinator.focusPlannerRegionIfNeeded(in: canvasView)
-        applyInitialPlannerViewport(to: canvasView, coordinator: context.coordinator)
+        let coordinator = context.coordinator
+        DispatchQueue.main.async { [weak canvasView, weak coordinator] in
+            guard let canvasView, let coordinator else { return }
+            coordinator.focusPlannerRegionIfNeeded(in: canvasView)
+            applyInitialPlannerViewport(to: canvasView, coordinator: coordinator)
+        }
         updateObjectOverlays(in: canvasView, coordinator: context.coordinator)
         updateInlineTextEditor(in: canvasView, coordinator: context.coordinator)
         bringCanvasOverlaysToFront(in: canvasView, coordinator: context.coordinator)
         updateAccessibility(for: canvasView)
         apply(configuration, to: canvasView, coordinator: context.coordinator)
-        if strokes.count != context.coordinator.knownStrokeCount {
+        if shouldRedraw {
             context.coordinator.isApplyingModelDrawing = true
             canvasView.drawing = PencilCanvasRenderer.drawing(from: strokes)
             context.coordinator.knownStrokeCount = strokes.count
@@ -138,6 +146,7 @@ struct PencilCanvasView: UIViewRepresentable {
         weak var objectSelectionOverlay: CanvasSelectionOverlayView?
         weak var hoverPreview: UIView?
         weak var inlineTextEditor: InlineCanvasTextEditor?
+        var overlayStrokes: [Stroke] = []
         var overlayObjects: [CanvasObject] = []
         var overlayAssets: [AssetID: Data] = [:]
         var highlightedStrokeIDs: Set<StrokeID> = []
@@ -366,6 +375,10 @@ struct PencilCanvasView: UIViewRepresentable {
         }
     }
 
+    private var isDrawingGestureEnabled: Bool {
+        !isTextToolActive && shapePlacementKind == nil && configuration.tool != .lasso
+    }
+
     private func apply(
         _ command: CanvasNavigationCommand?,
         to canvasView: PKCanvasView,
@@ -442,7 +455,11 @@ private extension PencilCanvasView {
         }
         canvasView.isAccessibilityElement = true
         canvasView.accessibilityLabel = "Infinite canvas"
-        var parts = ["\(strokes.count) ink strokes", "\(nonStrokeObjects.count) other objects"]
+        var parts = [
+            "Paper: \(template.displayName)",
+            "\(strokes.count) ink strokes",
+            "\(nonStrokeObjects.count) other objects"
+        ]
         if !text.isEmpty { parts.append("Text: \(text.joined(separator: ", "))") }
         if !recognizedText.isEmpty {
             parts.append("Recognized handwriting: \(recognizedText.joined(separator: ", "))")

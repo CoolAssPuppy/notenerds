@@ -3,19 +3,13 @@ import SwiftUI
 struct CanvasDrawingToolInspector: View {
     let tools: [CanvasTool]
     let selectedTool: CanvasTool
-    let selectedWidth: ToolWidth
-    let selectedColor: InkColor
     let favoriteOne: ToolConfiguration
     let favoriteTwo: ToolConfiguration
     @Binding var isFingerDrawingEnabled: Bool
     let onSelectTool: (CanvasTool) -> Void
     let onSelectFavorite: (ToolConfiguration) -> Void
-    let onSelectWidth: (ToolWidth) -> Void
-    let onSelectColor: (InkColor) -> Void
     let onSaveFavoriteOne: () -> Void
     let onSaveFavoriteTwo: () -> Void
-
-    @State private var presentedStyle: WritingStyleInspector?
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 3)
 
@@ -26,12 +20,6 @@ struct CanvasDrawingToolInspector: View {
                 ForEach(tools, id: \.self) { tool in
                     toolButton(tool)
                 }
-            }
-            Divider()
-            Text("Style").font(.subheadline.weight(.semibold))
-            HStack(spacing: 10) {
-                widthButton
-                colorButton
             }
             Toggle("Draw with finger", isOn: $isFingerDrawingEnabled)
             Divider()
@@ -54,52 +42,6 @@ struct CanvasDrawingToolInspector: View {
         .padding(18)
         .frame(width: 430)
         .presentationCompactAdaptation(.popover)
-    }
-
-    private var widthButton: some View {
-        Button { presentedStyle = .width } label: {
-            Label(selectedWidth.label, systemImage: "lineweight")
-                .frame(maxWidth: .infinity, minHeight: 40)
-                .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Stroke width")
-        .accessibilityValue(selectedWidth.label)
-        .popover(isPresented: styleBinding(.width)) {
-            CanvasWidthInspector(selectedWidth: selectedWidth) { width in
-                onSelectWidth(width)
-                presentedStyle = nil
-            }
-        }
-    }
-
-    private var colorButton: some View {
-        Button { presentedStyle = .color } label: {
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(Color(uiColor: UIColor(selectedColor)))
-                    .frame(width: 18, height: 18)
-                    .overlay(Circle().stroke(Color.primary.opacity(0.28), lineWidth: 0.75))
-                Text("Color")
-            }
-            .frame(maxWidth: .infinity, minHeight: 40)
-            .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Ink color")
-        .popover(isPresented: styleBinding(.color)) {
-            CanvasColorInspector(selectedColor: selectedColor) { color in
-                onSelectColor(color)
-                presentedStyle = nil
-            }
-        }
-    }
-
-    private func styleBinding(_ inspector: WritingStyleInspector) -> Binding<Bool> {
-        Binding(
-            get: { presentedStyle == inspector },
-            set: { isPresented in presentedStyle = isPresented ? inspector : nil }
-        )
     }
 
     private func toolButton(_ tool: CanvasTool) -> some View {
@@ -150,9 +92,4 @@ struct CanvasDrawingToolInspector: View {
                 .labelStyle(.iconOnly)
         }
     }
-}
-
-private enum WritingStyleInspector {
-    case width
-    case color
 }

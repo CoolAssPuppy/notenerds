@@ -11,6 +11,9 @@ struct CanvasToolbarView: View {
 
     var body: some View {
         toolbarContainer
+        .popover(item: $presentedInspector) { inspector in
+            inspectorContent(inspector)
+        }
         .padding(4)
         .background(toolbarBackground)
         .overlay {
@@ -56,12 +59,14 @@ struct CanvasToolbarView: View {
     @ViewBuilder
     private var toolbarActionItems: some View {
         drawingToolInspectorButton
+        widthInspectorButton
+        colorInspectorButton
         eraserInspectorButton
+        chromeButton("Lasso", symbol: "lasso", isSelected: editor.configuration.tool == .lasso) {
+            editor.selectTool(.lasso)
+        }
         if isExpanded {
             chromeDivider
-            chromeButton("Lasso", symbol: "lasso", isSelected: editor.configuration.tool == .lasso) {
-                editor.selectTool(.lasso)
-            }
             chromeButton("Add text", symbol: "textformat", isSelected: editor.isTextToolActive) {
                 editor.activateTextTool()
             }
@@ -94,29 +99,6 @@ struct CanvasToolbarView: View {
         .accessibilityLabel("Drawing tools")
         .accessibilityValue(editor.selectedDrawingTool.label)
         .help(editor.selectedDrawingTool.label)
-        .popover(isPresented: inspectorBinding(.drawing)) {
-            CanvasDrawingToolInspector(
-                tools: drawingTools,
-                selectedTool: editor.selectedDrawingTool,
-                selectedWidth: editor.configuration.width,
-                selectedColor: editor.configuration.color,
-                favoriteOne: editor.favoriteOne,
-                favoriteTwo: editor.favoriteTwo,
-                isFingerDrawingEnabled: editor.$isFingerDrawingEnabled,
-                onSelectTool: { tool in
-                    editor.selectTool(tool)
-                    presentedInspector = nil
-                },
-                onSelectFavorite: { configuration in
-                    editor.select(configuration)
-                    presentedInspector = nil
-                },
-                onSelectWidth: editor.setWidth,
-                onSelectColor: editor.setColor,
-                onSaveFavoriteOne: editor.saveFavoriteOne,
-                onSaveFavoriteTwo: editor.saveFavoriteTwo
-            )
-        }
     }
 
     private var shapeInspectorButton: some View {
@@ -126,32 +108,47 @@ struct CanvasToolbarView: View {
         .accessibilityLabel("Shapes")
         .accessibilityValue(editor.selectedShapeKind?.displayName ?? "Not selected")
         .help("Shapes")
-        .popover(isPresented: inspectorBinding(.shapes)) {
-            CanvasShapeInspector(selectedKind: editor.selectedShapeKind) { kind in
-                editor.activateShapeTool(kind)
-                presentedInspector = nil
-            }
+    }
+
+    private var widthInspectorButton: some View {
+        Button { presentedInspector = .width } label: {
+            CanvasChromeIcon(symbol: "lineweight")
         }
+        .accessibilityLabel("Stroke width")
+        .accessibilityValue(editor.configuration.width.label)
+        .help("Stroke width")
+    }
+
+    private var colorInspectorButton: some View {
+        Button { presentedInspector = .color } label: {
+            Circle()
+                .fill(Color(uiColor: UIColor(editor.configuration.color)))
+                .frame(width: 18, height: 18)
+                .overlay(Circle().stroke(Color.primary.opacity(0.28), lineWidth: 0.75))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("Ink color")
+        .help("Ink color")
     }
 
     private var eraserInspectorButton: some View {
-        Button {
-            editor.selectTool(.eraser)
-            presentedInspector = .eraser
-        } label: {
+        Button { presentedInspector = .eraser } label: {
             CanvasChromeIcon(symbol: "eraser", isSelected: editor.configuration.tool == .eraser)
         }
         .accessibilityLabel("Eraser")
         .accessibilityValue(editor.configuration.eraserMode.rawValue.capitalized)
         .help("Eraser")
-        .popover(isPresented: inspectorBinding(.eraser)) {
-            CanvasEraserInspector(
-                selectedMode: editor.configuration.eraserMode,
-                selectedWidth: editor.configuration.width,
-                onSelectMode: editor.selectEraser,
-                onSelectWidth: editor.setWidth
-            )
-        }
+    }
+
+    private var eraserInspector: some View {
+        CanvasEraserInspector(
+            selectedMode: editor.configuration.eraserMode,
+            selectedWidth: editor.configuration.width,
+            onSelectMode: editor.selectEraser,
+            onSelectWidth: editor.setWidth
+        )
+        .onAppear { editor.selectTool(.eraser) }
     }
 
     private var expansionButton: some View {
@@ -177,7 +174,31 @@ struct CanvasToolbarView: View {
         }
         .accessibilityLabel("Layers")
         .help("Layers")
-        .popover(isPresented: inspectorBinding(.layers)) {
+    }
+
+    @ViewBuilder
+    private func inspectorContent(_ inspector: CanvasToolbarInspector) -> some View {
+        switch inspector {
+        case .drawing:
+            drawingInspector
+        case .width:
+            CanvasWidthInspector(
+                selectedWidth: editor.configuration.width,
+                onSelect: editor.setWidth
+            )
+        case .color:
+            CanvasColorInspector(
+                selectedColor: editor.configuration.color,
+                onSelect: editor.setColor
+            )
+        case .eraser:
+            eraserInspector
+        case .shapes:
+            CanvasShapeInspector(selectedKind: editor.selectedShapeKind) { kind in
+                editor.activateShapeTool(kind)
+                presentedInspector = nil
+            }
+        case .layers:
             CanvasLayersPanel(
                 canvas: editor.currentCanvas,
                 selectedLayerID: editor.activeLayer.id,
@@ -189,6 +210,26 @@ struct CanvasToolbarView: View {
                 onDelete: editor.deleteLayer
             )
         }
+    }
+
+    private var drawingInspector: some View {
+        CanvasDrawingToolInspector(
+            tools: drawingTools,
+            selectedTool: editor.selectedDrawingTool,
+            favoriteOne: editor.favoriteOne,
+            favoriteTwo: editor.favoriteTwo,
+            isFingerDrawingEnabled: editor.$isFingerDrawingEnabled,
+            onSelectTool: { tool in
+                editor.selectTool(tool)
+                presentedInspector = nil
+            },
+            onSelectFavorite: { configuration in
+                editor.select(configuration)
+                presentedInspector = nil
+            },
+            onSaveFavoriteOne: editor.saveFavoriteOne,
+            onSaveFavoriteTwo: editor.saveFavoriteTwo
+        )
     }
 
     @ViewBuilder
@@ -223,15 +264,6 @@ struct CanvasToolbarView: View {
             .padding(editor.toolbarOrientation == .vertical ? .vertical : .horizontal, 3)
     }
 
-    private func inspectorBinding(_ inspector: CanvasToolbarInspector) -> Binding<Bool> {
-        Binding(
-            get: { presentedInspector == inspector },
-            set: { isPresented in
-                presentedInspector = isPresented ? inspector : nil
-            }
-        )
-    }
-
     private func chromeButton(
         _ title: String,
         symbol: String,
@@ -245,13 +277,18 @@ struct CanvasToolbarView: View {
         .accessibilityLabel(title)
         .help(title)
     }
+
 }
 
-private enum CanvasToolbarInspector {
+private enum CanvasToolbarInspector: Identifiable {
     case drawing
+    case width
+    case color
     case eraser
     case shapes
     case layers
+
+    var id: Self { self }
 }
 
 private struct CanvasChromeIcon: View {

@@ -110,6 +110,7 @@ final class NoteNerdsLaunchTests: XCTestCase {
         expandCanvasToolbarIfNeeded(in: application)
         application.buttons["Undo"].tap()
         application.buttons["Redo"].tap()
+        application.scrollViews["Expanded tools"].swipeDown()
         application.buttons["Eraser"].tap()
         application.buttons["Object eraser"].tap()
         XCTAssertEqual(application.buttons["Drawing tools"].value as? String, "Highlighter")
@@ -309,8 +310,9 @@ final class NoteNerdsLaunchTests: XCTestCase {
         application.buttons["New notebook"].tap()
 
         XCTAssertTrue(application.buttons["Drawing tools"].waitForExistence(timeout: 2))
-        XCTAssertFalse(application.buttons["Stroke width"].exists)
-        XCTAssertFalse(application.buttons["Ink color"].exists)
+        XCTAssertTrue(application.buttons["Stroke width"].exists)
+        XCTAssertTrue(application.buttons["Ink color"].exists)
+        XCTAssertTrue(application.buttons["Lasso"].exists)
         XCTAssertTrue(application.buttons["Eraser"].exists)
         XCTAssertTrue(application.buttons["Canvas browser"].exists)
         XCTAssertTrue(application.buttons["New canvas"].exists)
@@ -431,6 +433,7 @@ final class NoteNerdsLaunchTests: XCTestCase {
         toolsAttachment.lifetime = .keepAlways
         add(toolsAttachment)
 
+        dismissPopover(in: application, waitingFor: "Ballpoint")
         application.buttons["Ink color"].tap()
         XCTAssertTrue(application.buttons["Black"].exists)
         XCTAssertTrue(application.buttons["Orange"].exists)
@@ -443,8 +446,7 @@ final class NoteNerdsLaunchTests: XCTestCase {
         add(colorAttachment)
         application.buttons["Black"].tap()
 
-        dismissPopover(in: application)
-        application.buttons["Drawing tools"].tap()
+        dismissPopover(in: application, waitingFor: "Black")
         application.buttons["Stroke width"].tap()
         for width in ["Extra fine", "Fine", "Medium", "Bold", "Extra bold"] {
             XCTAssertTrue(application.buttons[width].exists)
@@ -455,7 +457,7 @@ final class NoteNerdsLaunchTests: XCTestCase {
         add(widthAttachment)
         application.buttons["Medium"].tap()
 
-        dismissPopover(in: application)
+        dismissPopover(in: application, waitingFor: "Extra fine")
         application.buttons["Eraser"].tap()
         XCTAssertTrue(application.buttons["Object eraser"].exists)
         XCTAssertTrue(application.buttons["Pixel eraser"].exists)
@@ -475,11 +477,10 @@ final class NoteNerdsLaunchTests: XCTestCase {
         }
     }
 }
-
 private extension NoteNerdsLaunchTests {
-    private func dismissPopover(in application: XCUIApplication) {
+    private func dismissPopover(in application: XCUIApplication, waitingFor label: String) {
         application.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.75)).tap()
-        XCTAssertTrue(application.buttons["Stroke width"].waitForNonExistence(timeout: 2))
+        XCTAssertTrue(application.buttons[label].waitForNonExistence(timeout: 2))
     }
 
     private func expandCanvasToolbarIfNeeded(in application: XCUIApplication) {

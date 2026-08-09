@@ -1,6 +1,29 @@
 import PencilKit
 import UIKit
 
+enum CanvasOverlayPresentation {
+    static func requiresSelectionOverlay(
+        strokeCount: Int,
+        nonStrokeObjectCount: Int,
+        isLassoEnabled: Bool,
+        isShapePlacementEnabled: Bool
+    ) -> Bool {
+        nonStrokeObjectCount > 0
+            || isShapePlacementEnabled
+            || (isLassoEnabled && strokeCount > 0)
+    }
+}
+
+enum CanvasOverlayModelReconciliation {
+    static func requiresRefresh(
+        currentStrokes: [Stroke],
+        incomingStrokes: [Stroke],
+        isLassoEnabled: Bool
+    ) -> Bool {
+        isLassoEnabled && currentStrokes != incomingStrokes
+    }
+}
+
 extension PencilCanvasView {
     func bringCanvasOverlaysToFront(in canvasView: PKCanvasView, coordinator: Coordinator) {
         for tag in 8_417...8_420 {
@@ -17,12 +40,18 @@ extension PencilCanvasView {
     }
 
     func updateObjectOverlays(in canvasView: PKCanvasView, coordinator: Coordinator) {
-        guard coordinator.overlayObjects != nonStrokeObjects
+        guard CanvasOverlayModelReconciliation.requiresRefresh(
+                currentStrokes: coordinator.overlayStrokes,
+                incomingStrokes: strokes,
+                isLassoEnabled: configuration.tool == .lasso
+              )
+                || coordinator.overlayObjects != nonStrokeObjects
                 || coordinator.overlayAssets != assets
                 || coordinator.highlightedStrokeIDs != highlightedStrokeIDs
                 || coordinator.isLassoOverlayEnabled != (configuration.tool == .lasso)
                 || coordinator.isTextPlacementOverlayEnabled != isTextToolActive
                 || coordinator.shapePlacementKind != shapePlacementKind else { return }
+        coordinator.overlayStrokes = strokes
         coordinator.overlayObjects = nonStrokeObjects
         coordinator.overlayAssets = assets
         coordinator.highlightedStrokeIDs = highlightedStrokeIDs
@@ -37,7 +66,12 @@ extension PencilCanvasView {
         canvasView.viewWithTag(selectionOverlayTag)?.removeFromSuperview()
         canvasView.viewWithTag(highlightOverlayTag)?.removeFromSuperview()
         canvasView.viewWithTag(textPlacementOverlayTag)?.removeFromSuperview()
-        if !nonStrokeObjects.isEmpty || shapePlacementKind != nil {
+        if CanvasOverlayPresentation.requiresSelectionOverlay(
+            strokeCount: strokes.count,
+            nonStrokeObjectCount: nonStrokeObjects.count,
+            isLassoEnabled: configuration.tool == .lasso,
+            isShapePlacementEnabled: shapePlacementKind != nil
+        ) {
             addObjectOverlays(
                 to: canvasView,
                 coordinator: coordinator,

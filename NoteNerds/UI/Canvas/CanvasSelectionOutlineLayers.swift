@@ -44,6 +44,10 @@ final class CanvasSelectionOutlineLayers {
     private let selectionBorder = CAShapeLayer()
     private let selectionHandles = CAShapeLayer()
     private let lassoOutline = CanvasLassoOutlineLayer()
+    var isSelectionVisible: Bool { !selectionBorder.isHidden && !selectionHandles.isHidden }
+    var isLassoVisible: Bool { !lassoOutline.isHidden }
+    var selectionPathBounds: CGRect? { selectionBorder.path?.boundingBox }
+    var lassoPathBounds: CGRect? { lassoOutline.path?.boundingBox }
 
     init() {
         selectionBorder.fillColor = UIColor.clear.cgColor

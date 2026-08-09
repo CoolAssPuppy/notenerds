@@ -53,15 +53,7 @@ struct PencilCanvasView: UIViewRepresentable {
     func makeUIView(context: Context) -> PKCanvasView {
         let canvasView = PKCanvasView()
         let coordinator = context.coordinator
-        let pencilInteraction = UIPencilInteraction()
-        pencilInteraction.delegate = context.coordinator
-        canvasView.addInteraction(pencilInteraction)
-        let hoverRecognizer = UIHoverGestureRecognizer(
-            target: context.coordinator,
-            action: #selector(Coordinator.handlePencilHover(_:))
-        )
-        hoverRecognizer.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.pencil.rawValue)]
-        canvasView.addGestureRecognizer(hoverRecognizer)
+        PencilCanvasInputAccessories.install(on: canvasView, coordinator: coordinator)
         configureViewport(canvasView)
         addPlannerSwipeRecognizers(to: canvasView, coordinator: context.coordinator)
         updatePlannerContext(context.coordinator)
@@ -96,7 +88,8 @@ struct PencilCanvasView: UIViewRepresentable {
     func updateUIView(_ canvasView: PKCanvasView, context: Context) {
         let shouldRedraw = PencilCanvasModelReconciliation.requiresRedraw(
             current: context.coordinator.canonicalStrokes,
-            incoming: strokes
+            incoming: strokes,
+            isUsingTool: context.coordinator.isUsingTool
         )
         context.coordinator.configuration = configuration
         context.coordinator.canonicalStrokes = strokes

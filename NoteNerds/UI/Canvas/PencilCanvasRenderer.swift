@@ -2,8 +2,12 @@ import PencilKit
 import UIKit
 
 enum PencilCanvasModelReconciliation {
-    static func requiresRedraw(current: [Stroke], incoming: [Stroke]) -> Bool {
-        current != incoming
+    static func requiresRedraw(
+        current: [Stroke],
+        incoming: [Stroke],
+        isUsingTool: Bool = false
+    ) -> Bool {
+        !isUsingTool && current != incoming
     }
 }
 

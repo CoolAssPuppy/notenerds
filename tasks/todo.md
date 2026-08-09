@@ -1,5 +1,21 @@
 # Current work
 
+## Prevent Pencil and lasso regressions
+
+- [x] Audit the current tests against every reported Pencil and lasso failure.
+- [x] Test repeated partial PencilKit updates during one stroke.
+- [x] Test rapid consecutive strokes and completed sample persistence.
+- [x] Test that canvas construction does not add a Pencil hover target.
+- [x] Test live lasso and selected-boundary vector feedback on an infinite canvas.
+- [x] Run focused tests, the complete behavior suite, strict lint, and project checks.
+- [x] Commit and push the regression suite.
+
+### Review
+
+- Six PencilKit integration tests cover repeated partial updates, rapid consecutive strokes, same-count geometry changes, model refreshes during Pencil contact, hover tracking without a visual target, and vector lasso feedback at infinite-canvas coordinates.
+- The model redraw policy now refuses to replace PencilKit content while a tool is in use. The completed gesture publishes once and triggers normal model reconciliation afterward.
+- The focused regression suite, complete behavior suite, strict SwiftLint, release-tool tests, XcodeGen regeneration, and whitespace checks pass.
+
 ## Restore Pencil writing and lasso feedback
 
 - [x] Reproduce the missing lasso outline, Pencil target, slow ink, and dropped writing.

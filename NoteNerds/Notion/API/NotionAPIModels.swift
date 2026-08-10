@@ -104,6 +104,25 @@ enum NotionAPIError: Error, Equatable, Sendable {
     case duplicateManagedSections
     case payloadTooLarge
     case httpStatus(Int)
+    case rejected(status: Int, code: String, message: String, requestID: String?)
+
+    var statusCode: Int? {
+        switch self {
+        case let .httpStatus(status), let .rejected(status, _, _, _): status
+        default: nil
+        }
+    }
+
+    var userFacingMessage: String? {
+        switch self {
+        case .payloadTooLarge:
+            "A Note Nerds reference is larger than this Notion workspace allows."
+        case let .rejected(_, _, message, _):
+            "Notion rejected the update: \(message)"
+        default:
+            nil
+        }
+    }
 }
 
 struct NotionPageSummary: Equatable, Identifiable, Sendable {
@@ -130,8 +149,10 @@ struct NotionPageBinding: Codable, Equatable, Sendable {
 }
 
 struct NotionNotebookRemoteFiles: Equatable, Sendable {
-    let nativeUploadID: String
-    let pdfUploadID: String
+    static let empty = NotionNotebookRemoteFiles(nativeUploadID: nil, pdfUploadID: nil)
+
+    let nativeUploadID: String?
+    let pdfUploadID: String?
 }
 
 enum NotionJSONValue: Encodable, Equatable, Sendable {

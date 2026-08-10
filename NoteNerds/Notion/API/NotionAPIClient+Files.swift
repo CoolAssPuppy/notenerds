@@ -11,6 +11,8 @@ extension NotionAPIClient {
         contentType: String
     ) async throws -> String {
         try Self.validateUpload(data: data, filename: filename, contentType: contentType)
+        let workspaceLimit = try await workspaceMaximumFileByteCount()
+        guard data.count <= workspaceLimit else { throw NotionAPIError.payloadTooLarge }
         let partCount = data.count <= Self.singlePartLimit
             ? 1
             : Int(ceil(Double(data.count) / Double(Self.multipartPartSize)))
@@ -37,6 +39,19 @@ extension NotionAPIClient {
             }
         }
         return upload.id
+    }
+
+    private func workspaceMaximumFileByteCount() async throws -> Int {
+        let request = baseRequest(path: "users/me", method: "GET")
+        let response = try JSONDecoder().decode(
+            NotionBotUserResponse.self,
+            from: try await send(request)
+        )
+        let maximum = response.bot.workspaceLimits.maximumFileByteCount
+        guard response.type == "bot", maximum > 0, Int64(maximum) <= Self.maximumFileSize else {
+            throw NotionAPIError.invalidResponse
+        }
+        return maximum
     }
 
     private func createFileUpload(
@@ -150,6 +165,27 @@ private struct FilePart {
 private struct FileUploadResponse: Decodable {
     let id: String
     let status: String
+}
+
+private struct NotionBotUserResponse: Decodable {
+    let type: String
+    let bot: NotionBotUser
+}
+
+private struct NotionBotUser: Decodable {
+    let workspaceLimits: NotionWorkspaceLimits
+
+    private enum CodingKeys: String, CodingKey {
+        case workspaceLimits = "workspace_limits"
+    }
+}
+
+private struct NotionWorkspaceLimits: Decodable {
+    let maximumFileByteCount: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case maximumFileByteCount = "max_file_upload_size_in_bytes"
+    }
 }
 
 private struct MultipartFormFile {

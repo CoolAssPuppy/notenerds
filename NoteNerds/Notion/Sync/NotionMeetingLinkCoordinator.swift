@@ -40,9 +40,9 @@ actor NotionMeetingLinkCoordinator: NotionMeetingLinkCoordinating {
                 return .needsSelection(meetings)
             }
             return try await link(meeting: meeting, notebookID: notebookID)
-        } catch NotionAPIError.httpStatus(403) {
+        } catch let error as NotionAPIError where error.statusCode == 403 {
             return .permissionRequired
-        } catch NotionAPIError.httpStatus(400) {
+        } catch let error as NotionAPIError where error.statusCode == 400 {
             return .unavailable
         }
     }
@@ -53,9 +53,9 @@ actor NotionMeetingLinkCoordinator: NotionMeetingLinkCoordinating {
                 $0.id == meetingID && isActive($0)
             }) else { return .noActiveMeeting }
             return try await link(meeting: meeting, notebookID: notebookID)
-        } catch NotionAPIError.httpStatus(403) {
+        } catch let error as NotionAPIError where error.statusCode == 403 {
             return .permissionRequired
-        } catch NotionAPIError.httpStatus(400) {
+        } catch let error as NotionAPIError where error.statusCode == 400 {
             return .unavailable
         }
     }
@@ -67,7 +67,7 @@ actor NotionMeetingLinkCoordinator: NotionMeetingLinkCoordinating {
         for link in links {
             do {
                 try await api.trashMeetingLink(blockID: link.linkBlockID)
-            } catch NotionAPIError.httpStatus(404) {
+            } catch let error as NotionAPIError where error.statusCode == 404 {
                 // The link is already absent from Notion.
             }
         }

@@ -123,7 +123,7 @@ final class NotionLibraryPublisher: NotionLibraryPublishing {
             try await meetingLinkCoordinator?.removeLinks(notebookID: binding.notebookID)
             do {
                 try await api.trashNotebookPage(pageID: binding.pageID)
-            } catch NotionAPIError.httpStatus(404) {
+            } catch let error as NotionAPIError where error.statusCode == 404 {
                 // The Notion page is already gone, so local sync state can be cleared.
             }
             try await registry.recordDeletion(notebookID: binding.notebookID)

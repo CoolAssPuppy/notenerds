@@ -35,8 +35,7 @@ extension NotionAPIClient {
         files: NotionNotebookRemoteFiles
     ) async throws -> NotionPageBinding {
         guard UUID(uuidString: dataSourceID) != nil,
-              UUID(uuidString: files.nativeUploadID) != nil,
-              UUID(uuidString: files.pdfUploadID) != nil else {
+              Self.areValid(files: files) else {
             throw NotionAPIError.invalidIdentifier
         }
         let properties = try NotionPageProperties.make(snapshot: snapshot, files: files)
@@ -60,8 +59,7 @@ extension NotionAPIClient {
         files: NotionNotebookRemoteFiles
     ) async throws -> NotionPageBinding {
         guard UUID(uuidString: pageID) != nil,
-              UUID(uuidString: files.nativeUploadID) != nil,
-              UUID(uuidString: files.pdfUploadID) != nil else {
+              Self.areValid(files: files) else {
             throw NotionAPIError.invalidIdentifier
         }
         let properties = try NotionPageProperties.make(snapshot: snapshot, files: files)
@@ -94,6 +92,12 @@ extension NotionAPIClient {
         guard response.id == pageID, response.inTrash else {
             throw NotionAPIError.invalidResponse
         }
+    }
+
+    private static func areValid(files: NotionNotebookRemoteFiles) -> Bool {
+        [files.nativeUploadID, files.pdfUploadID]
+            .compactMap { $0 }
+            .allSatisfy { UUID(uuidString: $0) != nil }
     }
 }
 

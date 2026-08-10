@@ -2,6 +2,7 @@ import Foundation
 
 extension AppModel {
     func importExternalFile(at url: URL) {
+        if openNotebookDeepLink(url) { return }
         let hasAccess = url.startAccessingSecurityScopedResource()
         defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
         do {
@@ -77,6 +78,21 @@ extension AppModel {
 
     func notebook(_ id: NotebookID) -> Notebook? { library.notebook(id: id) }
     func asset(_ id: AssetID) -> DocumentAsset? { library.asset(id: id) }
+
+    private func openNotebookDeepLink(_ url: URL) -> Bool {
+        guard url.scheme?.lowercased() == "notenerds", url.host?.lowercased() == "notebook" else {
+            return false
+        }
+        let identifier = url.pathComponents.dropFirst().first
+        guard let identifier,
+              let rawValue = UUID(uuidString: identifier),
+              library.notebook(id: NotebookID(rawValue: rawValue)) != nil else {
+            presentedError = "This notebook is not available on this device."
+            return true
+        }
+        open(NotebookID(rawValue: rawValue))
+        return true
+    }
 
     func assets(in notebook: Notebook) -> [DocumentAsset] {
         let identifiers = Set(notebook.canvases.flatMap(\.layers).flatMap(\.objects).compactMap { object in

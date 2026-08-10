@@ -1,11 +1,10 @@
-import PDFKit
 import UIKit
 import XCTest
 @testable import NoteNerds
 
 @MainActor
 final class NotionPayloadBuilderTests: XCTestCase {
-    func testBuildCreatesRestorableArchivePDFPreviewAndMatchingContentHash() async throws {
+    func testBuildCreatesOnlyLowResolutionPreviewsAndAStableContentHash() async throws {
         let notebook = DomainFixtures.notebook()
         let library = LibraryState(notebooks: [notebook])
 
@@ -14,18 +13,16 @@ final class NotionPayloadBuilderTests: XCTestCase {
             library: library,
             exportedAt: DomainFixtures.fixedDate
         )
-        let encodedArchive = try NotionTransportFile.decode(payload.nativeArchive)
-        let restored = try NotionTransportArchive().decode(encodedArchive)
-
-        XCTAssertEqual(restored.package, NativeNotebookPackage(schemaVersion: .current, notebook: notebook))
-        XCTAssertEqual(restored.assets, [])
-        XCTAssertEqual(payload.snapshot.row.contentHash, NotionContentHasher.sha256Hex(of: payload.nativeArchive))
-        XCTAssertEqual(PDFDocument(data: payload.pdf)?.pageCount, notebook.canvases.count)
+        XCTAssertTrue(payload.nativeArchive.isEmpty)
+        XCTAssertTrue(payload.pdf.isEmpty)
+        XCTAssertEqual(payload.snapshot.row.contentHash.count, 64)
         let expectedCanvasIDs = Set(notebook.canvases.map { $0.id.rawValue.uuidString.lowercased() })
         XCTAssertEqual(Set(payload.previews.keys), expectedCanvasIDs)
         for preview in payload.previews.values {
             let image = try XCTUnwrap(UIImage(data: preview))
-            XCTAssertLessThanOrEqual(max(image.size.width, image.size.height), 1_024)
+            let width = try XCTUnwrap(image.cgImage?.width)
+            let height = try XCTUnwrap(image.cgImage?.height)
+            XCTAssertLessThanOrEqual(max(width, height), 512)
         }
     }
 
@@ -45,7 +42,8 @@ final class NotionPayloadBuilderTests: XCTestCase {
             exportedAt: DomainFixtures.fixedDate.addingTimeInterval(3_600)
         )
 
-        XCTAssertEqual(first.nativeArchive, second.nativeArchive)
+        XCTAssertTrue(first.nativeArchive.isEmpty)
+        XCTAssertTrue(second.nativeArchive.isEmpty)
         XCTAssertEqual(first.snapshot.row.contentHash, second.snapshot.row.contentHash)
     }
 
@@ -68,7 +66,7 @@ final class NotionPayloadBuilderTests: XCTestCase {
         }
     }
 
-    func testArchiveIncludesReferencedAssetsAndExcludesUnrelatedAssets() async throws {
+    func testReferencePayloadDoesNotCopyOriginalAssets() async throws {
         let referencedID = AssetID(rawValue: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!)
         let unrelatedID = AssetID(rawValue: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!)
         var notebook = DomainFixtures.notebook()
@@ -93,13 +91,11 @@ final class NotionPayloadBuilderTests: XCTestCase {
             library: library,
             exportedAt: DomainFixtures.fixedDate
         )
-        let encodedArchive = try NotionTransportFile.decode(payload.nativeArchive)
-        let restored = try NotionTransportArchive().decode(encodedArchive)
-
-        XCTAssertEqual(restored.assets.map(\.id), [referencedID])
+        XCTAssertTrue(payload.nativeArchive.isEmpty)
+        XCTAssertTrue(payload.pdf.isEmpty)
     }
 
-    func testMissingReferencedAssetStopsTheExport() async {
+    func testMissingReferencedAssetDoesNotBlockReferencePublishing() async throws {
         let missingID = AssetID(rawValue: UUID(uuidString: "44444444-4444-4444-4444-444444444444")!)
         var notebook = DomainFixtures.notebook()
         let layerID = notebook.canvases[0].layers[0].id
@@ -115,15 +111,13 @@ final class NotionPayloadBuilderTests: XCTestCase {
             )
         )
 
-        do {
-            _ = try await NotionNotebookPayloadBuilder().build(
-                notebook: notebook,
-                library: LibraryState(notebooks: [notebook]),
-                exportedAt: DomainFixtures.fixedDate
-            )
-            XCTFail("Expected a missing asset to fail")
-        } catch {
-            XCTAssertEqual(error as? NotionNotebookPayloadError, .missingAsset(missingID))
-        }
+        let payload = try await NotionNotebookPayloadBuilder().build(
+            notebook: notebook,
+            library: LibraryState(notebooks: [notebook]),
+            exportedAt: DomainFixtures.fixedDate
+        )
+
+        XCTAssertTrue(payload.nativeArchive.isEmpty)
+        XCTAssertTrue(payload.pdf.isEmpty)
     }
 }

@@ -1,5 +1,7 @@
 # Lessons
 
+- Diagnose an app integration with the credentials stored by the app. A browser session may belong to another account or workspace and cannot prove which Notion identity the app uses.
+- A successful retry action does not fix the request that failed. Preserve the external service's status and safe error message, confirm the account limit, and test that exact rejection before shipping another build.
 - Before sending a CloudKit build to TestFlight, deploy the development schema to production and verify `DocumentChange`, `DocumentAsset`, and the queryable and sortable `sequence` indexes there.
 - A Settings retry button must repeat the failed operation with the current library. Reloading credentials or connection state alone does not resend notebooks.
 - Center app icon artwork by its visible pixel bounds, not the font frame or text line box. Measure the exported mark before installing or shipping it.

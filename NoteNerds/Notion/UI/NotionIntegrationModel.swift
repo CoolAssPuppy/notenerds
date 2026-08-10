@@ -205,8 +205,12 @@ final class NotionIntegrationModel: ObservableObject {
             if let connection {
                 state = .connected(workspaceName: connection.credentials.workspaceName)
             }
-        } catch NotionAPIError.httpStatus(404) {
-            showFailure("A Notion notebook page is missing. Tap Sync now to create a replacement.")
+        } catch let error as NotionAPIError {
+            if error.statusCode == 404 {
+                showFailure("A Notion notebook page is missing. Tap Sync now to create a replacement.")
+            } else {
+                showFailure(error.userFacingMessage ?? "Your notebooks could not be sent to Notion.")
+            }
         } catch {
             showFailure("Your notebooks could not be sent to Notion.")
         }

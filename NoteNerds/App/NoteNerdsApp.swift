@@ -100,7 +100,12 @@ struct NoteNerdsApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(model: model, notion: notion)
-                .onOpenURL(perform: model.importExternalFile)
+                .onOpenURL { url in
+                    Task {
+                        await model.restoreLibrary()
+                        model.importExternalFile(at: url)
+                    }
+                }
         }
         .commands {
             CommandGroup(replacing: .newItem) {

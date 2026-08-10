@@ -2,7 +2,7 @@ import XCTest
 @testable import NoteNerds
 
 final class NotionSyncCoordinatorBehaviorTests: XCTestCase {
-    func testFirstSyncUploadsAllRepresentationsAndCreatesOneNotebookRow() async throws {
+    func testFirstSyncUploadsOnlyLegibleCanvasPreviewsAndCreatesOneNotebookRow() async throws {
         let store = CoordinatorStateStore(state: NotionSyncState(destination: destination))
         let registry = NotionSyncRegistry(store: store)
         let api = RecordingNotionSyncAPI()
@@ -14,10 +14,9 @@ final class NotionSyncCoordinatorBehaviorTests: XCTestCase {
         let state = try await registry.snapshot()
 
         XCTAssertEqual(result, .uploaded(pageID: Self.pageID))
-        XCTAssertEqual(events.filter { $0.hasPrefix("upload:") }.count, 4)
-        XCTAssertTrue(events.contains(
-            "upload:\(payload.snapshot.row.notebookID.lowercased()).notenerds.json"
-        ))
+        XCTAssertEqual(events.filter { $0.hasPrefix("upload:") }.count, 2)
+        XCTAssertFalse(events.contains { $0.hasSuffix(".notenerds.json") })
+        XCTAssertFalse(events.contains { $0.hasSuffix(".pdf") })
         XCTAssertTrue(events.contains("find:\(payload.snapshot.row.notebookID)"))
         XCTAssertTrue(events.contains("create:\(payload.snapshot.row.notebookID)"))
         XCTAssertFalse(events.contains(where: { $0.hasPrefix("update:") }))

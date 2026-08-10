@@ -30,6 +30,11 @@ targets:
         CFBundleDisplayName: Note Nerds
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLName: com.strategicnerds.notenerds
+            CFBundleURLSchemes:
+              - notenerds
         ITSAppUsesNonExemptEncryption: false
         NNNotionClientIDBase64: $(NOTION_CLIENT_ID_B64)
         NNNotionClientSecretBase64: $(NOTION_CLIENT_SECRET_B64)

@@ -24,17 +24,25 @@ final class NotionManagedPageBehaviorTests: XCTestCase {
         XCTAssertTrue(serializedChildren.contains("First typed note"))
         XCTAssertTrue(serializedChildren.contains("First handwriting"))
         XCTAssertTrue(serializedChildren.contains("Reference text"))
-        XCTAssertTrue(serializedChildren.contains("11111111-1111-1111-1111-111111111111"))
-        XCTAssertTrue(serializedChildren.contains("22222222-2222-2222-2222-222222222222"))
-        XCTAssertTrue(serializedChildren.contains("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
-        XCTAssertTrue(serializedChildren.contains("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+        XCTAssertTrue(
+            serializedChildren.contains("11111111-1111-1111-1111-111111111111"),
+            serializedChildren
+        )
+        XCTAssertTrue(
+            serializedChildren.contains("22222222-2222-2222-2222-222222222222"),
+            serializedChildren
+        )
         XCTAssertTrue(serializedChildren.contains("Last synced"))
         XCTAssertTrue(serializedChildren.contains(iso8601(DomainFixtures.fixedDate)))
         XCTAssertTrue(serializedChildren.contains("Note Nerds copy"))
-        XCTAssertTrue(serializedChildren.contains("Native notebook"))
-        XCTAssertTrue(serializedChildren.contains("PDF"))
-        XCTAssertEqual(serializedChildren.components(separatedBy: #""type":"file""#).count - 1, 1)
-        XCTAssertEqual(serializedChildren.components(separatedBy: #""type":"pdf""#).count - 1, 1)
+        XCTAssertTrue(serializedChildren.contains("Open in Note Nerds"))
+        XCTAssertEqual(
+            try linkedURL(plan.children[3]),
+            "notenerds://notebook/\(snapshot.row.notebookID)"
+        )
+        XCTAssertFalse(serializedChildren.contains("Native notebook"))
+        XCTAssertEqual(serializedChildren.components(separatedBy: #""type":"file""#).count - 1, 0)
+        XCTAssertEqual(serializedChildren.components(separatedBy: #""type":"pdf""#).count - 1, 0)
         XCTAssertEqual(serializedChildren.components(separatedBy: #""type":"callout""#).count - 1, 1)
         let firstRange = try XCTUnwrap(serializedChildren.range(of: "Opening"))
         let secondRange = try XCTUnwrap(serializedChildren.range(of: "Details"))
@@ -147,6 +155,15 @@ final class NotionManagedPageBehaviorTests: XCTestCase {
         return richText.compactMap { item in
             (item["text"] as? [String: String])?["content"]
         }
+    }
+
+    private func linkedURL(_ value: NotionJSONValue) throws -> String {
+        let object = try jsonObject(value)
+        let paragraph = try XCTUnwrap(object["paragraph"] as? [String: Any])
+        let richText = try XCTUnwrap(paragraph["rich_text"] as? [[String: Any]])
+        let text = try XCTUnwrap(richText.first?["text"] as? [String: Any])
+        let link = try XCTUnwrap(text["link"] as? [String: String])
+        return try XCTUnwrap(link["url"])
     }
 
     private func iso8601(_ date: Date) -> String {

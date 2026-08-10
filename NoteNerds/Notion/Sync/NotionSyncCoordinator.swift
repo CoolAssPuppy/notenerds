@@ -130,18 +130,8 @@ actor NotionSyncCoordinator {
 
     private func uploadRepresentations(
         _ payload: NotionNotebookPayload,
-        notebookID: String
+        notebookID _: String
     ) async throws -> UploadedRepresentations {
-        let nativeID = try await api.uploadFile(
-            data: payload.nativeArchive,
-            filename: "\(notebookID.lowercased()).notenerds.json",
-            contentType: "application/json"
-        )
-        let pdfID = try await api.uploadFile(
-            data: payload.pdf,
-            filename: "\(notebookID.lowercased()).pdf",
-            contentType: "application/pdf"
-        )
         var previewIDs: [String: String] = [:]
         for canvas in payload.snapshot.canvases {
             guard let preview = payload.previews[canvas.canvasID] else {
@@ -154,7 +144,7 @@ actor NotionSyncCoordinator {
             )
         }
         return UploadedRepresentations(
-            files: NotionNotebookRemoteFiles(nativeUploadID: nativeID, pdfUploadID: pdfID),
+            files: .empty,
             previewIDs: previewIDs
         )
     }
@@ -219,9 +209,6 @@ actor NotionSyncCoordinator {
     }
 
     private func validate(_ payload: NotionNotebookPayload) throws {
-        guard !payload.nativeArchive.isEmpty, !payload.pdf.isEmpty else {
-            throw NotionAPIError.emptyFile
-        }
         for canvas in payload.snapshot.canvases {
             guard let preview = payload.previews[canvas.canvasID], !preview.isEmpty else {
                 throw NotionManagedPageError.missingPreview(canvas.canvasID)
@@ -231,17 +218,13 @@ actor NotionSyncCoordinator {
 
     private static func failureCategory(_ error: Error) -> NotionSyncFailure {
         guard let apiError = error as? NotionAPIError else { return .persistent }
-        return switch apiError {
-        case .httpStatus(401): NotionSyncFailure.authentication
-        case .httpStatus(403): NotionSyncFailure.accessDenied
-        case .httpStatus(404): NotionSyncFailure.missingRemotePage
-        case .httpStatus(429): NotionSyncFailure.rateLimited
-        case .httpStatus(500), .httpStatus(502), .httpStatus(503), .httpStatus(504):
-            NotionSyncFailure.serviceUnavailable
-        case .invalidIdentifier, .invalidFilename, .invalidContentType, .emptyFile,
-             .invalidResponse, .repeatedCursor, .paginationLimit, .duplicateNotebookRows,
-             .duplicateManagedSections, .payloadTooLarge, .httpStatus:
-            NotionSyncFailure.validation
+        return switch apiError.statusCode {
+        case 401: NotionSyncFailure.authentication
+        case 403: NotionSyncFailure.accessDenied
+        case 404: NotionSyncFailure.missingRemotePage
+        case 429: NotionSyncFailure.rateLimited
+        case 500, 502, 503, 504: NotionSyncFailure.serviceUnavailable
+        case .some, nil: NotionSyncFailure.validation
         }
     }
 

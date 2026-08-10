@@ -106,6 +106,7 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
 
         await model.sync(library)
         XCTAssertEqual(model.state, .actionNeeded)
+        XCTAssertEqual(model.failureMessage, "Notion rejected the update: Too large.")
         await model.retry(library: library)
 
         XCTAssertEqual(model.state, .connected(workspaceName: "Strategic Nerds"))
@@ -319,7 +320,7 @@ private final class StubLibraryPublisher: NotionLibraryPublishing {
         publishedLibraries.append(library)
         if remainingFailureCount > 0 {
             remainingFailureCount -= 1
-            throw NotionAPIError.httpStatus(500)
+            throw NotionAPIError.rejected(status: 400, code: "validation_error", message: "Too large.", requestID: nil)
         }
         return report
     }

@@ -49,8 +49,9 @@ enum NotionPageProperties {
         return date(value)
     }
 
-    private static func file(_ uploadID: String) -> NotionJSONValue {
-        .object([
+    private static func file(_ uploadID: String?) -> NotionJSONValue {
+        guard let uploadID else { return .object(["files": .array([])]) }
+        return .object([
             "files": .array([
                 .object([
                     "type": .string("file_upload"),

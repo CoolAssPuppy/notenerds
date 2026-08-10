@@ -3,6 +3,19 @@ import XCTest
 
 @MainActor
 final class AppSessionPersistenceBehaviorTests: XCTestCase {
+    func testNotebookDeepLinkOpensTheMatchingICloudNotebook() async throws {
+        let notebook = Notebook(title: "Linked notebook", canvases: [Canvas(title: "Canvas 1")])
+        let model = AppModel(automaticallyRestore: false)
+        model.library = LibraryState(notebooks: [notebook])
+
+        model.importExternalFile(
+            at: URL(string: "notenerds://notebook/\(notebook.id.rawValue.uuidString.lowercased())")!
+        )
+
+        XCTAssertEqual(model.selectedNotebookID, notebook.id)
+        XCTAssertNil(model.presentedError)
+    }
+
     func testRestoreRepairsAndPersistsDuplicateCanvasIdentifiers() async throws {
         let directoryURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directoryURL) }

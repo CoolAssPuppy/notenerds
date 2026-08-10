@@ -3,7 +3,7 @@ import XCTest
 
 @MainActor
 final class NotionEndToEndIntegrationTests: XCTestCase {
-    func testNotebookArchiveIsPublishedBeforeTheFolderManifest() async throws {
+    func testNotebookReferenceIsPublishedBeforeTheFolderManifest() async throws {
         let destination = NotionDestination(
             databaseID: "11111111-1111-1111-1111-111111111111",
             dataSourceID: "22222222-2222-2222-2222-222222222222"
@@ -198,8 +198,7 @@ final class NotionEndToEndIntegrationTests: XCTestCase {
         XCTAssertNotNil(state.binding(notebookID: notebookID))
     }
 
-    // swiftlint:disable:next function_body_length
-    func testPublishThenRestoreRecreatesTheNotebookFolderAndAsset() async throws {
+    func testPublishCreatesAReferenceWithoutCopyingTheNotebookOrAssetToNotion() async throws {
         let destination = NotionDestination(
             databaseID: "11111111-1111-1111-1111-111111111111",
             dataSourceID: "22222222-2222-2222-2222-222222222222"
@@ -240,20 +239,14 @@ final class NotionEndToEndIntegrationTests: XCTestCase {
             registry: registry,
             now: { DomainFixtures.fixedDate }
         ).publish(source)
-        let restoreService = NotionLibraryRestoreService(
-            loader: NotionRemoteLibraryLoader(api: notion, registry: registry)
-        )
-        let candidates = try await restoreService.prepare(local: LibraryState())
-        let restored = try restoreService.complete(
-            local: LibraryState(),
-            choices: Dictionary(uniqueKeysWithValues: candidates.map { ($0.notebookID, .useNotion) })
-        )
+        let filenames = await notion.uploadedFilenames()
 
         XCTAssertEqual(report.uploadedNotebookCount, 1)
         XCTAssertTrue(report.didUploadManifest)
-        XCTAssertEqual(restored.folder(id: folder.id), folder)
-        XCTAssertEqual(restored.notebook(id: notebook.id), notebook)
-        XCTAssertEqual(restored.asset(id: assetID), asset)
+        XCTAssertEqual(filenames.filter { $0.hasSuffix(".png") }.count, notebook.canvases.count)
+        XCTAssertTrue(filenames.contains("library-manifest.json"))
+        XCTAssertFalse(filenames.contains { $0.hasSuffix(".notenerds.json") })
+        XCTAssertFalse(filenames.contains { $0.hasSuffix(".pdf") })
     }
 }
 
@@ -281,6 +274,7 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
 
     private let manifestPageID: String
     private var uploads: [String: Data] = [:]
+    private var uploadedFileNames: [String] = []
     private var manifestUploadID: String?
     private var manifestUploadSequence = 0
     private var manifestRootID: String?
@@ -296,6 +290,7 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
         uploadSequence += 1
         let id = String(format: "AAAAAAAA-AAAA-AAAA-AAAA-%012d", uploadSequence)
         uploads[id] = data
+        uploadedFileNames.append(filename)
         if filename == "library-manifest.json" {
             manifestUploadID = id
             manifestUploadSequence += 1
@@ -316,7 +311,7 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
         let pageID = String(format: "BBBBBBBB-BBBB-BBBB-BBBB-%012d", notebookFiles.count + 1)
         notebookFiles[snapshot.row.notebookID] = NotebookFileRecord(
             pageID: pageID,
-            uploadID: files.nativeUploadID,
+            uploadID: files.nativeUploadID ?? "",
             contentHash: snapshot.row.contentHash
         )
         return NotionPageBinding(pageID: pageID, url: nil)
@@ -330,7 +325,7 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
         events.append("notebook")
         notebookFiles[snapshot.row.notebookID] = NotebookFileRecord(
             pageID: pageID,
-            uploadID: files.nativeUploadID,
+            uploadID: files.nativeUploadID ?? "",
             contentHash: snapshot.row.contentHash
         )
         return NotionPageBinding(pageID: pageID, url: nil)
@@ -406,6 +401,10 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
 
     func manifestUploadCount() -> Int {
         manifestUploadSequence
+    }
+
+    func uploadedFilenames() -> [String] {
+        uploadedFileNames
     }
 
     func trashedNotebookPageIDs() -> [String] {

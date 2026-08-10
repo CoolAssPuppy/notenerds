@@ -95,7 +95,7 @@ struct NotionAPIClient: Sendable {
                 }
                 if (200..<300).contains(response.statusCode) { return data }
                 guard attempt < maximumRetryCount, Self.isRetryable(response.statusCode) else {
-                    throw NotionAPIError.httpStatus(response.statusCode)
+                    throw Self.responseError(status: response.statusCode, data: data)
                 }
                 let delay = retryDelay(response: response, attempt: attempt)
                 try await sleeper.sleep(seconds: delay)
@@ -123,7 +123,7 @@ struct NotionAPIClient: Sendable {
                 }
                 if (200..<300).contains(response.statusCode) { return data }
                 guard attempt < maximumRetryCount, Self.isRetryable(response.statusCode) else {
-                    throw NotionAPIError.httpStatus(response.statusCode)
+                    throw Self.responseError(status: response.statusCode, data: data)
                 }
                 try await sleeper.sleep(
                     seconds: retryDelay(response: response, attempt: attempt)
@@ -214,6 +214,25 @@ struct NotionAPIClient: Sendable {
         status == 429 || [500, 502, 503, 504].contains(status)
     }
 
+    private static func responseError(status: Int, data: Data) -> NotionAPIError {
+        guard let response = try? JSONDecoder().decode(NotionErrorResponse.self, from: data),
+              let code = bounded(response.code, maximumCount: 200),
+              let message = bounded(response.message, maximumCount: 1_000) else {
+            return .httpStatus(status)
+        }
+        return .rejected(
+            status: status,
+            code: code,
+            message: message,
+            requestID: bounded(response.requestID, maximumCount: 200)
+        )
+    }
+
+    private static func bounded(_ value: String?, maximumCount: Int) -> String? {
+        guard let value, !value.isEmpty else { return nil }
+        return String(value.prefix(maximumCount))
+    }
+
     private func retryDelay(response: HTTPURLResponse, attempt: Int) -> TimeInterval {
         if response.statusCode == 429,
            let value = response.value(forHTTPHeaderField: "Retry-After"),
@@ -226,6 +245,17 @@ struct NotionAPIClient: Sendable {
     private func exponentialDelay(attempt: Int) -> TimeInterval {
         let base = min(pow(2, Double(attempt)), 30)
         return min(base + retryJitter(0...base), 30)
+    }
+}
+
+private struct NotionErrorResponse: Decodable {
+    let code: String?
+    let message: String?
+    let requestID: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case code, message
+        case requestID = "request_id"
     }
 }
 

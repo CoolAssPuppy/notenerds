@@ -28,6 +28,36 @@ final class NotionAPIClientBehaviorTests: XCTestCase {
         }
     }
 
+    func testRejectedResponseKeepsNotionCodeMessageAndRequestID() async {
+        let rejection = """
+        {"object":"error","status":400,"code":"validation_error",
+        "message":"The file is too large.","request_id":"request-123"}
+        """
+        let transport = StubNotionTransport(responses: [
+            .json(400, rejection)
+        ])
+        let client = NotionAPIClient(
+            accessToken: "token",
+            transport: transport,
+            maximumRetryCount: 0
+        )
+
+        do {
+            _ = try await client.send(client.baseRequest(path: "file_uploads", method: "POST"))
+            XCTFail("Expected Notion to reject the request")
+        } catch {
+            XCTAssertEqual(
+                error as? NotionAPIError,
+                .rejected(
+                    status: 400,
+                    code: "validation_error",
+                    message: "The file is too large.",
+                    requestID: "request-123"
+                )
+            )
+        }
+    }
+
     func testSearchPagesUsesCurrentHeadersAndFollowsPagination() async throws {
         let transport = StubNotionTransport(responses: [
             .json(200, searchResponse(idSuffix: "01", title: "Projects", nextCursor: "next")),

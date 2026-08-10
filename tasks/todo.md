@@ -1,5 +1,31 @@
 # Current work
 
+## Publish the Notion reference build
+
+- [x] Finish the preview-only Notion change and its focused checks.
+- [ ] Commit the verified change.
+- [ ] Run the release preflight and create TestFlight build 19.
+- [ ] Confirm Apple accepts build 19 for TestFlight.
+- [ ] Push the release commit and record the delivery result.
+
+## Make Notion a lightweight notebook reference
+
+- [x] Add failing tests for preview-only publishing and an app deep link.
+- [x] Stop building and uploading native notebook archives and full PDFs.
+- [x] Reduce canvas previews to a legible low-resolution image.
+- [x] Add an Open in Note Nerds link to each managed Notion page.
+- [x] Keep workspace-aware upload limits for previews and the small manifest.
+- [x] Run focused Notion checks, strict lint, and `git diff --check`.
+- [x] Report the verified result before another TestFlight upload.
+
+### Notion reference review
+
+- Each canvas is published as a PNG with a longest edge of 512 pixels. Notion receives no native notebook, full PDF, or copied document assets.
+- Each managed notebook page includes searchable text and an `Open in Note Nerds` link to the matching notebook stored on the device through iCloud.
+- Uploads check the connected Notion workspace limit before sending a file. Rejected requests retain Notion's safe error message for Settings.
+- The focused Notion and deep-link checks passed 54 tests with 0 failures. The result is `/tmp/NoteNerds-NotionReference-Final/Logs/Test/Test-NoteNerds-2026.08.10_08-35-46-+0100.xcresult`.
+- Strict SwiftLint passed with 0 violations. The generic iOS Simulator build and `git diff --check` passed.
+
 ## Fix iCloud and Notion sync errors
 
 - [x] Trace the two user-visible errors to their underlying failures.

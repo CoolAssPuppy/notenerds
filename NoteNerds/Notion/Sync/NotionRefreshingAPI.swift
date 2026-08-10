@@ -86,7 +86,7 @@ actor NotionRefreshingAPI: NotionSyncAPI {
         }
         do {
             return try await operation(apiFactory(current.credentials.accessToken))
-        } catch let error as NotionAPIError where error == .httpStatus(401) {
+        } catch let error as NotionAPIError where error.statusCode == 401 {
             let updated = try await refresh()
             return try await operation(apiFactory(updated.credentials.accessToken))
         }

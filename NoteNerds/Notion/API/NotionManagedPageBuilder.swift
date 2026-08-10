@@ -17,13 +17,17 @@ enum NotionManagedPageBuilder {
     static func plan(
         snapshot: NotionNotebookSnapshot,
         previewUploadIDs: [String: String],
-        files: NotionNotebookRemoteFiles,
+        files _: NotionNotebookRemoteFiles,
         syncedAt: Date
     ) throws -> NotionManagedPagePlan {
         var children = [
             code(marker),
             paragraph("Notebook ID: \(snapshot.row.notebookID)"),
-            callout(metadata(snapshot: snapshot, syncedAt: syncedAt))
+            callout(metadata(snapshot: snapshot, syncedAt: syncedAt)),
+            linkedParagraph(
+                "Open in Note Nerds",
+                url: "notenerds://notebook/\(snapshot.row.notebookID.lowercased())"
+            )
         ]
         for canvas in snapshot.canvases {
             guard let previewID = previewUploadIDs[canvas.canvasID] else {
@@ -43,8 +47,6 @@ enum NotionManagedPageBuilder {
             )
             try appendSection(title: "PDF text", values: canvas.embeddedPDFText, to: &children)
         }
-        children.append(pdf(uploadID: files.pdfUploadID, caption: "PDF"))
-        children.append(file(uploadID: files.nativeUploadID, caption: "Native notebook"))
         return NotionManagedPagePlan(
             root: .object([
                 "type": .string("toggle"),
@@ -95,6 +97,23 @@ enum NotionManagedPageBuilder {
         ])
     }
 
+    private static func linkedParagraph(_ text: String, url: String) -> NotionJSONValue {
+        .object([
+            "type": .string("paragraph"),
+            "paragraph": .object([
+                "rich_text": .array([
+                    .object([
+                        "type": .string("text"),
+                        "text": .object([
+                            "content": .string(text),
+                            "link": .object(["url": .string(url)])
+                        ])
+                    ])
+                ])
+            ])
+        ])
+    }
+
     private static func callout(_ text: String) -> NotionJSONValue {
         .object([
             "type": .string("callout"),
@@ -118,28 +137,6 @@ enum NotionManagedPageBuilder {
             "image": .object([
                 "type": .string("file_upload"),
                 "file_upload": .object(["id": .string(uploadID)])
-            ])
-        ])
-    }
-
-    private static func file(uploadID: String, caption: String) -> NotionJSONValue {
-        .object([
-            "type": .string("file"),
-            "file": .object([
-                "type": .string("file_upload"),
-                "file_upload": .object(["id": .string(uploadID)]),
-                "caption": .array([richText(caption)])
-            ])
-        ])
-    }
-
-    private static func pdf(uploadID: String, caption: String) -> NotionJSONValue {
-        .object([
-            "type": .string("pdf"),
-            "pdf": .object([
-                "type": .string("file_upload"),
-                "file_upload": .object(["id": .string(uploadID)]),
-                "caption": .array([richText(caption)])
             ])
         ])
     }

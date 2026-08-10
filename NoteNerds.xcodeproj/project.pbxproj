@@ -29,6 +29,7 @@
 		156458AD942683A47B930792 /* ShapeToolbarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A724DED6CFA5F77ECCC69590 /* ShapeToolbarUITests.swift */; };
 		1567A5EB4286B9C214380715 /* CanvasTextEditingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72768733A741582CBAE86449 /* CanvasTextEditingSession.swift */; };
 		159F64DE0064DEB26DE9C909 /* NotionAppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2720D1EA814DD85775B7E76A /* NotionAppConfiguration.swift */; };
+		19341FCD3077D0313FC97F58 /* TrashSidebarDropTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9FA3BBC15AF3EE0B8EA797 /* TrashSidebarDropTarget.swift */; };
 		19C2823785AA610E7765D3F7 /* LocalDocumentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4B6B2419B3550A7A5A8DC01 /* LocalDocumentStore.swift */; };
 		1AE1AB9161DF5084398C186B /* NotionLoopbackRequestParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E467E4AE51592A88F52AD0 /* NotionLoopbackRequestParser.swift */; };
 		1C0D23FF2DEB3D52BF37CECE /* CanvasBrowserUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D47CCECA583591164947B37D /* CanvasBrowserUITests.swift */; };
@@ -373,6 +374,7 @@
 		79289856F226D18A053567E1 /* LocalLibraryRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLibraryRepository.swift; sourceTree = "<group>"; };
 		7B9AB1B4153AB309A7728857 /* AppModel+LibrarySynchronization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+LibrarySynchronization.swift"; sourceTree = "<group>"; };
 		7C4A31B9CB5A92FF94C023B4 /* NotionOAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionOAuth.swift; sourceTree = "<group>"; };
+		7C9FA3BBC15AF3EE0B8EA797 /* TrashSidebarDropTarget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashSidebarDropTarget.swift; sourceTree = "<group>"; };
 		7E2FA015D0BB033D151949BC /* PencilSqueezeBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilSqueezeBehavior.swift; sourceTree = "<group>"; };
 		80502B993BADA665B8C5FD87 /* LibraryBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryBehaviorTests.swift; sourceTree = "<group>"; };
 		8214D55C09DDC192332C7812 /* FolderIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderIconView.swift; sourceTree = "<group>"; };
@@ -602,6 +604,7 @@
 				973D163EA269A8C37576965A /* LibraryView.swift */,
 				A628C2FF531A9E0B2757FCC7 /* NotebookCanvasPreviewStack.swift */,
 				8B3A81FBA53AE525FA27F047 /* NotebookModifiedTime.swift */,
+				7C9FA3BBC15AF3EE0B8EA797 /* TrashSidebarDropTarget.swift */,
 			);
 			path = Library;
 			sourceTree = "<group>";
@@ -1305,6 +1308,7 @@
 				87E309B454387E0782C996F0 /* SystemFontCatalog.swift in Sources */,
 				67BE141155C4D6E4E85B66ED /* TextBlock+Typography.swift in Sources */,
 				B291F37DDF8F244DBBB20D74 /* ToolConfiguration.swift in Sources */,
+				19341FCD3077D0313FC97F58 /* TrashSidebarDropTarget.swift in Sources */,
 				FC47A5C620CF1BD9DB3CCFDA /* VectorEraser.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

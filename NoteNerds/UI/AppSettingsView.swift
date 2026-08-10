@@ -105,6 +105,10 @@ struct AppSettingsView: View {
         Section("Privacy") {
             Label("iCloud sync uses your private CloudKit database", systemImage: "lock.icloud")
             Label("Handwriting recognition runs on this iPad", systemImage: "hand.draw")
+            if let syncIssue = model.syncIssue {
+                Label(syncIssue, systemImage: "exclamationmark.icloud")
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 

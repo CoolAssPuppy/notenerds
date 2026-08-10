@@ -64,7 +64,12 @@ struct LibrarySidebarView: View {
         .listStyle(.sidebar)
         .navigationTitle("Note Nerds")
         .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 320)
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { libraryMenu } }
+        .toolbar {
+            if canSelectItems {
+                ToolbarItem(placement: .topBarTrailing) { selectionButton }
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) { sidebarFooter }
         .confirmationDialog(
             "Delete all items permanently?",
             isPresented: $isConfirmingEmptyTrash,
@@ -113,62 +118,84 @@ struct LibrarySidebarView: View {
         )
     }
 
-    private var libraryMenu: some View {
-        Menu("More", systemImage: AppSymbol.more) {
-            if [.files, .trash].contains(model.selectedSection) && model.searchQuery.isEmpty {
-                Button(isSelecting ? "Done" : "Select", systemImage: isSelecting ? "checkmark" : AppSymbol.select) {
-                    isSelecting.toggle()
-                    if !isSelecting { selectedItems = [] }
-                }
-            }
-            selectionActions
-            trashActions
-            Divider()
-            Button("App settings", systemImage: AppSymbol.settings) {
-                isAppSettingsPresented = true
-            }
-            privacyInformation
+    private var canSelectItems: Bool {
+        [.files, .trash].contains(model.selectedSection) && model.searchQuery.isEmpty
+    }
+
+    private var selectionButton: some View {
+        Button(isSelecting ? "Done" : "Select") {
+            isSelecting.toggle()
+            if !isSelecting { selectedItems = [] }
         }
+    }
+
+    private var sidebarFooter: some View {
+        VStack(spacing: 0) {
+            if isSelecting && !selectedItems.isEmpty {
+                selectionActions
+                Divider()
+            } else if shouldOfferEmptyTrash {
+                Button(role: .destructive) {
+                    isConfirmingEmptyTrash = true
+                } label: {
+                    sidebarFooterLabel("Empty Trash", systemImage: "trash.slash")
+                }
+                .buttonStyle(.plain)
+                Divider()
+            }
+            Button {
+                isAppSettingsPresented = true
+            } label: {
+                sidebarFooterLabel("Settings", systemImage: AppSymbol.settings)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.vertical, 6)
+        .background(.bar)
     }
 
     @ViewBuilder
     private var selectionActions: some View {
-        if isSelecting && !selectedItems.isEmpty {
-            if model.selectedSection == .files {
-                Menu("Move", systemImage: AppSymbol.folder) {
-                    Button("My Notebooks") { moveSelection(to: nil) }
-                    ForEach(availableMoveDestinations) { folder in
-                        Button(moveDestinationName(folder)) { moveSelection(to: folder.id) }
-                    }
+        if model.selectedSection == .files {
+            Menu {
+                Button("My Notebooks") { moveSelection(to: nil) }
+                ForEach(availableMoveDestinations) { folder in
+                    Button(moveDestinationName(folder)) { moveSelection(to: folder.id) }
                 }
-                Button("Move selected to Trash", systemImage: AppSymbol.trash, role: .destructive) {
-                    model.deleteItems(selectedItems)
-                    stopSelecting()
-                }
-            } else if model.selectedSection == .trash {
-                Button("Restore selected", systemImage: "arrow.uturn.backward") {
-                    model.restoreItems(selectedItems)
-                    stopSelecting()
-                }
+            } label: {
+                sidebarFooterLabel("Move", systemImage: AppSymbol.folder)
             }
+            .buttonStyle(.plain)
+            Button(role: .destructive) {
+                model.deleteItems(selectedItems)
+                stopSelecting()
+            } label: {
+                sidebarFooterLabel("Move selected to Trash", systemImage: AppSymbol.trash)
+            }
+            .buttonStyle(.plain)
+        } else if model.selectedSection == .trash {
+            Button {
+                model.restoreItems(selectedItems)
+                stopSelecting()
+            } label: {
+                sidebarFooterLabel("Restore selected", systemImage: "arrow.uturn.backward")
+            }
+            .buttonStyle(.plain)
         }
     }
 
-    @ViewBuilder
-    private var trashActions: some View {
-        if model.selectedSection == .trash && (!trashedFolders.isEmpty || !model.visibleNotebooks.isEmpty) {
-            Button("Empty Trash", systemImage: "trash.slash", role: .destructive) {
-                isConfirmingEmptyTrash = true
-            }
-        }
+    private var shouldOfferEmptyTrash: Bool {
+        model.selectedSection == .trash
+            && (!trashedFolders.isEmpty || !model.visibleNotebooks.isEmpty)
+            && !isSelecting
     }
 
-    private var privacyInformation: some View {
-        Menu("iCloud and privacy", systemImage: "lock.icloud") {
-            Text("Notebooks and organization data sync through your private iCloud database.")
-            Text("Handwriting recognition runs on this iPad.")
-            if let syncIssue = model.syncIssue { Text(syncIssue) }
-        }
+    private func sidebarFooterLabel(_ title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
     }
 
     private func activate(_ folder: Folder) {
@@ -238,27 +265,6 @@ struct LibrarySidebarView: View {
     private func stopSelecting() {
         selectedItems = []
         isSelecting = false
-    }
-}
-
-private struct TrashSidebarDropTarget: ViewModifier {
-    let isEnabled: Bool
-    let onDrop: ([String]) -> Bool
-    @State private var isTargeted = false
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if isEnabled {
-            content
-                .listRowBackground(isTargeted ? Color.red.opacity(0.14) : Color.clear)
-                .dropDestination(for: String.self) { items, _ in
-                    onDrop(items)
-                } isTargeted: { isTargeted in
-                    self.isTargeted = isTargeted
-                }
-        } else {
-            content
-        }
     }
 }
 

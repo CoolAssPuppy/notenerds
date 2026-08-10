@@ -13,8 +13,7 @@ final class PaperSelectionUITests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         application.launch()
 
-        application.buttons["More"].tap()
-        application.buttons["App settings"].tap()
+        application.buttons["Settings"].tap()
         application.buttons["Default paper"].tap()
         assertPaperGallery(in: application)
         let galleryScreenshot = XCTAttachment(screenshot: application.screenshot())

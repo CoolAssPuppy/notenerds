@@ -74,11 +74,9 @@ final class NoteNerdsLaunchTests: XCTestCase {
         application.buttons["New notebook"].tap()
         application.buttons["Library"].tap()
 
-        application.buttons["More"].tap()
         application.buttons["Select"].tap()
         application.buttons["Folder, New folder"].tap()
         application.buttons["Notebook, Untitled notebook"].tap()
-        application.buttons["More"].tap()
         application.buttons["Move selected to Trash"].tap()
 
         XCTAssertTrue(application.buttons["Folder, New folder"].waitForNonExistence(timeout: 2))
@@ -236,18 +234,15 @@ final class NoteNerdsLaunchTests: XCTestCase {
         application.launch()
         application.buttons["New notebook"].tap()
         application.buttons["Library"].tap()
-        application.buttons["More"].tap()
         application.buttons["Select"].tap()
         application.buttons["Notebook, Untitled notebook"].tap()
-        application.buttons["More"].tap()
         application.buttons["Move selected to Trash"].tap()
         application.staticTexts["Trash"].tap()
         let trashedNotebook = application.buttons["Notebook, Untitled notebook"]
         XCTAssertTrue(trashedNotebook.waitForExistence(timeout: 2))
-        application.buttons["More"].tap()
+        XCTAssertTrue(application.buttons["Empty Trash"].exists)
         application.buttons["Select"].tap()
         trashedNotebook.tap()
-        application.buttons["More"].tap()
         application.buttons["Restore selected"].tap()
         application.staticTexts["My Notebooks"].tap()
         XCTAssertTrue(application.buttons["Notebook, Untitled notebook"].waitForExistence(timeout: 2))
@@ -337,10 +332,14 @@ final class NoteNerdsLaunchTests: XCTestCase {
         XCTAssertLessThan(newFolder.frame.midY, application.frame.height * 0.5)
         XCTAssertLessThan(newNotebook.frame.midY, application.frame.height * 0.2)
 
-        application.buttons["More"].tap()
-        XCTAssertTrue(application.buttons["Select"].exists)
-        XCTAssertFalse(application.buttons["Sort"].exists)
-        XCTAssertTrue(application.buttons["App settings"].exists)
+        let settings = application.buttons["Settings"]
+        XCTAssertTrue(settings.exists)
+        XCTAssertFalse(application.buttons["More"].exists)
+        XCTAssertLessThan(settings.frame.maxX, application.frame.width * 0.3)
+        XCTAssertGreaterThan(settings.frame.midY, application.frame.height * 0.75)
+        XCTAssertLessThan(application.frame.height - settings.frame.maxY, 80)
+        settings.tap()
+        XCTAssertTrue(application.navigationBars["Settings"].waitForExistence(timeout: 2))
         let attachment = XCTAttachment(screenshot: application.screenshot())
         attachment.name = "Apple standard library sidebar"
         attachment.lifetime = .keepAlways

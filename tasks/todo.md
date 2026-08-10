@@ -1,5 +1,21 @@
 # Current work
 
+## Simplify the library sidebar
+
+- [x] Add a failing interface test for a bottom Settings row and no sidebar ellipsis.
+- [x] Add a labeled gear Settings action at the bottom of the left navigation.
+- [x] Keep selection, move, Trash, and restore actions available without the ellipsis menu.
+- [x] Update related interface tests and run focused iPad and iPhone checks.
+- [x] Run strict lint and diff checks, then record, commit, and push the result.
+
+### Library sidebar review
+
+- The ellipsis menu is gone. A labeled gear Settings row stays at the bottom of the library sidebar on iPad and in the compact iPhone sidebar.
+- Select and Done remain in the sidebar navigation bar. Move, Move selected to Trash, Restore selected, and Empty Trash appear directly when they apply.
+- Sync errors that previously appeared in the ellipsis menu now appear in the Settings privacy section.
+- Nine related iPad interface tests, one compact iPhone Settings test, and the shared symbol behavior test passed.
+- Strict SwiftLint passed across 237 files with 0 violations. `git diff --check` passed.
+
 ## Name the canvas browser for its notebook
 
 - [x] Add a failing interface test for the notebook name in the Canvases title.

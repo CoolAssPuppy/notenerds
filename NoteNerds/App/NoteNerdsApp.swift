@@ -22,12 +22,16 @@ struct NoteNerdsApp: App {
                 forKey: "canvasToolbarOrientation"
             )
         }
-        _model = StateObject(wrappedValue: AppModel(
+        let model = AppModel(
             documentStore: AppModel.defaultDocumentStore(),
             syncProvider: isUITesting || isUnitTesting ? nil : DefaultSyncProvider.make(),
             syncStateStore: AppModel.defaultSyncStateStore(),
             automaticallyRestore: false
-        ))
+        )
+        if isUITesting && processInfo.arguments.contains("-force-sync-issue") {
+            model.syncIssue = "This change is saved locally and is waiting for iCloud sync."
+        }
+        _model = StateObject(wrappedValue: model)
         let notionConfiguration = Self.notionConfiguration(
             isUITesting: isUITesting,
             processInfo: processInfo

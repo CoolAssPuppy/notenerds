@@ -172,14 +172,16 @@ final class LibraryCreationPlacementUITests: XCTestCase {
         application.staticTexts["My Notebooks"].tap()
         application.buttons["New notebook"].tap()
         application.buttons["Library"].tap()
-        application.buttons["More"].tap()
         application.buttons["Select"].tap()
         application.buttons["Notebook, Untitled notebook"].tap()
-        application.buttons["More"].tap()
         application.buttons["Move"].tap()
 
         XCTAssertTrue(application.buttons["New folder"].exists)
-        XCTAssertTrue(application.buttons["New folder / New folder"].exists)
+        let nestedDestination = application.buttons["New folder / New folder"]
+        XCTAssertTrue(nestedDestination.exists)
+        nestedDestination.tap()
+        XCTAssertTrue(application.buttons["Select"].waitForExistence(timeout: 2))
+        XCTAssertFalse(application.buttons["Move"].exists)
     }
 
     func testFolderSelectionReportsItsStateToVoiceOver() {
@@ -190,7 +192,6 @@ final class LibraryCreationPlacementUITests: XCTestCase {
         application.buttons["New folder"].tap()
         let folder = application.buttons["Folder, New folder"]
         XCTAssertTrue(folder.waitForExistence(timeout: 2))
-        application.buttons["More"].tap()
         application.buttons["Select"].tap()
 
         XCTAssertTrue((folder.value as? String)?.contains("Not selected") == true)

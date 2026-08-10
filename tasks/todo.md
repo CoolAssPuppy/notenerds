@@ -18,11 +18,17 @@
 
 ## Publish the writing crash fix
 
-- [ ] Commit and push the verified change.
-- [ ] Run the release preflight.
-- [ ] Create and upload the next TestFlight build.
-- [ ] Confirm Apple marks the build valid.
-- [ ] Commit and push the build-number change.
+- [x] Commit and push the verified change.
+- [x] Run the release preflight.
+- [x] Create and upload TestFlight build 21.
+- [x] Confirm Apple marks the build valid.
+- [x] Commit and push the build-number change.
+
+### TestFlight build 21 review
+
+- The release preflight passed with App Store Connect access, signing credentials, XcodeGen 2.46.0, and compatible iPhone and iPad simulators.
+- The signed archive and IPA export passed. App Store Connect accepted build 21 and marked it `VALID`.
+- Delivery UUID: `82752bc2-84bf-456c-a3e3-ba275b7559ab`.
 
 ## Publish the Notion reset build
 

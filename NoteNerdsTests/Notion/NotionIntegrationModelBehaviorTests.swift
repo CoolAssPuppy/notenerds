@@ -78,7 +78,7 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         XCTAssertEqual(manager.disconnectCount, 1)
     }
 
-    func testSyncNowPublishesTheCurrentLibraryAndReportsCompletion() async throws {
+    func testFailedPublishCanBeRetriedWithCurrentLibraryAndReportsCompletion() async throws {
         let connection = storedConnection()
         let provider = StubDestinationProvider()
         let destination = provider.destination
@@ -88,7 +88,8 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
                 skippedNotebookCount: 1,
                 didUploadManifest: true,
                 deletedNotebookCount: 1
-            )
+            ),
+            failureCount: 1
         )
         let model = NotionIntegrationModel(
             isConfigured: true,
@@ -104,10 +105,12 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         let library = LibraryState(notebooks: [DomainFixtures.notebook()])
 
         await model.sync(library)
+        XCTAssertEqual(model.state, .actionNeeded)
+        await model.retry(library: library)
 
         XCTAssertEqual(model.state, .connected(workspaceName: "Strategic Nerds"))
         XCTAssertEqual(model.lastSyncSummary, "Sent 2 notebooks and moved 1 notebook to Notion Trash.")
-        XCTAssertEqual(publisher.publishedLibraries, [library])
+        XCTAssertEqual(publisher.publishedLibraries, [library, library])
     }
 
     func testActiveSyncKeepsConnectedWorkspaceAvailableToSettings() async throws {
@@ -156,10 +159,7 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
 
     func testPauseAfterRapidResumeCancelsTheCurrentAutomaticSync() async throws {
         let connection = storedConnection()
-        let destination = NotionDestination(
-            databaseID: "11111111-1111-1111-1111-111111111111",
-            dataSourceID: "22222222-2222-2222-2222-222222222222"
-        )
+        let destination = StubDestinationProvider().destination
         let publisher = CancellableLibraryPublisher()
         let model = NotionIntegrationModel(
             isConfigured: true,
@@ -192,10 +192,7 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
     func testRestoreResumesPersistedQueuedSyncForTheCurrentLibrary() async throws {
         let connection = storedConnection()
         let notebook = DomainFixtures.notebook()
-        let destination = NotionDestination(
-            databaseID: "11111111-1111-1111-1111-111111111111",
-            dataSourceID: "22222222-2222-2222-2222-222222222222"
-        )
+        let destination = StubDestinationProvider().destination
         let queueItem = NotionSyncQueueItem(
             notebookID: notebook.id.rawValue.uuidString.lowercased(),
             enqueuedAt: DomainFixtures.fixedDate,
@@ -233,10 +230,7 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
     func testRestoreReconcilesTheCurrentLibraryWhenDestinationHasNoQueue() async throws {
         let connection = storedConnection()
         let notebook = DomainFixtures.notebook()
-        let destination = NotionDestination(
-            databaseID: "11111111-1111-1111-1111-111111111111",
-            dataSourceID: "22222222-2222-2222-2222-222222222222"
-        )
+        let destination = StubDestinationProvider().destination
         let publisher = StubLibraryPublisher(report: NotionPublishReport(
             uploadedNotebookCount: 1,
             skippedNotebookCount: 0,
@@ -264,10 +258,7 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
     func testAutomaticSyncRetriesDurableTransientFailureWithoutAnotherEdit() async throws {
         let connection = storedConnection()
         let notebook = DomainFixtures.notebook()
-        let destination = NotionDestination(
-            databaseID: "11111111-1111-1111-1111-111111111111",
-            dataSourceID: "22222222-2222-2222-2222-222222222222"
-        )
+        let destination = StubDestinationProvider().destination
         let registry = NotionSyncRegistry(store: IntegrationStateStore(state: NotionSyncState(
             workspaceID: connection.credentials.workspaceID,
             destination: destination
@@ -313,15 +304,23 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
 @MainActor
 private final class StubLibraryPublisher: NotionLibraryPublishing {
     private let report: NotionPublishReport
+    private var remainingFailureCount: Int
     private(set) var publishedLibraries: [LibraryState] = []
 
-    init(report: NotionPublishReport) { self.report = report }
+    init(report: NotionPublishReport, failureCount: Int = 0) {
+        self.report = report
+        remainingFailureCount = failureCount
+    }
 
     func publish(
         _ library: LibraryState,
         notebookID: NotebookID?
     ) async throws -> NotionPublishReport {
         publishedLibraries.append(library)
+        if remainingFailureCount > 0 {
+            remainingFailureCount -= 1
+            throw NotionAPIError.httpStatus(500)
+        }
         return report
     }
 }

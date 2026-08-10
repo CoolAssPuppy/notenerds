@@ -64,11 +64,6 @@ struct LibrarySidebarView: View {
         .listStyle(.sidebar)
         .navigationTitle("Note Nerds")
         .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 320)
-        .toolbar {
-            if canSelectItems {
-                ToolbarItem(placement: .topBarTrailing) { selectionButton }
-            }
-        }
         .safeAreaInset(edge: .bottom, spacing: 0) { sidebarFooter }
         .confirmationDialog(
             "Delete all items permanently?",
@@ -116,17 +111,6 @@ struct LibrarySidebarView: View {
                 stopSelecting()
             }
         )
-    }
-
-    private var canSelectItems: Bool {
-        [.files, .trash].contains(model.selectedSection) && model.searchQuery.isEmpty
-    }
-
-    private var selectionButton: some View {
-        Button(isSelecting ? "Done" : "Select") {
-            isSelecting.toggle()
-            if !isSelecting { selectedItems = [] }
-        }
     }
 
     private var sidebarFooter: some View {

@@ -1,5 +1,7 @@
 # Lessons
 
+- Before sending a CloudKit build to TestFlight, deploy the development schema to production and verify `DocumentChange`, `DocumentAsset`, and the queryable and sortable `sequence` indexes there.
+- A Settings retry button must repeat the failed operation with the current library. Reloading credentials or connection state alone does not resend notebooks.
 - Center app icon artwork by its visible pixel bounds, not the font frame or text line box. Measure the exported mark before installing or shipping it.
 - For Note Nerds app icon exploration, create twenty editable options in Paper and base every direction on a lowercase “n” unless the user specifies a different mark or count.
 - Treat a named bug as a strict scope boundary. Add one failing behavior test, make the smallest fix, run one review pass, and ask before changing any adjacent system.

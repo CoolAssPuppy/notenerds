@@ -92,7 +92,9 @@ struct AppSettingsView: View {
                     notion.failureMessage ?? "Notion needs attention.",
                     systemImage: "exclamationmark.triangle"
                 )
-                Button("Try again") { Task { await notion.restore() } }
+                Button("Try again") {
+                    Task { await notion.retry(library: model.library) }
+                }
             }
         } header: {
             Text("Notion")

@@ -1,5 +1,21 @@
 # Current work
 
+## Fix iCloud and Notion sync errors
+
+- [x] Trace the two user-visible errors to their underlying failures.
+- [x] Reproduce each failure with a public-behavior test.
+- [x] Fix the confirmed causes without changing local save behavior.
+- [x] Remove the unnecessary Select button from the left navigation.
+- [x] Run focused sync and sidebar checks, strict lint, and `git diff --check`.
+- [ ] Record the result, commit, push, and release if verification passes.
+
+### Sync repair review
+
+- Production CloudKit logs showed the affected iPad's private-database query failing with `NOT_FOUND`. The production container had no `DocumentChange` or `DocumentAsset` schema. Both record types and all `DocumentChange` indexes, including the queryable and sortable `sequence` index, are now deployed to production.
+- The Notion Settings retry restored credentials without resending the library. It now restores the saved connection, confirms it is connected, and republishes the current library.
+- The normal left-sidebar `Select` button is removed. Selection behavior used by item actions remains available where needed.
+- Ten Notion integration tests and the focused sidebar UI test passed. Strict SwiftLint passed across 241 files with 0 violations. All 33 release-tool tests, App Store release verification, Xcode static analysis, XcodeGen drift, and `git diff --check` passed.
+
 ## Ship the selected app icon
 
 - [x] Enlarge the selected cursive lowercase “n” by 25 percent in Paper.

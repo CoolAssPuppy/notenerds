@@ -112,6 +112,12 @@ final class NotionIntegrationModel: ObservableObject {
         }
     }
 
+    func retry(library: LibraryState) async {
+        await restore()
+        guard case .connected = state else { return }
+        await sync(library)
+    }
+
     func connect() async {
         guard isConfigured else {
             state = .unavailable

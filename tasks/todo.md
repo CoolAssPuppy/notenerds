@@ -34,6 +34,7 @@
 - The focused handwriting checks passed 48 tests with 0 failures. Receipt, relaunch, highlighter, duplicate-identifier, and local-echo checks also passed.
 - The complete scheme ran 509 tests. It passed 508 and found one sync-queue performance regression. After the no-storage fast path was restored, that test passed in 0.018 seconds.
 - Strict SwiftLint passed across 241 files with 0 violations. All 33 release-tool tests, Xcode static analysis, and `git diff --check` passed.
+- Apple accepted TestFlight build 16 and marked it valid. Delivery UUID: `b34d0671-4c67-468b-a205-6583439ca4be`.
 
 ## Simplify the library sidebar
 

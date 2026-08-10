@@ -174,10 +174,10 @@ Suggested review path:
 
 1. Tap the new-notebook button in the upper-right corner of My Notebooks.
 2. Choose a paper style and create the notebook.
-3. Select a writing tool and draw on the canvas.
-4. Select the text tool, tap the canvas, type, and press Return.
+3. Select a writing tool, handwrite a clear word that does not appear elsewhere in the notebook, and pause briefly while recognition runs on the device.
+4. Select the text tool, tap the canvas, type a different phrase, and press Return.
 5. Return to the library, create a folder with the plus button beside Folders, and drag the notebook into it.
-6. Tap Search and search for typed text.
+6. Tap Search and search for the handwritten word, then search for the typed phrase. Each result should open the notebook.
 7. Open the notebook and use the share menu to export a PDF.
 8. Optional: open App settings, connect Notion, choose an accessible page, then use Sync now.
 

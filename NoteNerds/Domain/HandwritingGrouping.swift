@@ -27,10 +27,12 @@ struct HandwritingGroupBuilder: Sendable {
 actor HandwritingRecognitionCoordinator {
     private let recognizer: any HandwritingRecognizer
     private let minimumConfidence: Double
+    nonisolated let recognizerVersion: String
 
     init(recognizer: any HandwritingRecognizer, minimumConfidence: Double = 0.5) {
         self.recognizer = recognizer
         self.minimumConfidence = minimumConfidence
+        recognizerVersion = recognizer.recognizerVersion
     }
 
     func recognizeSafely(strokes: [Stroke]) async -> HandwritingRecognitionResult? {

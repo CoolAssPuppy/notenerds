@@ -58,7 +58,7 @@ The plan is based on the current repository and shipped identifiers.
 - App Store Connect Apple ID: `6799369721`
 - Apple Developer team: `955GSY56UT`
 - Minimum operating system: iOS and iPadOS 26
-- Current document schema: version 4
+- Current document schema: version 6
 - Current remote provider: private CloudKit
 - Current external publisher: Notion
 - Local files: library metadata, notebook snapshots, journals, and separate assets under Application Support
@@ -1031,7 +1031,7 @@ At no phase may a device apply remote changes from CloudKit and Supabase into th
 
 ### 14.1 Snapshot format
 
-The web parser must support native document schema version 4 before launch.
+The web parser must support current native document schema version 6 and legacy versions 4 and 5 before launch.
 
 Add:
 
@@ -1285,7 +1285,7 @@ Web worker:
 
 The viewer must support:
 
-- Every version 4 object type.
+- Every object type supported by native schema versions 4, 5, and 6.
 - Every current paper type, including both planner papers and hexagons.
 - Layer order and visibility.
 - Stroke pressure, width, opacity, cap, and instrument approximations.
@@ -1829,7 +1829,7 @@ Each phase ends with passing tests, refactoring, updated docs, and a focused com
 
 - [ ] Add this work to `tasks/todo.md` when implementation starts.
 - [ ] Record baseline iOS test, build, sync, archive, and performance results.
-- [ ] Create version 4 cross-platform JSON Schema.
+- [ ] Create cross-platform JSON Schemas for native versions 4, 5, and 6.
 - [ ] Create complete Swift golden fixtures.
 - [ ] Create the TypeScript document parser package.
 - [ ] Prove Swift-to-TypeScript fixture compatibility.
@@ -1839,7 +1839,7 @@ Each phase ends with passing tests, refactoring, updated docs, and a focused com
 
 Exit criteria:
 
-- TypeScript parses every supported version 4 fixture.
+- TypeScript parses every supported fixture for native versions 4, 5, and 6.
 - Swift and TypeScript contract tests pass.
 - No production sync behavior has changed.
 
@@ -1934,7 +1934,7 @@ Exit criteria:
 
 Exit criteria:
 
-- Every schema version 4 fixture renders without console warnings or errors.
+- Every supported schema fixture for native versions 4, 5, and 6 renders without console warnings or errors.
 - Representative large notebooks meet frame-rate and memory targets.
 - Keyboard and screen-reader journeys pass.
 
@@ -2130,4 +2130,4 @@ The Supabase backend and read-only web application are complete when all items b
 
 ## 31. First implementation action
 
-Start with Phase 0. Write the complete version 4 fixture in Swift, confirm the existing Swift decoder reads it, then write the TypeScript validation test and watch it fail before creating parser code. This proves the canonical document can cross the native and web boundary before any database or interface work begins.
+Start with Phase 0. Write the complete version 6 fixture and migration fixtures for versions 4 and 5 in Swift, then confirm the existing Swift decoder reads each one. Write the TypeScript validation tests and watch them fail before creating parser code. This proves the canonical document can cross the native and web boundary before any database or interface work begins.

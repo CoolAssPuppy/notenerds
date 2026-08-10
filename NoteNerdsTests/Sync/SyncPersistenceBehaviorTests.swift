@@ -108,6 +108,105 @@ final class SyncPersistenceBehaviorTests: XCTestCase {
     }
 
     @MainActor
+    func testSavedLocalStrokeIsNotAppliedAgainWhenRestartOccursBeforeEchoHandling() async throws {
+        let notebook = DomainFixtures.notebook(title: "Local stroke echo")
+        let canvas = notebook.canvases[0]
+        let layer = canvas.layers[0]
+        let stroke = DomainFixtures.stroke(id: StrokeID(), layerID: layer.id)
+        let operation = DocumentOperation.addStroke(
+            canvasID: canvas.id,
+            layerID: layer.id,
+            stroke: stroke
+        )
+        let fixture = try await makePreHandlingLocalEchoFixture(
+            operation: operation,
+            notebook: notebook
+        )
+        defer { try? FileManager.default.removeItem(at: fixture.directoryURL) }
+
+        let savedBeforeRelaunch = try await fixture.documentStore.load(notebookID: notebook.id)
+        XCTAssertEqual(savedBeforeRelaunch.notebook.strokeCount(for: stroke.id), 1)
+        XCTAssertEqual(
+            try SyncChangeEncoder.decodeDocumentAction(fixture.echo),
+            SyncedDocumentAction(operation: operation, direction: .apply)
+        )
+
+        let offlineModel = makeLocalEchoModel(
+            repository: fixture.repository,
+            documentStore: fixture.documentStore
+        )
+        await offlineModel.restoreLibrary()
+        let offlineNotebook = try XCTUnwrap(offlineModel.notebook(notebook.id))
+        var editedStroke = stroke
+        editedStroke.samples[0].point.x += 40
+        let editOperation = try DocumentOperation.replacingObjects(
+            in: offlineNotebook,
+            canvasID: canvas.id,
+            objectIDs: [stroke.objectID],
+            with: [.stroke(editedStroke)]
+        )
+        offlineModel.execute(editOperation, on: notebook.id)
+        await offlineModel.checkpointDocuments()
+
+        let reopenedModel = makeLocalEchoModel(
+            repository: fixture.repository,
+            documentStore: fixture.documentStore,
+            provider: fixture.provider,
+            stateStore: fixture.stateStore
+        )
+        await reopenedModel.restoreLibrary()
+
+        let reopened = try XCTUnwrap(reopenedModel.notebook(notebook.id))
+        let acknowledgedState = try await fixture.stateStore.load()
+        XCTAssertEqual(reopened.strokes(for: stroke.id), [editedStroke])
+        XCTAssertTrue(acknowledgedState?.receivedChanges.isEmpty == true)
+    }
+
+    @MainActor
+    func testSavedLocalCanvasInsertIsNotAppliedAgainWhenRestartOccursBeforeEchoHandling() async throws {
+        let notebook = DomainFixtures.notebook(title: "Local canvas echo")
+        let insertedCanvas = Canvas(title: "Local canvas")
+        let operation = DocumentOperation.insertCanvas(canvas: insertedCanvas, index: 1)
+        let fixture = try await makePreHandlingLocalEchoFixture(
+            operation: operation,
+            notebook: notebook
+        )
+        defer { try? FileManager.default.removeItem(at: fixture.directoryURL) }
+
+        let savedBeforeRelaunch = try await fixture.documentStore.load(notebookID: notebook.id)
+        XCTAssertEqual(savedBeforeRelaunch.notebook.canvasCount(for: insertedCanvas.id), 1)
+        XCTAssertEqual(
+            try SyncChangeEncoder.decodeDocumentAction(fixture.echo),
+            SyncedDocumentAction(operation: operation, direction: .apply)
+        )
+
+        let offlineModel = makeLocalEchoModel(
+            repository: fixture.repository,
+            documentStore: fixture.documentStore
+        )
+        await offlineModel.restoreLibrary()
+        offlineModel.renameCanvas(insertedCanvas.id, to: "Renamed offline", in: notebook.id)
+        await offlineModel.checkpointDocuments()
+
+        let reopenedModel = makeLocalEchoModel(
+            repository: fixture.repository,
+            documentStore: fixture.documentStore,
+            provider: fixture.provider,
+            stateStore: fixture.stateStore
+        )
+        await reopenedModel.restoreLibrary()
+
+        let reopened = try XCTUnwrap(reopenedModel.notebook(notebook.id))
+        let acknowledgedState = try await fixture.stateStore.load()
+        XCTAssertEqual(reopened.canvasCount(for: insertedCanvas.id), 1)
+        XCTAssertEqual(
+            reopened.canvases.first { $0.id == insertedCanvas.id }?.title,
+            "Renamed offline"
+        )
+        XCTAssertTrue(acknowledgedState?.receivedChanges.isEmpty == true)
+    }
+
+    @MainActor
     func testBackgroundCheckpointWaitsForTheSyncOutboxSave() async {
         let stateStore = PausingInitialLoadSyncStateStore()
         let model = AppModel(
@@ -192,6 +291,106 @@ final class SyncPersistenceBehaviorTests: XCTestCase {
         XCTAssertEqual(model.library.notebook(id: notebook.id), notebook)
         let stateAfterRetry = await stateStore.load()
         XCTAssertTrue(stateAfterRetry?.receivedChanges.isEmpty == true)
+    }
+
+    @MainActor
+    private func makePreHandlingLocalEchoFixture(
+        operation: DocumentOperation,
+        notebook: Notebook
+    ) async throws -> PreHandlingLocalEchoFixture {
+        let directoryURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        let repository = LocalLibraryRepository(fileURL: directoryURL.appending(path: "library.json"))
+        let documentStore = LocalDocumentStore(rootURL: directoryURL.appending(path: "Documents"))
+        let provider = InMemorySyncProvider()
+        let stateStore = LocalSyncStateStore(directoryURL: directoryURL.appending(path: "Sync"))
+        try await repository.save(LibraryState(notebooks: [notebook]))
+        try await documentStore.save(
+            NativeNotebookPackage(schemaVersion: .current, notebook: notebook)
+        )
+        let editingModel = makeLocalEchoModel(
+            repository: repository,
+            documentStore: documentStore
+        )
+        await editingModel.restoreLibrary()
+
+        editingModel.execute(operation, on: notebook.id)
+        await editingModel.checkpointDocuments()
+        let savedPackage = try await documentStore.load(notebookID: notebook.id)
+        XCTAssertTrue(savedPackage.appliedRemoteChangeIDs.isEmpty)
+        let echo = try SyncChangeEncoder(deviceID: "editing-device").change(
+            for: operation,
+            notebookID: notebook.id,
+            sequence: 1,
+            timestamp: DomainFixtures.fixedDate
+        )
+        let syncEngine = SyncEngine(provider: provider, stateStore: stateStore)
+        await syncEngine.enqueue(echo)
+        await syncEngine.synchronize()
+        let storedState = try await stateStore.load()
+        let interruptedState = try XCTUnwrap(storedState)
+        XCTAssertEqual(interruptedState.receivedChanges, [echo])
+
+        return PreHandlingLocalEchoFixture(
+            directoryURL: directoryURL,
+            repository: repository,
+            documentStore: documentStore,
+            provider: provider,
+            stateStore: stateStore,
+            echo: echo
+        )
+    }
+
+    @MainActor
+    private func makeLocalEchoModel(
+        repository: LocalLibraryRepository,
+        documentStore: LocalDocumentStore,
+        provider: (any SyncProvider)? = nil,
+        stateStore: (any SyncStateStore)? = nil
+    ) -> AppModel {
+        AppModel(
+            repository: repository,
+            documentStore: documentStore,
+            syncProvider: provider,
+            syncStateStore: stateStore,
+            deviceID: "editing-device",
+            recognitionCoordinator: HandwritingRecognitionCoordinator(
+                recognizer: LocalEchoTestRecognizer()
+            ),
+            automaticallyRestore: false
+        )
+    }
+}
+
+private struct LocalEchoTestRecognizer: HandwritingRecognizer {
+    func recognize(strokes: [Stroke]) async throws -> HandwritingRecognitionResult {
+        throw CocoaError(.featureUnsupported)
+    }
+}
+
+private struct PreHandlingLocalEchoFixture {
+    let directoryURL: URL
+    let repository: LocalLibraryRepository
+    let documentStore: LocalDocumentStore
+    let provider: InMemorySyncProvider
+    let stateStore: LocalSyncStateStore
+    let echo: DocumentChange
+}
+
+private extension Notebook {
+    func strokeCount(for id: StrokeID) -> Int {
+        strokes(for: id).count
+    }
+
+    func strokes(for id: StrokeID) -> [Stroke] {
+        canvases
+            .flatMap(\.layers)
+            .flatMap(\.objects)
+            .compactMap(\.strokeValue)
+            .filter { $0.id == id }
+    }
+
+    func canvasCount(for id: CanvasID) -> Int {
+        canvases.filter { $0.id == id }.count
     }
 }
 

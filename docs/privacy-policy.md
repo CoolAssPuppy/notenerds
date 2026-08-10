@@ -12,7 +12,7 @@ The app has no advertising SDK, analytics SDK, account system, or tracking syste
 
 ## Local storage
 
-Notebooks, drawings, text, imported files, settings, and search data are stored on the user’s device. Deleting the app may delete local data that has not been exported or synchronized.
+Notebooks, drawings, text, imported files, settings, and search data are stored on the user’s device. Handwriting recognition and search indexing run on the device. Deleting the app may delete local data that has not been exported or synchronized.
 
 ## iCloud
 
@@ -22,7 +22,7 @@ Users can control iCloud access through Apple ID and iCloud settings on their de
 
 ## Optional Notion connection
 
-Users may connect a Notion workspace and choose a Notion page. Note Nerds then creates a notebook database and a library manifest in that workspace. When the user selects Sync now, or edits a notebook after setup, the app sends notebook titles, folders, tags, canvas text, previews, PDFs, and restorable notebook files directly from the device to Notion. The developer does not receive this content.
+Users may connect a Notion workspace and choose a Notion page. Note Nerds then creates a notebook database and a library manifest in that workspace. When the user selects Sync now, or edits a notebook after setup, the app sends notebook titles, folders, tags, typed text, recognized handwriting text, canvas previews, PDFs, and restorable notebook files directly from the device to Notion. The developer does not receive this content.
 
 While a synced notebook is open, Note Nerds may ask Notion whether an AI meeting note is actively recording. When one is active, the app adds a link from that meeting note to the synced notebook page. The app stores only the meeting, notebook, page, and created-link identifiers needed to prevent duplicates and respect deleted links. Meeting audio and transcript text stay in Notion.
 

@@ -1,5 +1,14 @@
 # Lessons
 
+- Treat a named bug as a strict scope boundary. Add one failing behavior test, make the smallest fix, run one review pass, and ask before changing any adjacent system.
+- Stop after 30 minutes when a focused test is still failing. Report the blocker instead of expanding the audit or adding unrelated work.
+- Test handwriting recognition with an orientation-sensitive real Vision fixture and require the full expected word. Stub results cannot detect an upside-down input image.
+- Treat handwriting recognition as versioned derived data tied to the complete visible stroke set. Clear affected records inside document operations so undo, journal recovery, and sync cannot keep old search text.
+- Save notebook Trash and restore metadata into the notebook checkpoint before relaunch can replace library metadata with an older document copy.
+- Save an applied remote change identifier in the same notebook package as the changed document. Remove it only after sync acknowledgement is saved.
+- Keep Pencil completion work independent of canvas size. Remove only the affected handwriting search entry, then refresh recognition after the delay.
+- Bind async results to local values before passing them to XCTest assertions. XCTest assertion autoclosures cannot contain `await`.
+- After a failing test introduces a new production type member in a shared worktree, add the smallest compiling production declaration as soon as the failure is recorded. This keeps other focused test runs available while implementation continues.
 - Treat the minimum OS and Apple Intelligence availability as separate policies. Use only documented App Store capability keys for installation rules, and keep runtime checks for hardware, settings, and language-dependent AI features.
 - After changing a shared schema version, classify every hard-coded old version before running the full suite. Assertions for newly produced data must use the current schema constant; explicit old numbers belong only in migration fixtures.
 - A saved Pencil stroke needs the rendered PencilKit point size, opacity, secondary scale, and threshold in addition to location, force, tilt, and time. Reconstructing Marker or Highlighter paths from a selected toolbar width changes their appearance after reopening the note. Test a mixed-instrument note before and after native serialization.

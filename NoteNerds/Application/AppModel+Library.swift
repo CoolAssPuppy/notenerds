@@ -78,6 +78,7 @@ extension AppModel {
             let duplicateID = try library.duplicateNotebook(id, at: Date())
             persistLibrary()
             if let duplicate = library.notebook(id: duplicateID) {
+                refreshHandwritingSearch(in: duplicate.id)
                 persistCheckpoint(duplicate)
                 enqueueForSync(.createNotebook(duplicate), notebookID: duplicateID)
             }
@@ -142,8 +143,10 @@ extension AppModel {
     }
 
     func restoreFolder(_ id: FolderID) {
+        let previouslyTrashedNotebookIDs = trashedNotebookIDs
         performFolderChange { try $0.restoreFolder(id) }
         rebuildSearchIndex()
+        refreshHandwritingSearchForRestoredNotebooks(previouslyTrashedNotebookIDs)
         syncFolderRestoration(id)
     }
 
@@ -219,8 +222,10 @@ extension AppModel {
     }
 
     func restoreItems(_ items: Set<LibraryItemID>) {
+        let previouslyTrashedNotebookIDs = trashedNotebookIDs
         performFolderChange { try $0.restoreItems(items) }
         rebuildSearchIndex()
+        refreshHandwritingSearchForRestoredNotebooks(previouslyTrashedNotebookIDs)
         for item in items {
             switch item {
             case let .folder(id):
@@ -238,16 +243,21 @@ extension AppModel {
     }
 
     func delete(_ notebookID: NotebookID) {
+        let notebooksBeforeChange = notebooksByID
         library.moveNotebookToTrash(notebookID, at: Date())
         searchIndex.remove(notebookID: notebookID)
         persistLibrary()
+        persistChangedNotebookCheckpoints(from: notebooksBeforeChange)
         syncNotebookMetadata(notebookID)
     }
 
     func restore(_ notebookID: NotebookID) {
+        let notebooksBeforeChange = notebooksByID
+        let previouslyTrashedNotebookIDs = trashedNotebookIDs
         library.restoreNotebook(notebookID)
-        refreshSearchIndex(for: notebookID)
+        refreshHandwritingSearchForRestoredNotebooks(previouslyTrashedNotebookIDs)
         persistLibrary()
+        persistChangedNotebookCheckpoints(from: notebooksBeforeChange)
         syncNotebookRestoration(notebookID)
     }
 
@@ -259,17 +269,46 @@ extension AppModel {
     }
 
     private func performFolderChange(_ change: (inout LibraryState) throws -> Void) {
+        let notebooksBeforeChange = notebooksByID
         do {
             try change(&library)
             persistLibrary()
+            persistChangedNotebookCheckpoints(from: notebooksBeforeChange)
         } catch {
             presentedError = error.localizedDescription
+        }
+    }
+
+    private var notebooksByID: [NotebookID: Notebook] {
+        library.notebooks.reduce(into: [:]) { notebooks, notebook in
+            notebooks[notebook.id] = notebook
+        }
+    }
+
+    private func persistChangedNotebookCheckpoints(
+        from previousNotebooks: [NotebookID: Notebook]
+    ) {
+        for notebook in library.notebooks where previousNotebooks[notebook.id] != notebook {
+            persistCheckpoint(notebook)
         }
     }
 
     private func rebuildSearchIndex() {
         searchIndex = LibrarySearchIndex()
         for notebook in library.notebooks { searchIndex.update(notebook) }
+    }
+
+    private var trashedNotebookIDs: Set<NotebookID> {
+        Set(library.notebooks.lazy.filter { $0.trashedAt != nil }.map(\.id))
+    }
+
+    private func refreshHandwritingSearchForRestoredNotebooks(
+        _ previouslyTrashedNotebookIDs: Set<NotebookID>
+    ) {
+        for notebook in library.notebooks where notebook.trashedAt == nil
+            && previouslyTrashedNotebookIDs.contains(notebook.id) {
+            refreshHandwritingSearch(in: notebook.id)
+        }
     }
 
     func leaveInactiveCurrentFolder() {

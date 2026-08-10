@@ -19,16 +19,24 @@ actor SyncEngine {
     private var cursor: SyncCursor?
     private var didRestoreState = false
     private var shouldSynchronizeAgain = false
+    private var receivedChangeIDsPendingSave: Set<ChangeID> = []
+    private var locallyAppliedChangeIDs: Set<ChangeID> = []
+    private var locallyAppliedChangeIDsPendingRemoval: Set<ChangeID> = []
 
     init(provider: any SyncProvider, stateStore: (any SyncStateStore)? = nil) {
         self.provider = provider
         self.stateStore = stateStore
     }
 
-    func enqueue(_ change: DocumentChange) async {
+    func enqueue(_ change: DocumentChange, wasAppliedLocally: Bool = true) async {
         await restoreStateIfNeeded()
-        guard pendingChangeIDs.insert(change.id).inserted else { return }
-        pendingChanges.append(change)
+        let didInsertChange = pendingChangeIDs.insert(change.id).inserted
+        if didInsertChange {
+            pendingChanges.append(change)
+        }
+        let didInsertLocalMarker = wasAppliedLocally
+            && locallyAppliedChangeIDs.insert(change.id).inserted
+        guard didInsertChange || didInsertLocalMarker else { return }
         await persistState()
     }
 
@@ -106,10 +114,31 @@ actor SyncEngine {
         receivedChanges
     }
 
-    func acknowledgeReceivedChanges(_ identifiers: Set<ChangeID>) async {
-        receivedChanges.removeAll { identifiers.contains($0.id) }
-        receivedChangeIDs.subtract(identifiers)
-        await persistState()
+    func locallyAppliedChangeIDsSnapshot() async -> Set<ChangeID> {
+        await restoreStateIfNeeded()
+        return locallyAppliedChangeIDs
+    }
+
+    func acknowledgeReceivedChanges(_ identifiers: Set<ChangeID>) async -> Bool {
+        let acknowledgedIDs = receivedChangeIDs.intersection(identifiers)
+        guard !acknowledgedIDs.isEmpty else { return true }
+        guard stateStore != nil else {
+            receivedChanges.removeAll { acknowledgedIDs.contains($0.id) }
+            receivedChangeIDs.subtract(acknowledgedIDs)
+            locallyAppliedChangeIDs.subtract(acknowledgedIDs)
+            return false
+        }
+        receivedChangeIDsPendingSave.formUnion(acknowledgedIDs)
+        locallyAppliedChangeIDsPendingRemoval.formUnion(acknowledgedIDs)
+        let didPersist = await persistState()
+        if didPersist {
+            receivedChanges.removeAll { acknowledgedIDs.contains($0.id) }
+            receivedChangeIDs.subtract(acknowledgedIDs)
+            locallyAppliedChangeIDs.subtract(acknowledgedIDs)
+        }
+        receivedChangeIDsPendingSave.subtract(acknowledgedIDs)
+        locallyAppliedChangeIDsPendingRemoval.subtract(acknowledgedIDs)
+        return didPersist
     }
 
     func fetchAsset(_ id: AssetID) async throws -> Data {
@@ -137,21 +166,31 @@ actor SyncEngine {
         receivedChanges = snapshot.receivedChanges.filter {
             receivedChangeIDs.insert($0.id).inserted
         }
+        locallyAppliedChangeIDs.formUnion(snapshot.locallyAppliedChangeIDs)
         cursor = snapshot.cursor
     }
 
-    private func persistState() async {
+    @discardableResult
+    private func persistState() async -> Bool {
+        guard let stateStore else { return true }
         let snapshot = SyncEngineSnapshot(
             pendingChanges: pendingChanges,
             pendingAssets: Array(pendingAssets.values),
-            receivedChanges: receivedChanges,
-            cursor: cursor
+            receivedChanges: receivedChanges.filter {
+                !receivedChangeIDsPendingSave.contains($0.id)
+            },
+            cursor: cursor,
+            locallyAppliedChangeIDs: Array(
+                locallyAppliedChangeIDs.subtracting(locallyAppliedChangeIDsPendingRemoval)
+            )
         )
         do {
-            try await stateStore?.save(snapshot)
+            try await stateStore.save(snapshot)
+            return true
         } catch {
             lastFailure = .persistent
             state = .waitingToRetry
+            return false
         }
     }
 }
@@ -161,6 +200,58 @@ struct SyncEngineSnapshot: Codable, Equatable, Sendable {
     let pendingAssets: [DocumentAsset]
     let receivedChanges: [DocumentChange]
     let cursor: SyncCursor?
+    let locallyAppliedChangeIDs: [ChangeID]
+
+    init(
+        pendingChanges: [DocumentChange],
+        pendingAssets: [DocumentAsset],
+        receivedChanges: [DocumentChange],
+        cursor: SyncCursor?,
+        locallyAppliedChangeIDs: [ChangeID] = []
+    ) {
+        self.pendingChanges = pendingChanges
+        self.pendingAssets = pendingAssets
+        self.receivedChanges = receivedChanges
+        self.cursor = cursor
+        self.locallyAppliedChangeIDs = Self.sortedChangeIDs(locallyAppliedChangeIDs)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case pendingChanges
+        case pendingAssets
+        case receivedChanges
+        case cursor
+        case locallyAppliedChangeIDs
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            pendingChanges: try container.decode([DocumentChange].self, forKey: .pendingChanges),
+            pendingAssets: try container.decode([DocumentAsset].self, forKey: .pendingAssets),
+            receivedChanges: try container.decode([DocumentChange].self, forKey: .receivedChanges),
+            cursor: try container.decodeIfPresent(SyncCursor.self, forKey: .cursor),
+            locallyAppliedChangeIDs: try container.decodeIfPresent(
+                [ChangeID].self,
+                forKey: .locallyAppliedChangeIDs
+            ) ?? []
+        )
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(pendingChanges, forKey: .pendingChanges)
+        try container.encode(pendingAssets, forKey: .pendingAssets)
+        try container.encode(receivedChanges, forKey: .receivedChanges)
+        try container.encodeIfPresent(cursor, forKey: .cursor)
+        try container.encode(Self.sortedChangeIDs(locallyAppliedChangeIDs), forKey: .locallyAppliedChangeIDs)
+    }
+
+    private static func sortedChangeIDs(_ identifiers: [ChangeID]) -> [ChangeID] {
+        Array(Set(identifiers)).sorted {
+            $0.rawValue.uuidString < $1.rawValue.uuidString
+        }
+    }
 }
 
 protocol SyncStateStore: Sendable {

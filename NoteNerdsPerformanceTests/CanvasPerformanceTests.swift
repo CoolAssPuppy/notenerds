@@ -134,6 +134,36 @@ final class CanvasPerformanceTests: XCTestCase {
         }
     }
 
+    func testRemovingHandwritingFromALargeCanvasWithinOneTenthSecond() {
+        var notebook = makeLargeNotebook(canvasCount: 1, objectsPerCanvas: 20_000)
+        let canvasID = notebook.canvases[0].id
+        let layerID = notebook.canvases[0].layers[0].id
+        let stroke = makeStroke(index: 0, layerID: layerID)
+        notebook.canvases[0].layers[0].objects.append(.stroke(stroke))
+        let recognition = HandwritingRecognitionResult(
+            text: "Handwritten performance marker",
+            confidence: 0.95,
+            bounds: stroke.bounds,
+            sourceStrokeIDs: [stroke.id],
+            recognizerVersion: "performance"
+        )
+        notebook.recognitionByCanvas[canvasID] = [
+            PersistedHandwritingRecognition(result: recognition, sourceStrokes: [stroke])
+        ]
+        var index = LibrarySearchIndex()
+        index.update(notebook)
+        let clock = ContinuousClock()
+        let start = clock.now
+
+        for _ in 0..<1_000 {
+            index.removeHandwriting(canvasID: canvasID, notebookID: notebook.id)
+        }
+
+        XCTAssertLessThan(start.duration(to: clock.now), .milliseconds(100))
+        XCTAssertTrue(index.search("Handwritten performance marker").isEmpty)
+        XCTAssertEqual(index.search("Canvas 0 item 19999").count, 1)
+    }
+
     func testLargeNotebookOpeningDecode() throws {
         let notebook = makeLargeNotebook(canvasCount: 30, objectsPerCanvas: 150)
         let serializer = NativeDocumentSerializer()

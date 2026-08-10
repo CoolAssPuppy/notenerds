@@ -13,10 +13,34 @@ final class SerializationBehaviorTests: XCTestCase {
     }
 
     func testSerializationIsDeterministic() throws {
-        let package = NativeNotebookPackage(schemaVersion: .current, notebook: DomainFixtures.notebook())
+        let firstChangeID = try XCTUnwrap(
+            UUID(uuidString: "00000000-0000-0000-0000-000000000001")
+        )
+        let secondChangeID = try XCTUnwrap(
+            UUID(uuidString: "00000000-0000-0000-0000-000000000002")
+        )
+        let package = NativeNotebookPackage(
+            schemaVersion: .current,
+            notebook: DomainFixtures.notebook(),
+            appliedRemoteChangeIDs: [
+                ChangeID(rawValue: secondChangeID),
+                ChangeID(rawValue: firstChangeID)
+            ]
+        )
         let serializer = NativeDocumentSerializer()
 
-        XCTAssertEqual(try serializer.encode(package), try serializer.encode(package))
+        let firstEncoding = try serializer.encode(package)
+        let secondEncoding = try serializer.encode(package)
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: firstEncoding) as? [String: Any]
+        )
+        let encodedChangeIDs = try XCTUnwrap(object["appliedRemoteChangeIDs"] as? [String])
+
+        XCTAssertEqual(firstEncoding, secondEncoding)
+        XCTAssertEqual(encodedChangeIDs, [
+            firstChangeID.uuidString,
+            secondChangeID.uuidString
+        ])
     }
 
     func testNativeDocumentPreservesTheSelectedSystemFont() throws {
@@ -53,15 +77,21 @@ final class SerializationBehaviorTests: XCTestCase {
 
     func testOlderSchemaIsMigratedToCurrentVersion() throws {
         let package = NativeNotebookPackage(
-            schemaVersion: DocumentSchemaVersion(rawValue: 1),
+            schemaVersion: DocumentSchemaVersion(rawValue: 5),
             notebook: DomainFixtures.notebook()
         )
-        let data = try NativeDocumentSerializer().encode(package)
+        let serializer = NativeDocumentSerializer()
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: serializer.encode(package)) as? [String: Any]
+        )
+        object["appliedRemoteChangeIDs"] = nil
+        let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
 
-        let migrated = try NativeDocumentSerializer().decode(data)
+        let migrated = try serializer.decode(data)
 
         XCTAssertEqual(migrated.schemaVersion, .current)
         XCTAssertEqual(migrated.notebook, package.notebook)
+        XCTAssertTrue(migrated.appliedRemoteChangeIDs.isEmpty)
     }
 
     func testLegacyCanvasTemplatesDecodeAsSupportedPaperTypes() throws {

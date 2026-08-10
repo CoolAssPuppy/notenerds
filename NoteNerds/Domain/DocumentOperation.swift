@@ -140,6 +140,7 @@ enum DocumentOperation: Codable, Hashable, Sendable {
         default:
             try applyStructure(to: &notebook)
         }
+        clearHandwritingRecognition(in: &notebook)
     }
 
     private func applyStructure(to notebook: inout Notebook) throws {
@@ -211,6 +212,13 @@ enum DocumentOperation: Codable, Hashable, Sendable {
         default:
             try undoStructure(on: &notebook)
         }
+        clearHandwritingRecognition(in: &notebook)
+    }
+
+    private func clearHandwritingRecognition(in notebook: inout Notebook) {
+        guard changesHandwritingRecognition,
+              let canvasID = handwritingRecognitionCanvasID else { return }
+        notebook.recognitionByCanvas[canvasID] = nil
     }
 
     private func undoStructure(on notebook: inout Notebook) throws {

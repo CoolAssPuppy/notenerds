@@ -4,7 +4,7 @@
   <img src="NoteNerds/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png" width="128" height="128" alt="Note Nerds app icon">
 </p>
 
-Note Nerds is a native, local-first notebook and drawing app for iPad. It combines an infinite canvas, Apple Pencil input, inline text, searchable handwriting, layered content, and a folder-based library in an interface built with standard iPad patterns.
+Note Nerds is a native, local-first notebook and drawing app for iPhone and iPad. It combines an infinite canvas, Apple Pencil input, inline text, searchable handwriting, layered content, and a folder-based library in an interface built with standard iOS and iPadOS patterns.
 
 The app is written in Swift 6 with SwiftUI, UIKit, PencilKit, Vision, PDFKit, and CloudKit. Its document model belongs to Note Nerds rather than any Apple persistence or drawing framework, which keeps notebooks editable, versioned, and portable.
 
@@ -240,7 +240,7 @@ Notebook.notenerds/
     └── <asset UUID files>
 ```
 
-`Document.json` contains the versioned canonical notebook model. `Manifest.json` maps asset identifiers to their files. The current document schema is version 4.
+`Document.json` contains the versioned canonical notebook model. `Manifest.json` maps asset identifiers to their files. The current document schema is version 6.
 
 Serialization uses sorted JSON keys and millisecond timestamps for deterministic output. Newer unsupported schema versions are rejected before document data is changed. Older supported documents are migrated to the current schema. Archive reads validate asset names, constrain file sizes, and reject paths outside the package asset directory.
 

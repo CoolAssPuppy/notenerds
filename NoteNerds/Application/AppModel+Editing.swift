@@ -29,13 +29,17 @@ extension AppModel {
     func addStroke(_ stroke: Stroke, to notebookID: NotebookID, canvasID: CanvasID, layerID: LayerID) {
         guard var notebook = library.notebook(id: notebookID) else { return }
         var history = histories[notebookID, default: DocumentHistory()]
+        let operation = DocumentOperation.addStroke(canvasID: canvasID, layerID: layerID, stroke: stroke)
         do {
-            try history.execute(.addStroke(canvasID: canvasID, layerID: layerID, stroke: stroke), on: &notebook)
+            try history.execute(operation, on: &notebook)
+            let handwritingCanvasID = cancelHandwritingRecognition(after: operation)
             notebook.modifiedAt = Date()
             histories[notebookID] = history
             library.updateNotebook(notebook)
+            if let handwritingCanvasID {
+                finishHandwritingChange(after: operation, canvasID: handwritingCanvasID, in: notebook)
+            }
             persistCheckpoint(notebook)
-            scheduleRecognition(notebookID: notebookID, canvasID: canvasID)
         } catch {
             presentedError = error.localizedDescription
         }
@@ -68,7 +72,6 @@ extension AppModel {
                 canvasID: canvasID
             )
         }
-        scheduleRecognition(notebookID: notebookID, canvasID: canvasID)
         return didSnapShape
     }
 
@@ -85,7 +88,13 @@ extension AppModel {
         Task { [weak self] in
             guard let self,
                   let result = await recognitionCoordinator.recognizeSafely(strokes: strokes),
-                  let currentNotebook = library.notebook(id: notebookID) else { return }
+                  let currentNotebook = library.notebook(id: notebookID),
+                  let currentCanvas = currentNotebook.canvases.first(where: { $0.id == canvasID }) else { return }
+            let currentStrokes = currentCanvas.layers
+                .flatMap(\.objects)
+                .compactMap(\.strokeValue)
+                .filter { strokeIDs.contains($0.id) }
+            guard currentStrokes == strokes else { return }
             let textBlock = HandwritingTextLayout().textBlock(from: [result], layerID: strokes[0].layerID)
             do {
                 let operation = try DocumentOperation.convertStrokesToText(
@@ -255,10 +264,15 @@ extension AppModel {
         guard var notebook = library.notebook(id: notebookID), var history = histories[notebookID] else { return }
         do {
             let operation = try history.undo(on: &notebook)
+            let handwritingCanvasID = cancelHandwritingRecognition(after: operation)
             notebook.modifiedAt = Date()
             histories[notebookID] = history
             library.updateNotebook(notebook)
-            updateSearchIndex(after: operation, in: notebook)
+            if let handwritingCanvasID {
+                finishHandwritingChange(after: operation, canvasID: handwritingCanvasID, in: notebook)
+            } else {
+                updateSearchIndex(after: operation, in: notebook)
+            }
             persistCheckpoint(notebook)
             enqueueForSync(SyncedDocumentAction(operation: operation, direction: .undo), notebookID: notebookID)
         } catch DocumentHistoryError.nothingToUndo {
@@ -272,10 +286,15 @@ extension AppModel {
         guard var notebook = library.notebook(id: notebookID), var history = histories[notebookID] else { return }
         do {
             let operation = try history.redo(on: &notebook)
+            let handwritingCanvasID = cancelHandwritingRecognition(after: operation)
             notebook.modifiedAt = Date()
             histories[notebookID] = history
             library.updateNotebook(notebook)
-            updateSearchIndex(after: operation, in: notebook)
+            if let handwritingCanvasID {
+                finishHandwritingChange(after: operation, canvasID: handwritingCanvasID, in: notebook)
+            } else {
+                updateSearchIndex(after: operation, in: notebook)
+            }
             persistCheckpoint(notebook)
             enqueueForSync(SyncedDocumentAction(operation: operation, direction: .apply), notebookID: notebookID)
         } catch DocumentHistoryError.nothingToRedo {

@@ -14,7 +14,7 @@ extension AppModel {
             library = restored
             searchIndex = LibrarySearchIndex()
             for notebook in restored.notebooks {
-                searchIndex.update(notebook)
+                refreshHandwritingSearch(in: notebook.id)
             }
         } catch {
             presentedError = "The restored notebooks could not be saved. \(error.localizedDescription)"

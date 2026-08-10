@@ -19,7 +19,8 @@ struct LibrarySearchResult: Codable, Hashable, Sendable {
 }
 
 struct LibrarySearchIndex: Sendable {
-    private var entriesByNotebook: [NotebookID: [LibrarySearchResult]] = [:]
+    private var contentEntriesByNotebook: [NotebookID: [LibrarySearchResult]] = [:]
+    private var handwritingEntriesByNotebook: [NotebookID: [CanvasID: [LibrarySearchResult]]] = [:]
 
     mutating func update(
         _ notebook: Notebook,
@@ -31,42 +32,64 @@ struct LibrarySearchIndex: Sendable {
         }
         let results = recognitionResults
             ?? notebook.recognitionByCanvas.mapValues { $0.map(\.result) }
-        var entries = notebookEntries(notebook)
+        contentEntriesByNotebook[notebook.id] = notebookEntries(notebook)
+        var entriesByCanvas: [CanvasID: [LibrarySearchResult]] = [:]
         for canvas in notebook.canvases {
-            entries.append(contentsOf: recognitionEntries(
+            entriesByCanvas[canvas.id] = recognitionEntries(
                 results[canvas.id, default: []],
                 canvas: canvas,
                 notebook: notebook
-            ))
+            )
         }
-        entriesByNotebook[notebook.id] = entries
+        handwritingEntriesByNotebook[notebook.id] = entriesByCanvas
     }
 
     mutating func update(canvasID: CanvasID, in notebook: Notebook) {
         guard let canvas = notebook.canvases.first(where: { $0.id == canvasID }),
-              entriesByNotebook[notebook.id] != nil else {
+              contentEntriesByNotebook[notebook.id] != nil else {
             update(notebook)
             return
         }
-        var entries = entriesByNotebook[notebook.id, default: []].filter { $0.canvasID != canvasID }
+        var entries = contentEntriesByNotebook[notebook.id, default: []].filter { $0.canvasID != canvasID }
         entries.append(contentsOf: contentEntries(canvas: canvas, notebook: notebook))
-        entries.append(contentsOf: recognitionEntries(
+        contentEntriesByNotebook[notebook.id] = entries
+        handwritingEntriesByNotebook[notebook.id, default: [:]][canvasID] = recognitionEntries(
             notebook.recognitionByCanvas[canvasID, default: []].map(\.result),
             canvas: canvas,
             notebook: notebook
-        ))
-        entriesByNotebook[notebook.id] = entries
+        )
+    }
+
+    mutating func updateHandwriting(canvasID: CanvasID, in notebook: Notebook) {
+        guard let canvas = notebook.canvases.first(where: { $0.id == canvasID }),
+              contentEntriesByNotebook[notebook.id] != nil else {
+            update(notebook)
+            return
+        }
+        handwritingEntriesByNotebook[notebook.id, default: [:]][canvasID] = recognitionEntries(
+            notebook.recognitionByCanvas[canvasID, default: []].map(\.result),
+            canvas: canvas,
+            notebook: notebook
+        )
+    }
+
+    mutating func removeHandwriting(canvasID: CanvasID, notebookID: NotebookID) {
+        handwritingEntriesByNotebook[notebookID]?[canvasID] = nil
     }
 
     mutating func remove(notebookID: NotebookID) {
-        entriesByNotebook[notebookID] = nil
+        contentEntriesByNotebook[notebookID] = nil
+        handwritingEntriesByNotebook[notebookID] = nil
     }
 
     func search(_ query: String) -> [LibrarySearchResult] {
         let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedQuery.isEmpty else { return [] }
-        return entriesByNotebook.values
+        let contentEntries = contentEntriesByNotebook.values.flatMap { $0 }
+        let handwritingEntries = handwritingEntriesByNotebook.values
+            .flatMap(\.values)
             .flatMap { $0 }
+        return (contentEntries + handwritingEntries)
             .filter { $0.snippet.localizedCaseInsensitiveContains(normalizedQuery) }
             .sorted { $0.notebookTitle.localizedCaseInsensitiveCompare($1.notebookTitle) == .orderedAscending }
     }

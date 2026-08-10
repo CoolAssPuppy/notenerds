@@ -16,7 +16,7 @@ extension AppModel {
                 }
                 try library.addNotebook(notebook, to: currentFolderID)
                 selectedNotebookID = notebook.id
-                searchIndex.update(notebook)
+                refreshHandwritingSearch(in: notebook.id)
                 persistCheckpoint(notebook)
                 enqueueForSync(.createNotebook(notebook), notebookID: notebook.id)
             } else if fileExtension == "pdf" {
@@ -31,7 +31,7 @@ extension AppModel {
                 }
                 try library.addNotebook(imported.notebook, to: currentFolderID)
                 selectedNotebookID = imported.notebook.id
-                searchIndex.update(imported.notebook)
+                refreshHandwritingSearch(in: imported.notebook.id)
                 persistCheckpoint(imported.notebook)
                 enqueueForSync(.createNotebook(imported.notebook), notebookID: imported.notebook.id)
             } else {
@@ -256,7 +256,7 @@ extension AppModel {
         enqueueAssetForSync(imported.asset)
         try library.addNotebook(notebook, to: currentFolderID)
         selectedNotebookID = notebook.id
-        searchIndex.update(notebook)
+        refreshHandwritingSearch(in: notebook.id)
         persistCheckpoint(notebook)
         enqueueForSync(.createNotebook(notebook), notebookID: notebook.id)
     }

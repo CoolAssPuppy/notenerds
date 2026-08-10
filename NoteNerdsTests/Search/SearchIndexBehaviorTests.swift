@@ -102,4 +102,244 @@ final class SearchIndexBehaviorTests: XCTestCase {
 
         XCTAssertTrue(index.search("archived").isEmpty)
     }
+
+    @MainActor
+    func testEditingRecognizedInkRemovesTheOldSearchResult() throws {
+        var notebook = DomainFixtures.notebook()
+        let canvas = notebook.canvases[0]
+        let layer = canvas.layers[0]
+        let stroke = try XCTUnwrap(layer.objects[0].strokeValue)
+        let recognition = HandwritingRecognitionResult(
+            text: "Original project estimate",
+            confidence: 0.94,
+            bounds: stroke.bounds,
+            sourceStrokeIDs: [stroke.id],
+            recognizerVersion: "test"
+        )
+        notebook.recognitionByCanvas[canvas.id] = [
+            PersistedHandwritingRecognition(result: recognition, sourceStrokes: [stroke])
+        ]
+        let model = AppModel(automaticallyRestore: false)
+        model.library = LibraryState(notebooks: [notebook])
+        model.refreshSearchIndex(for: notebook.id)
+        model.searchQuery = "project estimate"
+        XCTAssertEqual(model.searchResults.first?.matchType, .handwriting)
+        var changedStroke = stroke
+        changedStroke.samples[0].point.x += 40
+
+        model.replaceVisibleStrokes(
+            [changedStroke],
+            in: notebook.id,
+            canvasID: canvas.id,
+            layerID: layer.id
+        )
+
+        XCTAssertTrue(model.searchResults.isEmpty)
+    }
+
+    @MainActor
+    func testConvertingRecognizedInkRemovesTheOldHandwritingResult() async throws {
+        var notebook = DomainFixtures.notebook()
+        let canvas = notebook.canvases[0]
+        let stroke = try XCTUnwrap(canvas.layers[0].objects[0].strokeValue)
+        let phrase = "Converted project estimate"
+        let recognition = HandwritingRecognitionResult(
+            text: phrase,
+            confidence: 0.94,
+            bounds: stroke.bounds,
+            sourceStrokeIDs: [stroke.id],
+            recognizerVersion: "test"
+        )
+        notebook.recognitionByCanvas[canvas.id] = [
+            PersistedHandwritingRecognition(result: recognition, sourceStrokes: [stroke])
+        ]
+        let model = AppModel(
+            recognitionCoordinator: HandwritingRecognitionCoordinator(
+                recognizer: SearchHandwritingRecognizer(result: recognition)
+            ),
+            automaticallyRestore: false
+        )
+        model.library = LibraryState(notebooks: [notebook])
+        model.refreshSearchIndex(for: notebook.id)
+        model.searchQuery = "converted project"
+
+        model.convertStrokesToText([stroke.id], in: notebook.id, canvasID: canvas.id)
+        for _ in 0..<100 where model.searchResults.allSatisfy({ $0.matchType != .typedText }) {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+
+        XCTAssertTrue(model.searchResults.contains { $0.matchType == .typedText })
+        XCTAssertFalse(model.searchResults.contains { $0.matchType == .handwriting })
+    }
+
+    @MainActor
+    func testDeletingARecognizedCanvasRemovesItsHandwritingResult() throws {
+        var notebook = DomainFixtures.notebook()
+        let canvas = notebook.canvases[0]
+        let stroke = try XCTUnwrap(canvas.layers[0].objects[0].strokeValue)
+        let recognition = HandwritingRecognitionResult(
+            text: "Delete canvas transcript",
+            confidence: 0.94,
+            bounds: stroke.bounds,
+            sourceStrokeIDs: [stroke.id],
+            recognizerVersion: "test"
+        )
+        notebook.recognitionByCanvas[canvas.id] = [
+            PersistedHandwritingRecognition(result: recognition, sourceStrokes: [stroke])
+        ]
+        notebook.canvases.append(Canvas(title: "Canvas 2"))
+        let model = AppModel(automaticallyRestore: false)
+        model.library = LibraryState(notebooks: [notebook])
+        model.refreshSearchIndex(for: notebook.id)
+        model.searchQuery = "canvas transcript"
+        XCTAssertEqual(model.searchResults.first?.canvasID, canvas.id)
+
+        model.deleteCanvas(canvas.id, in: notebook.id)
+
+        XCTAssertTrue(model.searchResults.isEmpty)
+        XCTAssertNil(model.notebook(notebook.id)?.recognitionByCanvas[canvas.id])
+    }
+
+    @MainActor
+    func testDeletingRecognizedInkRemovesItsHandwritingResult() throws {
+        var notebook = DomainFixtures.notebook()
+        let canvas = notebook.canvases[0]
+        let stroke = try XCTUnwrap(canvas.layers[0].objects[0].strokeValue)
+        let recognition = HandwritingRecognitionResult(
+            text: "Delete selected handwriting",
+            confidence: 0.94,
+            bounds: stroke.bounds,
+            sourceStrokeIDs: [stroke.id],
+            recognizerVersion: "test"
+        )
+        notebook.recognitionByCanvas[canvas.id] = [
+            PersistedHandwritingRecognition(result: recognition, sourceStrokes: [stroke])
+        ]
+        let model = AppModel(automaticallyRestore: false)
+        model.library = LibraryState(notebooks: [notebook])
+        model.refreshSearchIndex(for: notebook.id)
+        model.searchQuery = "selected handwriting"
+
+        model.deleteObjects([stroke.objectID], notebookID: notebook.id, canvasID: canvas.id)
+
+        XCTAssertTrue(model.searchResults.isEmpty)
+        XCTAssertTrue(model.notebook(notebook.id)?.canvases[0].layers[0].objects.isEmpty == true)
+    }
+
+    @MainActor
+    func testDeletingInkWhileConversionRunsDoesNotInsertStaleText() async throws {
+        let notebook = DomainFixtures.notebook()
+        let canvas = notebook.canvases[0]
+        let stroke = try XCTUnwrap(canvas.layers[0].objects[0].strokeValue)
+        let phrase = "Text from deleted ink"
+        let recognizer = FirstCallPausingSearchRecognizer(result: HandwritingRecognitionResult(
+            text: phrase,
+            confidence: 0.94,
+            bounds: stroke.bounds,
+            sourceStrokeIDs: [stroke.id],
+            recognizerVersion: "test"
+        ))
+        let model = AppModel(
+            recognitionCoordinator: HandwritingRecognitionCoordinator(recognizer: recognizer),
+            automaticallyRestore: false
+        )
+        model.library = LibraryState(notebooks: [notebook])
+        model.searchQuery = "deleted ink"
+
+        model.convertStrokesToText([stroke.id], in: notebook.id, canvasID: canvas.id)
+        await recognizer.waitUntilPaused()
+        model.deleteObjects([stroke.objectID], notebookID: notebook.id, canvasID: canvas.id)
+        await recognizer.finish()
+        try await Task.sleep(for: .milliseconds(100))
+
+        let objects = try XCTUnwrap(model.notebook(notebook.id)?.canvases[0].layers[0].objects)
+        XCTAssertTrue(objects.isEmpty)
+        XCTAssertTrue(model.searchResults.isEmpty)
+    }
+
+    @MainActor
+    func testMovingStrokeLayersDuringRecognitionStillProducesSearchText() async throws {
+        let firstLayer = Layer(name: "First", objects: [
+            .stroke(DomainFixtures.stroke(layerID: LayerID()))
+        ])
+        var firstStroke = try XCTUnwrap(firstLayer.objects[0].strokeValue)
+        firstStroke.layerID = firstLayer.id
+        let secondLayer = Layer(name: "Second")
+        let canvas = Canvas(title: "Canvas 1", layers: [
+            Layer(id: firstLayer.id, name: firstLayer.name, objects: [.stroke(firstStroke)]),
+            secondLayer
+        ])
+        let notebook = Notebook(title: "Layer order", canvases: [canvas])
+        let addedStroke = DomainFixtures.stroke(id: StrokeID(), layerID: secondLayer.id)
+        let phrase = "Layer order handwriting"
+        let recognizer = FirstCallPausingSearchRecognizer(result: HandwritingRecognitionResult(
+            text: phrase,
+            confidence: 0.94,
+            bounds: addedStroke.bounds,
+            sourceStrokeIDs: [firstStroke.id, addedStroke.id],
+            recognizerVersion: "test"
+        ))
+        let model = AppModel(
+            recognitionCoordinator: HandwritingRecognitionCoordinator(recognizer: recognizer),
+            automaticallyRestore: false
+        )
+        model.library = LibraryState(notebooks: [notebook])
+        model.searchQuery = "layer order"
+
+        model.addStroke(
+            addedStroke,
+            to: notebook.id,
+            canvasID: canvas.id,
+            layerID: secondLayer.id
+        )
+        await recognizer.waitUntilPaused()
+        model.moveLayer(from: 0, to: 1, canvasID: canvas.id, notebookID: notebook.id)
+        await recognizer.finish()
+        for _ in 0..<100 where !model.searchResults.contains(where: { $0.matchType == .handwriting }) {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+
+        XCTAssertTrue(model.searchResults.contains { result in
+            result.matchType == .handwriting && result.snippet == phrase
+        })
+    }
+}
+
+private struct SearchHandwritingRecognizer: HandwritingRecognizer {
+    let result: HandwritingRecognitionResult
+
+    func recognize(strokes: [Stroke]) async throws -> HandwritingRecognitionResult { result }
+}
+
+private actor FirstCallPausingSearchRecognizer: HandwritingRecognizer {
+    let result: HandwritingRecognitionResult
+    private var isPaused = false
+    private var pauseWaiters: [CheckedContinuation<Void, Never>] = []
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    init(result: HandwritingRecognitionResult) {
+        self.result = result
+    }
+
+    func recognize(strokes: [Stroke]) async throws -> HandwritingRecognitionResult {
+        if !isPaused {
+            await withCheckedContinuation { continuation in
+                self.continuation = continuation
+                isPaused = true
+                pauseWaiters.forEach { $0.resume() }
+                pauseWaiters.removeAll()
+            }
+        }
+        return result
+    }
+
+    func waitUntilPaused() async {
+        guard !isPaused else { return }
+        await withCheckedContinuation { pauseWaiters.append($0) }
+    }
+
+    func finish() {
+        continuation?.resume()
+        continuation = nil
+    }
 }

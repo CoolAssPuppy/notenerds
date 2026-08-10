@@ -26,6 +26,8 @@ final class AppModel: ObservableObject {
     let recognitionCoordinator: HandwritingRecognitionCoordinator
     var histories: [NotebookID: DocumentHistory] = [:]
     var recognitionTasks: [CanvasID: Task<Void, Never>] = [:]
+    var pendingRecognitionBackfill: [NotebookID: Set<CanvasID>] = [:]
+    var recognitionBackfillTask: Task<Void, Never>?
     var conversionTasks: [CanvasID: Task<Void, Never>] = [:]
     var pendingConversionStrokeIDs: [CanvasID: Set<StrokeID>] = [:]
     let conversionDelay: Duration
@@ -36,11 +38,15 @@ final class AppModel: ObservableObject {
     var seenSyncChangeIDs: Set<ChangeID> = []
     var journalCounts: [NotebookID: Int] = [:]
     var libraryPersistenceTask: Task<Void, Never>?
+    var libraryPersistenceOutcomeTask: Task<Bool, Never>?
     var didPersistLibrary = true
     var documentPersistenceTask: Task<Void, Never>?
+    var documentPersistenceOutcomeTask: Task<Bool, Never>?
     var didPersistDocuments = true
     var syncSubmissionTask: Task<Void, Never>?
     var remoteChangeIDsAwaitingPersistence: Set<ChangeID> = []
+    var remoteNotebookIDsAwaitingPersistence: [ChangeID: Set<NotebookID>] = [:]
+    var appliedRemoteChangeIDsByNotebook: [NotebookID: Set<ChangeID>] = [:]
     private var libraryRestoreTask: Task<Void, Never>?
 
     init(
@@ -134,6 +140,7 @@ final class AppModel: ObservableObject {
                 for notebook in library.notebooks {
                     do {
                         var recovered = try await documentStore.recover(notebookID: notebook.id)
+                        appliedRemoteChangeIDsByNotebook[notebook.id] = recovered.appliedRemoteChangeIDs
                         if recovered.notebook.repairDuplicateCanvasIdentifiers() {
                             try await documentStore.save(recovered)
                             didRepairLibrary = true
@@ -144,7 +151,7 @@ final class AppModel: ObservableObject {
                         didRepairLibrary = repairedNotebook.repairDuplicateCanvasIdentifiers() || didRepairLibrary
                         library.updateNotebook(repairedNotebook)
                         try await documentStore.save(
-                            NativeNotebookPackage(schemaVersion: .current, notebook: repairedNotebook)
+                            nativePackage(for: repairedNotebook)
                         )
                     }
                 }
@@ -159,7 +166,7 @@ final class AppModel: ObservableObject {
             if didRepairLibrary {
                 try await repository.save(library)
             }
-            for notebook in library.notebooks { searchIndex.update(notebook) }
+            restoreHandwritingSearch()
             await synchronize()
         } catch {
             presentedError = "Your local library could not be opened. \(error.localizedDescription)"
@@ -169,16 +176,20 @@ final class AppModel: ObservableObject {
     func persistLibrary() {
         let snapshot = library
         let precedingTask = libraryPersistenceTask
-        libraryPersistenceTask = Task {
+        let outcomeTask = Task { () -> Bool in
             await precedingTask?.value
             do {
                 try await repository.save(snapshot)
                 didPersistLibrary = true
+                return true
             } catch {
                 didPersistLibrary = false
                 presentedError = "Your latest change could not be saved. \(error.localizedDescription)"
+                return false
             }
         }
+        libraryPersistenceOutcomeTask = outcomeTask
+        libraryPersistenceTask = Task { _ = await outcomeTask.value }
     }
 
     func execute(_ operation: DocumentOperation, on notebookID: NotebookID) {
@@ -186,10 +197,15 @@ final class AppModel: ObservableObject {
         var history = histories[notebookID, default: DocumentHistory()]
         do {
             try history.execute(operation, on: &notebook)
+            let handwritingCanvasID = cancelHandwritingRecognition(after: operation)
             notebook.modifiedAt = Date()
             histories[notebookID] = history
             library.updateNotebook(notebook)
-            updateSearchIndex(after: operation, in: notebook)
+            if let handwritingCanvasID {
+                finishHandwritingChange(after: operation, canvasID: handwritingCanvasID, in: notebook)
+            } else {
+                updateSearchIndex(after: operation, in: notebook)
+            }
             persist(operation, notebook: notebook)
             enqueueForSync(operation, notebookID: notebookID)
         } catch {
@@ -214,24 +230,27 @@ final class AppModel: ObservableObject {
         let notebookID = notebook.id
         let count = journalCounts[notebookID, default: 0] + 1
         journalCounts[notebookID] = count
+        let checkpoint = count >= 20 ? nativePackage(for: notebook) : nil
         let precedingTask = documentPersistenceTask
-        documentPersistenceTask = Task {
+        let outcomeTask = Task { () -> Bool in
             await precedingTask?.value
             do {
                 try await documentStore.append(operation, notebookID: notebookID)
-                if count >= 20 {
-                    try await documentStore.save(
-                        NativeNotebookPackage(schemaVersion: .current, notebook: notebook)
-                    )
+                if let checkpoint {
+                    try await documentStore.save(checkpoint)
                     journalCounts[notebookID] = 0
                     persistLibrary()
                 }
                 didPersistDocuments = true
+                return true
             } catch {
                 didPersistDocuments = false
                 presentedError = "Your latest change could not be saved. \(error.localizedDescription)"
+                return false
             }
         }
+        documentPersistenceOutcomeTask = outcomeTask
+        documentPersistenceTask = Task { _ = await outcomeTask.value }
     }
 
     func persistCheckpoint(_ notebook: Notebook) {
@@ -240,20 +259,23 @@ final class AppModel: ObservableObject {
             return
         }
         journalCounts[notebook.id] = 0
+        let checkpoint = nativePackage(for: notebook)
         let precedingTask = documentPersistenceTask
-        documentPersistenceTask = Task {
+        let outcomeTask = Task { () -> Bool in
             await precedingTask?.value
             do {
-                try await documentStore.save(
-                    NativeNotebookPackage(schemaVersion: .current, notebook: notebook)
-                )
+                try await documentStore.save(checkpoint)
                 persistLibrary()
                 didPersistDocuments = true
+                return true
             } catch {
                 didPersistDocuments = false
                 presentedError = "Your latest change could not be saved. \(error.localizedDescription)"
+                return false
             }
         }
+        documentPersistenceOutcomeTask = outcomeTask
+        documentPersistenceTask = Task { _ = await outcomeTask.value }
     }
 
     func checkpointDocuments() async {
@@ -264,12 +286,20 @@ final class AppModel: ObservableObject {
             return
         }
         for notebook in library.notebooks {
-            try? await documentStore.save(NativeNotebookPackage(schemaVersion: .current, notebook: notebook))
+            try? await documentStore.save(nativePackage(for: notebook))
             journalCounts[notebook.id] = 0
         }
         persistLibrary()
         await libraryPersistenceTask?.value
         await syncSubmissionTask?.value
+    }
+
+    func nativePackage(for notebook: Notebook) -> NativeNotebookPackage {
+        NativeNotebookPackage(
+            schemaVersion: .current,
+            notebook: notebook,
+            appliedRemoteChangeIDs: appliedRemoteChangeIDsByNotebook[notebook.id, default: []]
+        )
     }
 
     func openSearchResult(_ result: LibrarySearchResult) {

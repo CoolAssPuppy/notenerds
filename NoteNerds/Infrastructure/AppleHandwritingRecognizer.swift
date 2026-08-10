@@ -9,7 +9,7 @@ enum AppleHandwritingRecognitionError: Error, Equatable {
 }
 
 actor AppleHandwritingRecognizer: HandwritingRecognizer {
-    private let recognizerVersion = "Vision-1"
+    nonisolated var recognizerVersion: String { "Vision-2" }
 
     func recognize(strokes: [Stroke]) async throws -> HandwritingRecognitionResult {
         guard strokes.contains(where: { !$0.samples.isEmpty }) else {
@@ -36,7 +36,7 @@ actor AppleHandwritingRecognizer: HandwritingRecognizer {
     }
 
     private func render(strokes: [Stroke], bounds: CanvasRect) throws -> CGImage {
-        let padding = 24.0
+        let padding = 12.0
         let contentWidth = max(bounds.size.width, 1)
         let contentHeight = max(bounds.size.height, 1)
         let scale = min(3.0, 2048.0 / max(contentWidth, contentHeight))
@@ -83,7 +83,7 @@ actor AppleHandwritingRecognizer: HandwritingRecognizer {
     ) -> CGPoint {
         CGPoint(
             x: (point.x - bounds.minX + padding) * scale,
-            y: (point.y - bounds.minY + padding) * scale
+            y: (bounds.maxY - point.y + padding) * scale
         )
     }
 }

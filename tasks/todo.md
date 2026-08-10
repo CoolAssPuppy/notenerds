@@ -1,5 +1,40 @@
 # Current work
 
+## Persist remote sync receipts
+
+- [x] Add interrupted-acknowledgement behavior tests for later-edited insert and add operations.
+- [x] Add interrupted-acknowledgement behavior tests for canvas and layer moves.
+- [x] Capture the focused failing test result before changing production code.
+- [x] Save durable applied-change receipts in notebook checkpoints while decoding older packages.
+- [x] Restore receipts before sync and skip only changes with a matching durable receipt.
+- [x] Run focused sync, persistence, serialization, lint, and diff checks.
+
+### Remote sync receipt review
+
+- Interrupted acknowledgement tests first failed for a changed remote stroke, a renamed inserted canvas, an edited inserted layer, and repeated canvas and layer moves. The failing result is `/tmp/notenerds-receipt-red/Logs/Test/Test-NoteNerds-2026.08.10_05-20-52-+0100.xcresult`.
+- Notebook checkpoints now save exact remote change identifiers with the changed document. Files from schema version 5 decode with an empty receipt set, and encoded identifiers have a stable order.
+- A received change remains queued until its acknowledgement is saved. Failed acknowledgement saves keep both the queued change and its notebook receipt through a later local checkpoint and relaunch. Successful acknowledgement saves remove the receipt from the notebook checkpoint.
+- A permanent remote deletion is acknowledged only after the library manifest saves its deletion record. Startup recovers document snapshots only for notebooks in that manifest, so an older orphaned snapshot cannot restore the deleted notebook. Trashed notebooks remain in the manifest and receive a document checkpoint.
+- The focused receipt, remote handwriting sync, serialization, local document storage, and sync persistence checks passed 29 tests with 0 failures. The result is `/tmp/notenerds-receipt-green/Logs/Test/Test-NoteNerds-2026.08.10_05-35-20-+0100.xcresult`.
+- Strict SwiftLint passed across 240 files with 0 violations. `git diff --check` passed.
+
+## Restore handwriting search
+
+- [x] Add a failing behavior test for recognized handwriting appearing in library search.
+- [x] Cover live recognition, saved notebooks, and reopened notebooks.
+- [x] Fix the recognition-to-search indexing path.
+- [x] Run focused recognition, search, persistence, and interface tests.
+- [x] Run strict lint and diff checks, then record, commit, and push the result.
+
+### Handwriting search review
+
+- The Vision image used the opposite vertical coordinate direction from Pencil input, so saved writing was sent to recognition upside down. The corrected image recognizes the real `NOTE` test fixture.
+- Search recognition now refreshes after editing, reopening, importing, duplicating, syncing, and restoring notebooks. Old recognition results are removed when their source ink changes. Highlighter strokes are excluded from recognition.
+- Recognition results cannot replace newer edits or write into Trash. Notebook checkpoints preserve local and remote edits across relaunch and prevent an acknowledged sync change from being applied twice.
+- The focused handwriting checks passed 48 tests with 0 failures. Receipt, relaunch, highlighter, duplicate-identifier, and local-echo checks also passed.
+- The complete scheme ran 509 tests. It passed 508 and found one sync-queue performance regression. After the no-storage fast path was restored, that test passed in 0.018 seconds.
+- Strict SwiftLint passed across 241 files with 0 violations. All 33 release-tool tests, Xcode static analysis, and `git diff --check` passed.
+
 ## Simplify the library sidebar
 
 - [x] Add a failing interface test for a bottom Settings row and no sidebar ellipsis.

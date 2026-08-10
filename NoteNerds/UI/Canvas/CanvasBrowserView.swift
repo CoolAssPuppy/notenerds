@@ -25,7 +25,7 @@ struct CanvasBrowserView: View {
                 }
                 .padding(24)
             }
-            .navigationTitle("Canvases")
+            .navigationTitle("Canvases for \(notebook.title)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

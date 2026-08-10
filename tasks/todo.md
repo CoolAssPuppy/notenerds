@@ -1,5 +1,18 @@
 # Current work
 
+## Name the canvas browser for its notebook
+
+- [x] Add a failing interface test for the notebook name in the Canvases title.
+- [x] Show `Canvases for [Parent Notebook Name]` in the canvas browser navigation bar.
+- [x] Update related interface checks and run the focused tests, lint, and diff checks.
+- [x] Record the result, commit, and push.
+
+### Canvas browser title review
+
+- The canvas browser uses the current notebook title, including a name changed immediately before the sheet opens.
+- Five related interface tests passed on the iPad Pro 13-inch simulator. The title test also passed on the iPhone 17 Pro simulator.
+- Strict SwiftLint passed across 236 files with 0 violations. `git diff --check` passed.
+
 ## Create and customize folders
 
 - [x] Add failing behavior tests for root, child, and child-depth folder creation.

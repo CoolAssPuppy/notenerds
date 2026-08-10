@@ -34,7 +34,7 @@ final class PaperSelectionUITests: XCTestCase {
         let firstCanvas = application.buttons["Canvas thumbnail, Canvas 1"]
         XCTAssertTrue(firstCanvas.waitForExistence(timeout: 2))
         XCTAssertTrue((firstCanvas.value as? String)?.contains("Yellow legal pad") == true)
-        application.navigationBars["Canvases"].buttons["Done"].tap()
+        application.navigationBars["Canvases for Untitled notebook"].buttons["Done"].tap()
 
         application.buttons["New canvas"].tap()
         assertPaperGallery(in: application)

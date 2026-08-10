@@ -94,3 +94,4 @@
 - Check every per-record CloudKit result and preserve change sequence order. A successful batch call can still contain failed records.
 - Publish Notion notebook files and deletions before publishing the folder manifest. Restore a notebook at the library root when an interrupted publish leaves its former parent absent.
 - Older clients can erase new fields when they republish a shared version 1 manifest. Require every Notion-connected device to update before those fields are used, or move them to a separately versioned file.
+- Name a child collection screen with its parent object. The canvas browser title must include the notebook name so the user always knows which notebook its canvases belong to.

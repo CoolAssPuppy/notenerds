@@ -296,7 +296,7 @@ final class NoteNerdsLaunchTests: XCTestCase {
         application.launch()
         application.buttons["New notebook"].tap()
         application.buttons["Canvases"].tap()
-        XCTAssertTrue(application.navigationBars["Canvases"].waitForExistence(timeout: 2))
+        XCTAssertTrue(application.navigationBars["Canvases for Untitled notebook"].waitForExistence(timeout: 2))
 
         let attachment = XCTAttachment(screenshot: application.screenshot())
         attachment.name = "Canvases sheet"

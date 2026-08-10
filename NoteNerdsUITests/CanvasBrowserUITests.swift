@@ -2,14 +2,19 @@ import XCTest
 
 @MainActor
 final class CanvasBrowserUITests: XCTestCase {
-    func testCanvasesHeaderAndDoneButtonShareOneNavigationBarLevel() {
+    func testCanvasesHeaderNamesItsNotebookAndSharesOneNavigationBarLevel() {
         let application = makeApplication()
         application.launch()
         application.buttons["New notebook"].tap()
+        application.buttons["Notebook title, Untitled notebook"].tap()
+        let notebookTitle = application.textFields["Notebook title"]
+        XCTAssertTrue(notebookTitle.waitForExistence(timeout: 2))
+        notebookTitle.typeText("Project Atlas\n")
         application.buttons["Canvases"].tap()
 
-        let navigationBar = application.navigationBars["Canvases"]
-        let title = navigationBar.staticTexts["Canvases"]
+        let expectedTitle = "Canvases for Project Atlas"
+        let navigationBar = application.navigationBars[expectedTitle]
+        let title = navigationBar.staticTexts[expectedTitle]
         let done = navigationBar.buttons["Done"]
 
         XCTAssertTrue(title.waitForExistence(timeout: 2))

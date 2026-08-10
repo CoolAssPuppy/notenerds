@@ -13,7 +13,7 @@
 - [x] Normalize uploaded artwork to a bounded local icon and reject invalid files.
 - [x] Preserve folder icons through local storage, sync, export, restore, and older files.
 - [x] Run focused tests, the complete test suite, lint, and release checks.
-- [ ] Record the result, commit, push, and release as requested.
+- [x] Record the result, commit, push, and release as requested.
 
 ### Folder review
 
@@ -23,6 +23,7 @@
 - The complete iOS 26.5 scheme passed 459 tests with 0 failures and 0 skipped tests. This includes 7 folder interface tests, 7 performance checks, multi-device sync ordering, permanent deletion, Notion restore, Marker and Highlighter reopen, lasso persistence, fast Pencil input, and multi-canvas isolation.
 - Strict SwiftLint passed across 236 files. All 33 release-tool tests, Xcode static analysis, the secret scan, the XcodeGen stability check, release preflight, and `git diff --check` passed.
 - Every device connected to the same Notion library must run build 15 or later before folder appearance is changed. Build 14 can republish the version 1 manifest without icon and color fields.
+- Apple accepted TestFlight build 15 and marked it valid. The Internal Testers group has access to every build. Delivery UUID: `bf27d404-a11d-403e-886a-9a8f8ecf0d83`.
 
 ## Preserve Marker width after reopening a notebook
 

@@ -1,5 +1,6 @@
 # Lessons
 
+- For Note Nerds app icon exploration, create twenty editable options in Paper and base every direction on a lowercase “n” unless the user specifies a different mark or count.
 - Treat a named bug as a strict scope boundary. Add one failing behavior test, make the smallest fix, run one review pass, and ask before changing any adjacent system.
 - Stop after 30 minutes when a focused test is still failing. Report the blocker instead of expanding the audit or adding unrelated work.
 - Test handwriting recognition with an orientation-sensitive real Vision fixture and require the full expected word. Stub results cannot detect an upside-down input image.

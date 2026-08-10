@@ -7,7 +7,7 @@
 - [x] Fix the confirmed causes without changing local save behavior.
 - [x] Remove the unnecessary Select button from the left navigation.
 - [x] Run focused sync and sidebar checks, strict lint, and `git diff --check`.
-- [ ] Record the result, commit, push, and release if verification passes.
+- [x] Record the result, commit, push, and release if verification passes.
 
 ### Sync repair review
 
@@ -15,6 +15,7 @@
 - The Notion Settings retry restored credentials without resending the library. It now restores the saved connection, confirms it is connected, and republishes the current library.
 - The normal left-sidebar `Select` button is removed. Selection behavior used by item actions remains available where needed.
 - Ten Notion integration tests and the focused sidebar UI test passed. Strict SwiftLint passed across 241 files with 0 violations. All 33 release-tool tests, App Store release verification, Xcode static analysis, XcodeGen drift, and `git diff --check` passed.
+- Apple accepted TestFlight build 18 and marked it valid. The `Internal Testers` group has the build. Delivery UUID: `fdb70c4d-ab37-49d8-9240-3595d9f1dac0`.
 
 ## Ship the selected app icon
 

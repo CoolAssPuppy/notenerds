@@ -75,10 +75,8 @@ final class NotionLibraryPublisher: NotionLibraryPublishing {
             dataSourceID: destination.dataSourceID,
             generatedAt: generatedAt
         )
-        let manifestResult = try await manifestCoordinator.sync(
-            NotionLibraryManifestCodec.encode(manifest),
-            contentHash: NotionLibraryManifestCodec.contentHash(manifest)
-        )
+        let manifestData = try NotionLibraryManifestCodec.encode(manifest)
+        let manifestHash = try NotionLibraryManifestCodec.contentHash(manifest)
         let deletedCount = if notebookID == nil {
             try await reconcileDeletedNotebooks(in: library, state: state)
         } else {
@@ -99,6 +97,10 @@ final class NotionLibraryPublisher: NotionLibraryPublishing {
             case .skippedUnchanged: skippedCount += 1
             }
         }
+        let manifestResult = try await manifestCoordinator.sync(
+            manifestData,
+            contentHash: manifestHash
+        )
         return NotionPublishReport(
             uploadedNotebookCount: uploadedCount,
             skippedNotebookCount: skippedCount,

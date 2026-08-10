@@ -15,7 +15,6 @@ enum NotionRestoreChoice: Equatable, Sendable {
 enum NotionRestoreError: Error, Equatable, Sendable {
     case databaseMismatch
     case duplicateNotebook(NotebookID)
-    case missingParentFolder(FolderID)
     case invalidFolderTree
     case notebookIDMismatch
     case contentHashMismatch
@@ -43,10 +42,16 @@ struct NotionRestoreCoordinator: Sendable {
 
         var restored = local
         try restoreFolders(manifest.folders, into: &restored)
+        var inheritedTrashDates: [NotebookID: Date] = [:]
+        for record in manifest.notebookTrashProvenance {
+            inheritedTrashDates[record.notebookID] = record.inheritedTrashDate
+        }
         for content in contents {
-            let notebook = content.package.notebook
+            var notebook = content.package.notebook
+            var inheritedTrashDate = inheritedTrashDates[notebook.id]
             if let folderID = notebook.parentFolderID, restored.folder(id: folderID) == nil {
-                throw NotionRestoreError.missingParentFolder(folderID)
+                notebook.parentFolderID = nil
+                inheritedTrashDate = nil
             }
             let existing = restored.notebook(id: notebook.id)
             let choice = choices[notebook.id] ?? .keepLocal
@@ -54,7 +59,10 @@ struct NotionRestoreCoordinator: Sendable {
             let restoredNotebook = existing != nil && choice == .importCopy
                 ? notebook.duplicated(at: now())
                 : notebook
-            restored.updateNotebook(restoredNotebook)
+            restored.restoreNotebookFromBackup(
+                restoredNotebook,
+                inheritedTrashDate: restoredNotebook.id == notebook.id ? inheritedTrashDate : nil
+            )
             for asset in content.assets {
                 restored.storeAsset(asset)
             }
@@ -66,19 +74,18 @@ struct NotionRestoreCoordinator: Sendable {
         _ records: [NotionFolderManifestRecord],
         into library: inout LibraryState
     ) throws {
-        for record in records where library.folder(id: record.id) == nil {
-            library.updateFolder(
-                Folder(
-                    id: record.id,
-                    name: record.name,
-                    parentID: record.parentID,
-                    createdAt: record.createdAt,
-                    modifiedAt: record.modifiedAt,
-                    isFavorite: record.isFavorite,
-                    tags: Set(record.tags),
-                    trashedAt: record.trashedAt
-                )
-            )
+        for record in records {
+            let remoteFolder = record.folder
+            guard var localFolder = library.folder(id: record.id) else {
+                library.restoreFolderFromBackup(remoteFolder)
+                continue
+            }
+            if shouldRestoreAppearance(from: remoteFolder, over: localFolder) {
+                localFolder.icon = remoteFolder.icon
+                localFolder.iconColor = remoteFolder.iconColor
+                localFolder.appearanceModifiedAt = remoteFolder.appearanceModifiedAt
+            }
+            library.restoreFolderFromBackup(localFolder)
         }
         do {
             for record in records {
@@ -87,6 +94,12 @@ struct NotionRestoreCoordinator: Sendable {
         } catch {
             throw NotionRestoreError.invalidFolderTree
         }
+    }
+
+    private func shouldRestoreAppearance(from remote: Folder, over local: Folder) -> Bool {
+        guard let remoteDate = remote.appearanceModifiedAt else { return false }
+        guard let localDate = local.appearanceModifiedAt else { return true }
+        return remoteDate > localDate
     }
 
     private func validateUniqueNotebooks(_ contents: [NativeArchiveContents]) throws {

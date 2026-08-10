@@ -32,21 +32,36 @@ final class LibraryCreationPlacementUITests: XCTestCase {
         expandedAttachment.lifetime = .keepAlways
         add(expandedAttachment)
 
-        application.coordinate(withNormalizedOffset: CGVector(dx: 0.65, dy: 0.5)).tap()
+        application.staticTexts["Favorites"].tap()
         XCTAssertTrue(searchButton.waitForExistence(timeout: 2))
         XCTAssertFalse(searchField.exists)
+        application.staticTexts["My Notebooks"].tap()
+        XCTAssertTrue(application.navigationBars["My Notebooks"].waitForExistence(timeout: 2))
         let attachment = XCTAttachment(screenshot: application.screenshot())
         attachment.name = "Library creation controls"
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
 
-        newFolder.tap()
+    func testNewSubfolderAppearsAndCannotCreateGrandchild() {
+        let application = makeApplication()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        application.launch()
+
+        application.buttons["New folder"].tap()
         let folder = application.buttons["Folder, New folder"]
         XCTAssertTrue(folder.waitForExistence(timeout: 2))
         folder.tap()
 
         XCTAssertTrue(application.navigationBars["New folder"].waitForExistence(timeout: 2))
-        XCTAssertTrue(newNotebook.exists)
+        let newSubfolder = application.buttons["New subfolder"]
+        XCTAssertTrue(newSubfolder.waitForExistence(timeout: 2))
+        newSubfolder.tap()
+        let childFolder = application.buttons["Subfolder, New folder"]
+        XCTAssertTrue(childFolder.waitForExistence(timeout: 2))
+        childFolder.tap()
+        XCTAssertTrue(newSubfolder.waitForNonExistence(timeout: 2))
+        XCTAssertTrue(application.buttons["New notebook"].exists)
     }
 
     func testFolderSortAndGlobalSwipeableCanvasStack() {
@@ -88,6 +103,99 @@ final class LibraryCreationPlacementUITests: XCTestCase {
             ).count,
             0
         )
+    }
+
+    func testFolderEditorChangesTheNameSymbolAndColorTogether() {
+        let application = makeApplication()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        application.launch()
+
+        application.buttons["New folder"].tap()
+        let folder = application.buttons["Folder, New folder"]
+        XCTAssertTrue(folder.waitForExistence(timeout: 2))
+        folder.press(forDuration: 1)
+        application.buttons["Edit folder"].tap()
+
+        XCTAssertTrue(application.navigationBars["Edit folder"].waitForExistence(timeout: 2))
+        let nameField = application.textFields["Folder name"]
+        XCTAssertTrue(nameField.exists)
+        let iconType = application.segmentedControls["Folder icon type"]
+        XCTAssertTrue(iconType.exists)
+        iconType.buttons["Image"].tap()
+        XCTAssertTrue(application.buttons["Choose PNG or SVG"].exists)
+        iconType.buttons["Symbol"].tap()
+        XCTAssertTrue(application.buttons["Briefcase"].exists)
+        let purpleColor = application.buttons["Purple"]
+        XCTAssertTrue(purpleColor.exists)
+        XCTAssertGreaterThanOrEqual(purpleColor.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(purpleColor.frame.height, 44)
+
+        nameField.tap()
+        nameField.typeText(" Work")
+        application.buttons["Briefcase"].tap()
+        purpleColor.tap()
+        application.buttons["Save"].tap()
+
+        let editedFolder = application.buttons["Folder, New folder Work"]
+        XCTAssertTrue(editedFolder.waitForExistence(timeout: 2))
+        XCTAssertTrue((editedFolder.value as? String)?.contains("Briefcase") == true)
+    }
+
+    func testFolderEditorSavesOneEmoji() {
+        let application = makeApplication()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        application.launch()
+
+        application.buttons["New folder"].tap()
+        let folder = application.buttons["Folder, New folder"]
+        XCTAssertTrue(folder.waitForExistence(timeout: 2))
+        folder.press(forDuration: 1)
+        application.buttons["Edit folder"].tap()
+        application.segmentedControls["Folder icon type"].buttons["Emoji"].tap()
+        let emoji = "\u{1F4C1}"
+        let emojiField = application.textFields["Emoji"]
+        emojiField.tap()
+        emojiField.typeText(emoji)
+        application.buttons["Save"].tap()
+
+        XCTAssertTrue((folder.value as? String)?.contains(emoji) == true)
+    }
+
+    func testMoveMenuNamesNestedDestinationsByTheirFolderPath() {
+        let application = makeApplication()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        application.launch()
+
+        application.buttons["New folder"].tap()
+        application.buttons["Folder, New folder"].tap()
+        application.buttons["New subfolder"].tap()
+        application.staticTexts["My Notebooks"].tap()
+        application.buttons["New notebook"].tap()
+        application.buttons["Library"].tap()
+        application.buttons["More"].tap()
+        application.buttons["Select"].tap()
+        application.buttons["Notebook, Untitled notebook"].tap()
+        application.buttons["More"].tap()
+        application.buttons["Move"].tap()
+
+        XCTAssertTrue(application.buttons["New folder"].exists)
+        XCTAssertTrue(application.buttons["New folder / New folder"].exists)
+    }
+
+    func testFolderSelectionReportsItsStateToVoiceOver() {
+        let application = makeApplication()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        application.launch()
+
+        application.buttons["New folder"].tap()
+        let folder = application.buttons["Folder, New folder"]
+        XCTAssertTrue(folder.waitForExistence(timeout: 2))
+        application.buttons["More"].tap()
+        application.buttons["Select"].tap()
+
+        XCTAssertTrue((folder.value as? String)?.contains("Not selected") == true)
+        folder.tap()
+        XCTAssertTrue((folder.value as? String)?.contains("Selected") == true)
     }
 
     private func makeApplication() -> XCUIApplication {

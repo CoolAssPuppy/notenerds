@@ -2,6 +2,7 @@ import Foundation
 
 extension AppModel {
     func createNotebook(paperType: PaperType? = nil) {
+        guard canCreateNotebook else { return }
         let now = Date()
         let selectedPaper = paperType ?? PaperType(
             rawValue: UserDefaults.standard.string(forKey: "defaultPaperType") ?? ""
@@ -11,7 +12,8 @@ extension AppModel {
             canvases: [Canvas(title: "Canvas 1", template: selectedPaper, createdAt: now, modifiedAt: now)],
             createdAt: now,
             modifiedAt: now,
-            lastOpenedAt: now
+            lastOpenedAt: now,
+            parentFolderID: currentFolderID
         )
         do {
             try library.addNotebook(notebook, to: currentFolderID)
@@ -26,6 +28,7 @@ extension AppModel {
     }
 
     func createFolder() {
+        guard canCreateFolder else { return }
         do {
             let folder = try library.createFolder(named: "New folder", in: currentFolderID, at: Date())
             persistLibrary()
@@ -94,9 +97,20 @@ extension AppModel {
         syncNotebookMetadata(notebookID)
     }
 
-    func renameFolder(_ id: FolderID, to name: String) {
+    func editFolder(
+        _ id: FolderID,
+        name: String,
+        icon: FolderIcon,
+        iconColor: FolderIconColor?
+    ) {
         do {
-            try library.renameFolder(id, to: name, at: Date())
+            try library.editFolder(
+                id,
+                name: name,
+                icon: icon,
+                iconColor: iconColor,
+                at: Date()
+            )
             persistLibrary()
             syncFolder(id)
         } catch {
@@ -122,6 +136,7 @@ extension AppModel {
     func deleteFolder(_ id: FolderID) {
         let date = Date()
         performFolderChange { try $0.moveFolderToTrash(id, at: date) }
+        leaveInactiveCurrentFolder()
         rebuildSearchIndex()
         enqueueForSync(.trashFolder(id, date: date), notebookID: NotebookID(rawValue: id.rawValue))
     }
@@ -129,19 +144,36 @@ extension AppModel {
     func restoreFolder(_ id: FolderID) {
         performFolderChange { try $0.restoreFolder(id) }
         rebuildSearchIndex()
-        enqueueForSync(.restoreFolder(id), notebookID: NotebookID(rawValue: id.rawValue))
+        syncFolderRestoration(id)
     }
 
     func permanentlyDeleteFolder(_ id: FolderID) {
+        let scope = library.permanentDeletionScope(forFolder: id)
         performFolderChange { try $0.permanentlyDeleteFolder(id) }
+        leaveInactiveCurrentFolder()
         rebuildSearchIndex()
-        enqueueForSync(.deleteFolder(id), notebookID: NotebookID(rawValue: id.rawValue))
+        let descendantFolderIDs = scope.folderIDs
+            .subtracting([id])
+            .sorted { $0.rawValue.uuidString < $1.rawValue.uuidString }
+        let notebookIDs = scope.notebookIDs.sorted {
+            $0.rawValue.uuidString < $1.rawValue.uuidString
+        }
+        for folderID in [id] + descendantFolderIDs {
+            enqueueForSync(
+                .deleteFolder(folderID),
+                notebookID: NotebookID(rawValue: folderID.rawValue)
+            )
+        }
+        for notebookID in notebookIDs {
+            enqueueForSync(.deleteNotebook(notebookID), notebookID: notebookID)
+        }
     }
 
     func emptyTrash() {
         let deletedNotebookIDs = library.notebooks.filter { $0.trashedAt != nil }.map(\.id)
         let deletedFolderIDs = library.folders.filter { $0.trashedAt != nil }.map(\.id)
         library.emptyTrash()
+        leaveInactiveCurrentFolder()
         rebuildSearchIndex()
         persistLibrary()
         for id in deletedNotebookIDs { enqueueForSync(.deleteNotebook(id), notebookID: id) }
@@ -161,11 +193,13 @@ extension AppModel {
     }
 
     func moveFolder(_ id: FolderID, to parentID: FolderID?) {
+        guard canMoveFolder(id, to: parentID) else { return }
         performFolderChange { try $0.moveFolder(id, to: parentID, at: Date()) }
         syncFolder(id)
     }
 
     func moveItems(_ items: Set<LibraryItemID>, to parentID: FolderID?) {
+        guard canMoveItems(items, to: parentID) else { return }
         performFolderChange { try $0.moveItems(items, to: parentID, at: Date()) }
         sync(items)
     }
@@ -173,6 +207,7 @@ extension AppModel {
     func deleteItems(_ items: Set<LibraryItemID>) {
         let date = Date()
         performFolderChange { try $0.moveItemsToTrash(items, at: date) }
+        leaveInactiveCurrentFolder()
         rebuildSearchIndex()
         for item in items {
             switch item {
@@ -189,8 +224,9 @@ extension AppModel {
         for item in items {
             switch item {
             case let .folder(id):
-                enqueueForSync(.restoreFolder(id), notebookID: NotebookID(rawValue: id.rawValue))
-            case let .notebook(id): syncNotebookMetadata(id)
+                syncFolderRestoration(id)
+            case let .notebook(id):
+                syncNotebookRestoration(id)
             }
         }
     }
@@ -212,7 +248,7 @@ extension AppModel {
         library.restoreNotebook(notebookID)
         refreshSearchIndex(for: notebookID)
         persistLibrary()
-        syncNotebookMetadata(notebookID)
+        syncNotebookRestoration(notebookID)
     }
 
     func permanentlyDelete(_ notebookID: NotebookID) {
@@ -231,27 +267,21 @@ extension AppModel {
         }
     }
 
-    private func syncNotebookMetadata(_ id: NotebookID) {
-        guard let notebook = library.notebook(id: id) else { return }
-        enqueueForSync(.updateNotebookMetadata(NotebookSyncMetadata(notebook: notebook)), notebookID: id)
-    }
-
-    private func syncFolder(_ id: FolderID) {
-        guard let folder = library.folder(id: id) else { return }
-        enqueueForSync(.updateFolder(folder), notebookID: NotebookID(rawValue: id.rawValue))
-    }
-
-    private func sync(_ items: Set<LibraryItemID>) {
-        for item in items {
-            switch item {
-            case let .folder(id): syncFolder(id)
-            case let .notebook(id): syncNotebookMetadata(id)
-            }
-        }
-    }
-
     private func rebuildSearchIndex() {
         searchIndex = LibrarySearchIndex()
         for notebook in library.notebooks { searchIndex.update(notebook) }
+    }
+
+    func leaveInactiveCurrentFolder() {
+        guard let currentFolderID else { return }
+        guard let currentFolder = library.folder(id: currentFolderID) else {
+            self.currentFolderID = nil
+            return
+        }
+        guard currentFolder.trashedAt != nil else { return }
+        self.currentFolderID = currentFolder.parentID.flatMap { parentID in
+            guard library.folder(id: parentID)?.trashedAt == nil else { return nil }
+            return parentID
+        }
     }
 }

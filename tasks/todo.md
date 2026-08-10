@@ -1,5 +1,29 @@
 # Current work
 
+## Create and customize folders
+
+- [x] Add failing behavior tests for root, child, and child-depth folder creation.
+- [x] Create a top-level folder when no folder is selected.
+- [x] Create a child folder when a top-level folder is selected.
+- [x] Hide the folder creation action when a child folder is selected.
+- [x] Keep the folder schema capable of deeper nesting.
+- [x] Replace the rename alert with one folder editor for the name and icon.
+- [x] Offer a curated SF Symbol picker, one-emoji entry, and PNG or SVG import.
+- [x] Let SF Symbols and the default folder icon use a saved custom color.
+- [x] Normalize uploaded artwork to a bounded local icon and reject invalid files.
+- [x] Preserve folder icons through local storage, sync, export, restore, and older files.
+- [x] Run focused tests, the complete test suite, lint, and release checks.
+- [ ] Record the result, commit, push, and release as requested.
+
+### Folder review
+
+- The Folders plus button creates a top-level folder when no folder is selected and a child when a top-level folder is selected. The app hides that action for child folders, while the stored model still accepts deeper trees from sync or import.
+- One folder editor changes the name, curated SF Symbol, emoji, imported PNG or SVG, and optional icon color. Imported artwork becomes a bounded PNG before it is stored or synced.
+- Folder appearance survives local storage, iCloud sync, Notion backup and restore, Trash, moves, duplication, and older files. Folder and notebook Trash provenance prevents stale devices from restoring or deleting unrelated content.
+- The complete iOS 26.5 scheme passed 459 tests with 0 failures and 0 skipped tests. This includes 7 folder interface tests, 7 performance checks, multi-device sync ordering, permanent deletion, Notion restore, Marker and Highlighter reopen, lasso persistence, fast Pencil input, and multi-canvas isolation.
+- Strict SwiftLint passed across 236 files. All 33 release-tool tests, Xcode static analysis, the secret scan, the XcodeGen stability check, release preflight, and `git diff --check` passed.
+- Every device connected to the same Notion library must run build 15 or later before folder appearance is changed. Build 14 can republish the version 1 manifest without icon and color fields.
+
 ## Preserve Marker width after reopening a notebook
 
 - [x] Reproduce the reported thin-to-thick Marker change through save, leave, and reopen.

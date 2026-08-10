@@ -10,10 +10,16 @@ actor CloudKitSyncProvider: SyncProvider {
     nonisolated let identifier = "cloudkit"
     private let container: CKContainer
     private let database: CKDatabase
+    private let recordSaver: any CloudKitRecordSaving
 
-    init(container: CKContainer = CKContainer.default()) {
+    init(
+        container: CKContainer = CKContainer.default(),
+        recordSaver: (any CloudKitRecordSaving)? = nil
+    ) {
         self.container = container
-        database = container.privateCloudDatabase
+        let database = container.privateCloudDatabase
+        self.database = database
+        self.recordSaver = recordSaver ?? CKDatabaseRecordSaver(database: database)
     }
 
     func start() async throws {
@@ -27,7 +33,8 @@ actor CloudKitSyncProvider: SyncProvider {
     }
 
     func push(_ changes: [DocumentChange]) async throws {
-        for batch in SyncPushBatcher.batches(changes, maximumCount: 200) {
+        let orderedChanges = changes.sorted { $0.sequence < $1.sequence }
+        for batch in SyncPushBatcher.batches(orderedChanges, maximumCount: 200) {
             try await pushBatch(batch)
         }
     }
@@ -72,12 +79,8 @@ actor CloudKitSyncProvider: SyncProvider {
         do {
             try createProtectedFile(asset.data, at: assetURL)
             record[Field.data] = CKAsset(fileURL: assetURL)
-            _ = try await database.modifyRecords(
-                saving: [record],
-                deleting: [],
-                savePolicy: .changedKeys,
-                atomically: false
-            )
+            let saveResults = try await recordSaver.save([record])
+            try validate(saveResults, includeEvery: [record])
         } catch {
             throw syncFailure(from: error)
         }
@@ -103,14 +106,24 @@ actor CloudKitSyncProvider: SyncProvider {
                 try createProtectedFile(change.payload, at: payloadURL)
                 return record(for: change, payloadURL: payloadURL)
             }
-            _ = try await database.modifyRecords(
-                saving: records,
-                deleting: [],
-                savePolicy: .changedKeys,
-                atomically: false
-            )
+            for record in records {
+                let saveResults = try await recordSaver.save([record])
+                try validate(saveResults, includeEvery: [record])
+            }
         } catch {
             throw syncFailure(from: error)
+        }
+    }
+
+    private func validate(
+        _ results: [CKRecord.ID: Result<CKRecord, any Error>],
+        includeEvery records: [CKRecord]
+    ) throws {
+        for record in records {
+            guard let result = results[record.recordID] else {
+                throw CloudKitSyncError.malformedRecord
+            }
+            _ = try result.get()
         }
     }
 
@@ -139,7 +152,7 @@ actor CloudKitSyncProvider: SyncProvider {
               let sequence = record[Field.sequence] as? Int else {
             throw CloudKitSyncError.malformedRecord
         }
-        let payload = try payloadData(from: record)
+        let payload = try changePayloadData(from: record)
         return DocumentChange(
             id: ChangeID(rawValue: changeUUID),
             notebookID: NotebookID(rawValue: notebookUUID),
@@ -158,12 +171,46 @@ actor CloudKitSyncProvider: SyncProvider {
         try results.map { _, recordResult in try change(from: recordResult.get()) }
     }
 
-    private func payloadData(from record: CKRecord) throws -> Data {
-        if let data = record[Field.data] as? Data { return data }
+    private func changePayloadData(from record: CKRecord) throws -> Data {
+        if let data = record[Field.data] as? Data {
+            let maximumByteCount = SyncChangeEncoder.maximumPayloadByteCount(
+                forEnvelopePrefix: Data(data.prefix(SyncChangeEncoder.maximumEnvelopePrefixByteCount))
+            )
+            guard data.count <= maximumByteCount else { throw BoundedFileReaderError.fileTooLarge }
+            return data
+        }
         guard let asset = record[Field.data] as? CKAsset, let fileURL = asset.fileURL else {
             throw CloudKitSyncError.assetNotFound
         }
-        return try BoundedFileReader().read(from: fileURL)
+        let prefix = try readPayloadPrefix(from: fileURL)
+        let maximumByteCount = SyncChangeEncoder.maximumPayloadByteCount(
+            forEnvelopePrefix: prefix
+        )
+        return try BoundedFileReader(maximumByteCount: maximumByteCount).read(from: fileURL)
+    }
+
+    private func payloadData(
+        from record: CKRecord,
+        maximumByteCount: Int = SyncChangeEncoder.maximumChangePayloadByteCount
+    ) throws -> Data {
+        if let data = record[Field.data] as? Data {
+            guard data.count <= maximumByteCount else { throw BoundedFileReaderError.fileTooLarge }
+            return data
+        }
+        guard let asset = record[Field.data] as? CKAsset, let fileURL = asset.fileURL else {
+            throw CloudKitSyncError.assetNotFound
+        }
+        return try BoundedFileReader(maximumByteCount: maximumByteCount).read(from: fileURL)
+    }
+
+    private func readPayloadPrefix(from url: URL) throws -> Data {
+        let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+        guard values.isRegularFile == true, values.isSymbolicLink != true else {
+            throw BoundedFileReaderError.unsupportedFile
+        }
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        return try handle.read(upToCount: SyncChangeEncoder.maximumEnvelopePrefixByteCount) ?? Data()
     }
 
     private func createProtectedFile(_ data: Data, at url: URL) throws {
@@ -194,6 +241,27 @@ actor CloudKitSyncProvider: SyncProvider {
         default:
             return .persistent
         }
+    }
+}
+
+protocol CloudKitRecordSaving: Sendable {
+    func save(
+        _ records: [CKRecord]
+    ) async throws -> [CKRecord.ID: Result<CKRecord, any Error>]
+}
+
+private struct CKDatabaseRecordSaver: CloudKitRecordSaving, @unchecked Sendable {
+    let database: CKDatabase
+
+    func save(
+        _ records: [CKRecord]
+    ) async throws -> [CKRecord.ID: Result<CKRecord, any Error>] {
+        try await database.modifyRecords(
+            saving: records,
+            deleting: [],
+            savePolicy: .changedKeys,
+            atomically: false
+        ).saveResults
     }
 }
 

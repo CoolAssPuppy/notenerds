@@ -7,6 +7,7 @@ struct LibrarySidebarView: View {
     @Binding var selectedItems: Set<LibraryItemID>
     @State private var isConfirmingEmptyTrash = false
     @State private var isAppSettingsPresented = false
+    @State private var expandedFolderIDs = Set<FolderID>()
 
     var body: some View {
         List(selection: selectedSection) {
@@ -23,23 +24,25 @@ struct LibrarySidebarView: View {
                 }
             }
             Section {
-                OutlineGroup(folderTree, children: \.children) { node in
-                    LibraryFolderSidebarRow(
+                ForEach(folderTree) { node in
+                    LibraryFolderTreeRow(
                         model: model,
-                        folder: node.folder,
-                        isCurrent: model.currentFolderID == node.id,
+                        node: node,
+                        expandedFolderIDs: $expandedFolderIDs,
                         isSelecting: isSelecting,
-                        isSelected: selectedItems.contains(.folder(node.id)),
-                        onActivate: { activate(node.folder) }
+                        selectedItems: selectedItems,
+                        onActivate: activate
                     )
                 }
             } header: {
                 HStack {
                     Text("Folders")
                     Spacer()
-                    Button("New folder", systemImage: "plus", action: model.createFolder)
-                        .labelStyle(.iconOnly)
-                        .buttonStyle(.plain)
+                    if model.canCreateFolder && !isSelecting {
+                        Button(newFolderLabel, systemImage: "plus", action: createFolder)
+                            .labelStyle(.iconOnly)
+                            .buttonStyle(.plain)
+                    }
                 }
                 .textCase(nil)
             }
@@ -94,6 +97,10 @@ struct LibrarySidebarView: View {
         model.library.folders(sortedBy: .recentlyModified).filter { $0.trashedAt != nil }
     }
 
+    private var newFolderLabel: String {
+        model.currentFolderID == nil ? "New folder" : "New subfolder"
+    }
+
     private var selectedSection: Binding<LibrarySection?> {
         Binding(
             get: { model.currentFolderID == nil ? model.selectedSection : nil },
@@ -130,8 +137,8 @@ struct LibrarySidebarView: View {
             if model.selectedSection == .files {
                 Menu("Move", systemImage: AppSymbol.folder) {
                     Button("My Notebooks") { moveSelection(to: nil) }
-                    ForEach(model.library.folders.filter { $0.trashedAt == nil }) { folder in
-                        Button(folder.name) { moveSelection(to: folder.id) }
+                    ForEach(availableMoveDestinations) { folder in
+                        Button(moveDestinationName(folder)) { moveSelection(to: folder.id) }
                     }
                 }
                 Button("Move selected to Trash", systemImage: AppSymbol.trash, role: .destructive) {
@@ -173,6 +180,13 @@ struct LibrarySidebarView: View {
         }
     }
 
+    private func createFolder() {
+        if let parentID = model.currentFolderID {
+            expandedFolderIDs.insert(parentID)
+        }
+        model.createFolder()
+    }
+
     private func toggleSelection(_ item: LibraryItemID) {
         if selectedItems.contains(item) {
             selectedItems.remove(item)
@@ -184,6 +198,31 @@ struct LibrarySidebarView: View {
     private func moveSelection(to folderID: FolderID?) {
         model.moveItems(selectedItems, to: folderID)
         stopSelecting()
+    }
+
+    private var availableMoveDestinations: [Folder] {
+        model.availableMoveDestinations(for: selectedItems)
+            .sorted { lhs, rhs in
+                let leftName = moveDestinationName(lhs)
+                let rightName = moveDestinationName(rhs)
+                if leftName == rightName {
+                    return lhs.id.rawValue.uuidString < rhs.id.rawValue.uuidString
+                }
+                return leftName.localizedStandardCompare(rightName) == .orderedAscending
+            }
+    }
+
+    private func moveDestinationName(_ folder: Folder) -> String {
+        var names = [folder.name]
+        var parentID = folder.parentID
+        var visited = Set([folder.id])
+        while let identifier = parentID,
+              visited.insert(identifier).inserted,
+              let parent = model.library.folder(id: identifier) {
+            names.append(parent.name)
+            parentID = parent.parentID
+        }
+        return names.reversed().joined(separator: " / ")
     }
 
     private func moveNotebooksToTrash(_ items: [String]) -> Bool {
@@ -221,12 +260,6 @@ private struct TrashSidebarDropTarget: ViewModifier {
             content
         }
     }
-}
-
-private struct LibraryFolderNode: Identifiable {
-    let folder: Folder
-    let children: [LibraryFolderNode]?
-    var id: FolderID { folder.id }
 }
 
 extension LibrarySection {

@@ -21,7 +21,7 @@ final class AppModel: ObservableObject {
     @Published var syncIssue: String?
     @Published private(set) var hasRestoredLibrary = false
 
-    let repository: LocalLibraryRepository
+    let repository: any LibraryRepository
     let documentStore: LocalDocumentStore?
     let recognitionCoordinator: HandwritingRecognitionCoordinator
     var histories: [NotebookID: DocumentHistory] = [:]
@@ -36,11 +36,15 @@ final class AppModel: ObservableObject {
     var seenSyncChangeIDs: Set<ChangeID> = []
     var journalCounts: [NotebookID: Int] = [:]
     var libraryPersistenceTask: Task<Void, Never>?
+    var didPersistLibrary = true
     var documentPersistenceTask: Task<Void, Never>?
+    var didPersistDocuments = true
+    var syncSubmissionTask: Task<Void, Never>?
+    var remoteChangeIDsAwaitingPersistence: Set<ChangeID> = []
     private var libraryRestoreTask: Task<Void, Never>?
 
     init(
-        repository: LocalLibraryRepository = AppModel.defaultRepository(),
+        repository: any LibraryRepository = AppModel.defaultRepository(),
         documentStore: LocalDocumentStore? = nil,
         syncProvider: (any SyncProvider)? = nil,
         syncStateStore: (any SyncStateStore)? = nil,
@@ -169,7 +173,9 @@ final class AppModel: ObservableObject {
             await precedingTask?.value
             do {
                 try await repository.save(snapshot)
+                didPersistLibrary = true
             } catch {
+                didPersistLibrary = false
                 presentedError = "Your latest change could not be saved. \(error.localizedDescription)"
             }
         }
@@ -220,7 +226,9 @@ final class AppModel: ObservableObject {
                     journalCounts[notebookID] = 0
                     persistLibrary()
                 }
+                didPersistDocuments = true
             } catch {
+                didPersistDocuments = false
                 presentedError = "Your latest change could not be saved. \(error.localizedDescription)"
             }
         }
@@ -240,7 +248,9 @@ final class AppModel: ObservableObject {
                     NativeNotebookPackage(schemaVersion: .current, notebook: notebook)
                 )
                 persistLibrary()
+                didPersistDocuments = true
             } catch {
+                didPersistDocuments = false
                 presentedError = "Your latest change could not be saved. \(error.localizedDescription)"
             }
         }
@@ -250,6 +260,7 @@ final class AppModel: ObservableObject {
         await documentPersistenceTask?.value
         guard let documentStore else {
             await libraryPersistenceTask?.value
+            await syncSubmissionTask?.value
             return
         }
         for notebook in library.notebooks {
@@ -258,118 +269,7 @@ final class AppModel: ObservableObject {
         }
         persistLibrary()
         await libraryPersistenceTask?.value
-    }
-
-    private func enqueueForSync(_ operation: DocumentOperation, notebookID: NotebookID) {
-        enqueueForSync(SyncedDocumentAction(operation: operation, direction: .apply), notebookID: notebookID)
-    }
-
-    func enqueueForSync(_ action: SyncedDocumentAction, notebookID: NotebookID) {
-        guard let syncEngine else { return }
-        syncSequence = nextSyncSequence()
-        do {
-            let change = try syncChangeEncoder.change(
-                for: action,
-                notebookID: notebookID,
-                sequence: syncSequence
-            )
-            seenSyncChangeIDs.insert(change.id)
-            Task {
-                await syncEngine.enqueue(change)
-                await synchronize(using: syncEngine)
-            }
-        } catch {
-            syncIssue = "This change is saved locally and is waiting for iCloud sync."
-        }
-    }
-
-    func enqueueForSync(_ mutation: LibrarySyncMutation, notebookID: NotebookID) {
-        guard let syncEngine else { return }
-        syncSequence = nextSyncSequence()
-        do {
-            let change = try syncChangeEncoder.change(
-                for: mutation,
-                notebookID: notebookID,
-                sequence: syncSequence
-            )
-            seenSyncChangeIDs.insert(change.id)
-            Task {
-                await syncEngine.enqueue(change)
-                await synchronize(using: syncEngine)
-            }
-        } catch {
-            syncIssue = "This change is saved locally and is waiting for iCloud sync."
-        }
-    }
-
-    func enqueueAssetForSync(_ asset: DocumentAsset) {
-        guard let syncEngine else { return }
-        Task {
-            await syncEngine.enqueue(asset)
-            await synchronize(using: syncEngine)
-        }
-    }
-
-    func synchronize(using engine: SyncEngine? = nil) async {
-        guard let engine = engine ?? syncEngine else { return }
-        await engine.synchronize()
-        let state = await engine.state
-        let failure = await engine.lastFailure
-        let changes = await engine.receivedChangesSnapshot()
-        applyRemoteChanges(changes)
-        await engine.acknowledgeReceivedChanges(Set(changes.map(\.id)))
-        syncIssue = state == .idle ? nil : failure?.userMessage
-    }
-
-    private func applyRemoteChanges(_ changes: [DocumentChange]) {
-        for change in changes where !seenSyncChangeIDs.contains(change.id) {
-            seenSyncChangeIDs.insert(change.id)
-            if let mutation = try? SyncChangeEncoder.decodeLibraryMutation(change) {
-                try? mutation.apply(to: &library)
-                if let notebookID = mutation.affectedNotebookID {
-                    if let notebook = library.notebook(id: notebookID) {
-                        searchIndex.update(notebook)
-                        fetchMissingAssets(in: notebook)
-                    } else {
-                        searchIndex.remove(notebookID: notebookID)
-                    }
-                } else {
-                    searchIndex = LibrarySearchIndex()
-                    for notebook in library.notebooks { searchIndex.update(notebook) }
-                }
-                continue
-            }
-            guard var notebook = library.notebook(id: change.notebookID),
-                  let action = try? SyncChangeEncoder.decodeDocumentAction(change),
-                  (try? action.perform(on: &notebook)) != nil else { continue }
-            notebook.modifiedAt = max(notebook.modifiedAt, change.timestamp)
-            library.updateNotebook(notebook)
-            searchIndex.update(notebook)
-            fetchMissingAssets(in: notebook)
-        }
-        if !changes.isEmpty { persistLibrary() }
-    }
-
-    private func fetchMissingAssets(in notebook: Notebook) {
-        guard let syncEngine else { return }
-        let identifiers = Set(notebook.canvases.flatMap(\.layers).flatMap(\.objects).compactMap { object in
-            switch object {
-            case let .image(image): image.assetID
-            case let .pdf(pdf): pdf.assetID
-            case .stroke, .shape, .text: nil
-            }
-        }).filter { library.asset(id: $0) == nil }
-        for id in identifiers {
-            Task {
-                guard let data = try? await syncEngine.fetchAsset(id) else { return }
-                library.storeAsset(DocumentAsset(id: id, data: data, contentType: "application/octet-stream"))
-                persistLibrary()
-            }
-        }
-    }
-
-    private func nextSyncSequence() -> Int {
-        max(syncSequence + 1, Int(Date().timeIntervalSince1970 * 1_000_000))
+        await syncSubmissionTask?.value
     }
 
     func openSearchResult(_ result: LibrarySearchResult) {

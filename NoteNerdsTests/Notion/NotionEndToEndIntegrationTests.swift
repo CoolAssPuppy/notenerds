@@ -3,6 +3,52 @@ import XCTest
 
 @MainActor
 final class NotionEndToEndIntegrationTests: XCTestCase {
+    func testNotebookArchiveIsPublishedBeforeTheFolderManifest() async throws {
+        let destination = NotionDestination(
+            databaseID: "11111111-1111-1111-1111-111111111111",
+            dataSourceID: "22222222-2222-2222-2222-222222222222"
+        )
+        let registry = NotionSyncRegistry(store: EndToEndStateStore(state: NotionSyncState(
+            workspaceID: "workspace",
+            destination: destination,
+            manifestPageID: "33333333-3333-3333-3333-333333333333"
+        )))
+        let notion = LocalNotionService(manifestPageID: "33333333-3333-3333-3333-333333333333")
+
+        _ = try await NotionLibraryPublisher(api: notion, registry: registry)
+            .publish(LibraryState(notebooks: [DomainFixtures.notebook()]))
+
+        let events = await notion.publicationEvents()
+        XCTAssertEqual(events, ["notebook", "manifest"])
+    }
+
+    func testNotebookDeletionIsPublishedBeforeTheFolderManifest() async throws {
+        let destination = NotionDestination(
+            databaseID: "11111111-1111-1111-1111-111111111111",
+            dataSourceID: "22222222-2222-2222-2222-222222222222"
+        )
+        let registry = NotionSyncRegistry(store: EndToEndStateStore(state: NotionSyncState(
+            workspaceID: "workspace",
+            destination: destination,
+            manifestPageID: "33333333-3333-3333-3333-333333333333",
+            bindings: [NotionNotebookBinding(
+                notebookID: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+                pageID: "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE",
+                managedRootBlockID: nil,
+                contentHash: String(repeating: "a", count: 64),
+                syncedAt: DomainFixtures.fixedDate,
+                notionLastEditedAt: nil
+            )]
+        )))
+        let notion = LocalNotionService(manifestPageID: "33333333-3333-3333-3333-333333333333")
+
+        _ = try await NotionLibraryPublisher(api: notion, registry: registry)
+            .publish(LibraryState())
+
+        let events = await notion.publicationEvents()
+        XCTAssertEqual(events, ["deletion", "manifest"])
+    }
+
     func testRepeatedLibraryPublishDoesNotUploadAnUnchangedManifest() async throws {
         let destination = NotionDestination(
             databaseID: "11111111-1111-1111-1111-111111111111",
@@ -242,6 +288,7 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
     private var trashedPageIDs: [String] = []
     private var uploadSequence = 0
     private var rootSequence = 0
+    private var events: [String] = []
 
     init(manifestPageID: String) { self.manifestPageID = manifestPageID }
 
@@ -265,6 +312,7 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
         snapshot: NotionNotebookSnapshot,
         files: NotionNotebookRemoteFiles
     ) -> NotionPageBinding {
+        events.append("notebook")
         let pageID = String(format: "BBBBBBBB-BBBB-BBBB-BBBB-%012d", notebookFiles.count + 1)
         notebookFiles[snapshot.row.notebookID] = NotebookFileRecord(
             pageID: pageID,
@@ -279,6 +327,7 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
         snapshot: NotionNotebookSnapshot,
         files: NotionNotebookRemoteFiles
     ) -> NotionPageBinding {
+        events.append("notebook")
         notebookFiles[snapshot.row.notebookID] = NotebookFileRecord(
             pageID: pageID,
             uploadID: files.nativeUploadID,
@@ -290,6 +339,7 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
     func findManagedRootBlock(pageID: String, notebookID: String) -> String? { nil }
 
     func trashNotebookPage(pageID: String) {
+        events.append("deletion")
         trashedPageIDs.append(pageID)
         notebookFiles = notebookFiles.filter { $0.value.pageID != pageID }
     }
@@ -301,7 +351,10 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
     ) -> String {
         rootSequence += 1
         let rootID = String(format: "CCCCCCCC-CCCC-CCCC-CCCC-%012d", rootSequence)
-        if pageID == manifestPageID { manifestRootID = rootID }
+        if pageID == manifestPageID {
+            manifestRootID = rootID
+            events.append("manifest")
+        }
         return rootID
     }
 
@@ -357,6 +410,10 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
 
     func trashedNotebookPageIDs() -> [String] {
         trashedPageIDs
+    }
+
+    func publicationEvents() -> [String] {
+        events
     }
 }
 

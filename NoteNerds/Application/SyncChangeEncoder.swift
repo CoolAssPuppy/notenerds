@@ -18,6 +18,10 @@ struct SyncedDocumentAction: Codable, Hashable, Sendable {
 }
 
 struct SyncChangeEncoder: Sendable {
+    static let maximumLibraryMutationPayloadByteCount = 1_024 * 1_024
+    static let maximumChangePayloadByteCount = 512 * 1_024 * 1_024
+    static let maximumEnvelopePrefixByteCount = 512
+
     private enum Payload: Codable {
         case document(SyncedDocumentAction)
         case library(LibrarySyncMutation)
@@ -45,7 +49,7 @@ struct SyncChangeEncoder: Sendable {
         sequence: Int,
         timestamp: Date = Date()
     ) throws -> DocumentChange {
-        DocumentChange(
+        return DocumentChange(
             id: ChangeID(),
             notebookID: notebookID,
             objectKey: action.operation.syncObjectKey,
@@ -79,12 +83,17 @@ struct SyncChangeEncoder: Sendable {
         sequence: Int,
         timestamp: Date = Date()
     ) throws -> DocumentChange {
-        DocumentChange(
+        let payload = try Self.makeEncoder().encode(Payload.library(mutation))
+        if mutation.objectKey.hasPrefix("folder:"),
+           payload.count > Self.maximumLibraryMutationPayloadByteCount {
+            throw CocoaError(.fileWriteOutOfSpace)
+        }
+        return DocumentChange(
             id: ChangeID(),
             notebookID: notebookID,
             objectKey: mutation.objectKey,
             kind: mutation.isPermanentDeletion ? .delete : .upsert,
-            payload: try Self.makeEncoder().encode(Payload.library(mutation)),
+            payload: payload,
             timestamp: timestamp,
             deviceID: deviceID,
             sequence: sequence
@@ -92,11 +101,35 @@ struct SyncChangeEncoder: Sendable {
     }
 
     static func decodeLibraryMutation(_ change: DocumentChange) throws -> LibrarySyncMutation {
+        let maximumByteCount = maximumPayloadByteCount(
+            forEnvelopePrefix: Data(change.payload.prefix(maximumEnvelopePrefixByteCount))
+        )
+        guard change.payload.count <= maximumByteCount else {
+            throw CocoaError(.fileReadTooLarge)
+        }
         let payload = try makeDecoder().decode(Payload.self, from: change.payload)
         guard case let .library(mutation) = payload else {
             throw CocoaError(.coderInvalidValue)
         }
+        guard !mutation.objectKey.hasPrefix("folder:")
+                || change.payload.count <= maximumLibraryMutationPayloadByteCount else {
+            throw CocoaError(.fileReadTooLarge)
+        }
+        guard mutation.objectKey == change.objectKey else {
+            throw CocoaError(.coderInvalidValue)
+        }
         return mutation
+    }
+
+    static func maximumPayloadByteCount(forEnvelopePrefix prefix: Data) -> Int {
+        var preflight = SyncPayloadEnvelopePreflight(prefix: prefix)
+        guard let kind = try? preflight.payloadKind() else {
+            return maximumLibraryMutationPayloadByteCount
+        }
+        switch kind {
+        case .folderMutation: return maximumLibraryMutationPayloadByteCount
+        case .general: return maximumChangePayloadByteCount
+        }
     }
 
     private static func makeEncoder() -> JSONEncoder {
@@ -111,6 +144,91 @@ struct SyncChangeEncoder: Sendable {
         decoder.dateDecodingStrategy = .millisecondsSince1970
         return decoder
     }
+}
+
+private struct SyncPayloadEnvelopePreflight {
+    private static let folderMutationNames: Set<String> = [
+        "createFolder", "updateFolder", "trashFolder", "restoreFolder", "deleteFolder"
+    ]
+    private static let notebookMutationNames: Set<String> = [
+        "createNotebook", "updateNotebookMetadata", "restoreNotebook", "deleteNotebook"
+    ]
+    private static let legacyDocumentNames: Set<String> = [
+        "addStroke", "deleteObjects", "convertStrokesToText", "replaceObjects",
+        "insertCanvas", "deleteCanvas", "moveCanvas", "renameCanvas",
+        "insertLayer", "deleteLayer", "moveLayer", "updateLayer", "changeTemplate"
+    ]
+
+    private let bytes: [UInt8]
+    private var index = 0
+
+    init(prefix: Data) {
+        bytes = Array(prefix)
+    }
+
+    mutating func payloadKind() throws -> SyncPayloadEnvelopeKind {
+        try consume(0x7B)
+        let payloadName = try readString()
+        try consume(0x3A)
+        if payloadName == "document" || Self.legacyDocumentNames.contains(payloadName) {
+            return .general
+        }
+        guard payloadName == "library" else { throw CocoaError(.coderInvalidValue) }
+        try consume(0x7B)
+        guard try readString() == "_0" else { throw CocoaError(.coderInvalidValue) }
+        try consume(0x3A)
+        try consume(0x7B)
+        let mutationName = try readString()
+        if Self.folderMutationNames.contains(mutationName) { return .folderMutation }
+        guard Self.notebookMutationNames.contains(mutationName) else {
+            throw CocoaError(.coderInvalidValue)
+        }
+        return .general
+    }
+
+    private mutating func consume(_ expected: UInt8) throws {
+        skipWhitespace()
+        guard index < bytes.count, bytes[index] == expected else {
+            throw CocoaError(.coderInvalidValue)
+        }
+        index += 1
+    }
+
+    private mutating func readString() throws -> String {
+        skipWhitespace()
+        guard index < bytes.count, bytes[index] == 0x22 else {
+            throw CocoaError(.coderInvalidValue)
+        }
+        let start = index
+        index += 1
+        var isEscaped = false
+        while index < bytes.count {
+            let byte = bytes[index]
+            if byte == 0x22, !isEscaped {
+                let encoded = Data(bytes[start...index])
+                index += 1
+                return try JSONDecoder().decode(String.self, from: encoded)
+            }
+            if isEscaped {
+                isEscaped = false
+            } else if byte == 0x5C {
+                isEscaped = true
+            }
+            index += 1
+        }
+        throw CocoaError(.coderInvalidValue)
+    }
+
+    private mutating func skipWhitespace() {
+        while index < bytes.count, [0x09, 0x0A, 0x0D, 0x20].contains(bytes[index]) {
+            index += 1
+        }
+    }
+}
+
+private enum SyncPayloadEnvelopeKind {
+    case folderMutation
+    case general
 }
 
 extension DocumentOperation {

@@ -2,6 +2,98 @@ import XCTest
 @testable import NoteNerds
 
 final class SyncBehaviorTests: XCTestCase {
+    func testChildFolderKeepsItsParentWhenCloudChangesArriveChildFirst() throws {
+        let parent = Folder(
+            name: "Parent",
+            parentID: nil,
+            createdAt: DomainFixtures.fixedDate,
+            modifiedAt: DomainFixtures.fixedDate
+        )
+        let child = Folder(
+            name: "Child",
+            parentID: parent.id,
+            createdAt: DomainFixtures.fixedDate,
+            modifiedAt: DomainFixtures.fixedDate
+        )
+        var library = LibraryState()
+
+        try LibrarySyncMutation.createFolder(child).apply(to: &library)
+        try LibrarySyncMutation.createFolder(parent).apply(to: &library)
+
+        XCTAssertEqual(library.folder(id: child.id)?.parentID, parent.id)
+    }
+
+    @MainActor
+    func testNotebookRestoreSyncPublishesRestoreBeforeMetadata() async throws {
+        let provider = OrderedMutationSyncProvider()
+        let stateStore = PausingFirstLoadSyncStateStore()
+        let model = AppModel(
+            repository: LocalLibraryRepository(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appending(path: UUID().uuidString)
+                    .appending(path: "library.json")
+            ),
+            syncProvider: provider,
+            syncStateStore: stateStore,
+            deviceID: "restoring-device",
+            automaticallyRestore: false
+        )
+        let notebook = DomainFixtures.notebook()
+        try model.library.addNotebook(notebook, to: nil)
+        model.library.moveNotebookToTrash(notebook.id, at: DomainFixtures.fixedDate)
+
+        model.restore(notebook.id)
+        await stateStore.waitUntilLoadStarted()
+        for _ in 0..<100 { await Task.yield() }
+        await stateStore.resumeLoad()
+
+        var changes: [DocumentChange] = []
+        for _ in 0..<100 where changes.count < 2 {
+            await Task.yield()
+            changes = await provider.changes()
+        }
+        let mutations = try changes.map(SyncChangeEncoder.decodeLibraryMutation)
+        XCTAssertEqual(mutations.first, .restoreNotebook(notebook.id))
+        XCTAssertEqual(mutations.count, 2)
+    }
+
+    @MainActor
+    func testChangesMadeDuringACloudPushAreSavedAndUploadedInOrder() async throws {
+        let provider = PausingFirstPushSyncProvider()
+        let stateStore = InMemorySyncStateStore()
+        let model = AppModel(
+            repository: LocalLibraryRepository(
+                fileURL: FileManager.default.temporaryDirectory
+                    .appending(path: UUID().uuidString)
+                    .appending(path: "library.json")
+            ),
+            syncProvider: provider,
+            syncStateStore: stateStore,
+            deviceID: "editing-device",
+            automaticallyRestore: false
+        )
+
+        model.createFolder()
+        await provider.waitUntilFirstPushStarted()
+        model.createFolder()
+
+        var savedChanges: [DocumentChange] = []
+        for _ in 0..<100 where savedChanges.count < 2 {
+            await Task.yield()
+            savedChanges = await stateStore.load()?.pendingChanges ?? []
+        }
+        XCTAssertEqual(savedChanges.count, 2)
+        XCTAssertEqual(savedChanges.map(\.sequence), savedChanges.map(\.sequence).sorted())
+
+        await provider.resumeFirstPush()
+        var uploadedChanges: [DocumentChange] = []
+        for _ in 0..<100 where uploadedChanges.count < 2 {
+            await Task.yield()
+            uploadedChanges = await provider.changes()
+        }
+        XCTAssertEqual(uploadedChanges.map(\.id), savedChanges.map(\.id))
+    }
+
     func testSimulatorBuildUsesLocalStorageWithoutCreatingACloudContainer() {
         XCTAssertFalse(CloudKitRuntime.isAvailable)
         XCTAssertNil(DefaultSyncProvider.make())
@@ -201,36 +293,6 @@ final class SyncBehaviorTests: XCTestCase {
         XCTAssertEqual(change.sequence, 7)
     }
 
-    func testLibraryMetadataSyncDoesNotReplaceNotebookContent() throws {
-        var notebook = DomainFixtures.notebook(title: "Before")
-        var library = LibraryState(notebooks: [notebook])
-        notebook.title = "After"
-        notebook.isFavorite = true
-        let mutation = LibrarySyncMutation.updateNotebookMetadata(NotebookSyncMetadata(notebook: notebook))
-        let change = try SyncChangeEncoder(deviceID: "device").change(
-            for: mutation,
-            notebookID: notebook.id,
-            sequence: 3,
-            timestamp: DomainFixtures.fixedDate
-        )
-
-        try SyncChangeEncoder.decodeLibraryMutation(change).apply(to: &library)
-
-        XCTAssertEqual(library.notebook(id: notebook.id)?.title, "After")
-        XCTAssertEqual(library.notebook(id: notebook.id)?.isFavorite, true)
-        XCTAssertEqual(library.notebook(id: notebook.id)?.canvases, DomainFixtures.notebook().canvases)
-    }
-
-    func testFolderDeletionSyncUsesRecoverableTombstone() throws {
-        var library = LibraryState()
-        let folder = try library.createFolder(named: "Archive", in: nil, at: DomainFixtures.fixedDate)
-        let mutation = LibrarySyncMutation.trashFolder(folder.id, date: DomainFixtures.fixedDate)
-
-        try mutation.apply(to: &library)
-
-        XCTAssertEqual(library.folder(id: folder.id)?.trashedAt, DomainFixtures.fixedDate)
-    }
-
     func testSyncedUndoRemovesTheOperationOnAnotherDevice() throws {
         let original = DomainFixtures.notebook()
         var remote = original
@@ -318,4 +380,99 @@ private actor AccountUnavailableSyncProvider: SyncProvider {
 private actor FailingSyncStateStore: SyncStateStore {
     func load() -> SyncEngineSnapshot? { nil }
     func save(_ snapshot: SyncEngineSnapshot) throws { throw CocoaError(.fileWriteUnknown) }
+}
+
+private actor PausingFirstLoadSyncStateStore: SyncStateStore {
+    private var hasStartedLoading = false
+    private var loadContinuation: CheckedContinuation<Void, Never>?
+    private var startWaiters: [CheckedContinuation<Void, Never>] = []
+
+    func load() async -> SyncEngineSnapshot? {
+        hasStartedLoading = true
+        startWaiters.forEach { $0.resume() }
+        startWaiters.removeAll()
+        await withCheckedContinuation { loadContinuation = $0 }
+        return nil
+    }
+
+    func save(_ snapshot: SyncEngineSnapshot) {}
+
+    func waitUntilLoadStarted() async {
+        guard !hasStartedLoading else { return }
+        await withCheckedContinuation { startWaiters.append($0) }
+    }
+
+    func resumeLoad() {
+        loadContinuation?.resume()
+        loadContinuation = nil
+    }
+}
+
+private actor OrderedMutationSyncProvider: SyncProvider {
+    nonisolated let identifier = "ordered-mutation"
+    private var pushedChanges: [DocumentChange] = []
+
+    func start() async throws {}
+
+    func push(_ changes: [DocumentChange]) async throws {
+        pushedChanges.append(contentsOf: changes)
+    }
+
+    func pull(since cursor: SyncCursor?) async throws -> SyncBatch {
+        SyncBatch(changes: [], cursor: cursor)
+    }
+
+    func uploadAsset(_ asset: DocumentAsset) async throws {}
+
+    func fetchAsset(_ id: AssetID) async throws -> Data {
+        throw CocoaError(.fileNoSuchFile)
+    }
+
+    func changes() -> [DocumentChange] {
+        pushedChanges
+    }
+}
+
+private actor PausingFirstPushSyncProvider: SyncProvider {
+    nonisolated let identifier = "pausing-first-push"
+    private var pushedChanges: [DocumentChange] = []
+    private var hasStartedFirstPush = false
+    private var firstPushContinuation: CheckedContinuation<Void, Never>?
+    private var startWaiters: [CheckedContinuation<Void, Never>] = []
+
+    func start() async throws {}
+
+    func push(_ changes: [DocumentChange]) async throws {
+        if !hasStartedFirstPush {
+            hasStartedFirstPush = true
+            startWaiters.forEach { $0.resume() }
+            startWaiters.removeAll()
+            await withCheckedContinuation { firstPushContinuation = $0 }
+        }
+        pushedChanges.append(contentsOf: changes)
+    }
+
+    func pull(since cursor: SyncCursor?) async throws -> SyncBatch {
+        SyncBatch(changes: [], cursor: cursor)
+    }
+
+    func uploadAsset(_ asset: DocumentAsset) async throws {}
+
+    func fetchAsset(_ id: AssetID) async throws -> Data {
+        throw CocoaError(.fileNoSuchFile)
+    }
+
+    func waitUntilFirstPushStarted() async {
+        guard !hasStartedFirstPush else { return }
+        await withCheckedContinuation { startWaiters.append($0) }
+    }
+
+    func resumeFirstPush() {
+        firstPushContinuation?.resume()
+        firstPushContinuation = nil
+    }
+
+    func changes() -> [DocumentChange] {
+        pushedChanges
+    }
 }

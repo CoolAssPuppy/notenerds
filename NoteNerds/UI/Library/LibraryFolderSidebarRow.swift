@@ -30,8 +30,7 @@ struct LibraryFolderSidebarRow: View {
     let isSelecting: Bool
     let isSelected: Bool
     let onActivate: () -> Void
-    @State private var isRenaming = false
-    @State private var proposedName = ""
+    @State private var isEditing = false
     @State private var isAddingTag = false
     @State private var proposedTag = ""
     @State private var isConfirmingPermanentDelete = false
@@ -39,8 +38,15 @@ struct LibraryFolderSidebarRow: View {
     var body: some View {
         Button(action: onActivate) {
             HStack(spacing: 10) {
-                Image(systemName: folder.trashedAt == nil ? AppSymbol.folder : "folder.fill.badge.minus")
-                    .foregroundStyle(Color.accentColor)
+                FolderIconView(icon: folder.icon, color: folder.iconColor)
+                    .opacity(folder.trashedAt == nil ? 1 : 0.55)
+                    .overlay(alignment: .bottomTrailing) {
+                        if folder.trashedAt != nil {
+                            Image(systemName: "minus.circle.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 Text(folder.name).lineLimit(1)
                 Spacer(minLength: 4)
                 if folder.isFavorite { Image(systemName: "star.fill").font(.caption) }
@@ -54,18 +60,20 @@ struct LibraryFolderSidebarRow: View {
         }
         .buttonStyle(.plain)
         .listRowBackground(isCurrent ? Color.accentColor.opacity(0.16) : Color.clear)
-        .accessibilityLabel("Folder, \(folder.name)")
-        .accessibilityHint(folder.trashedAt == nil ? "Shows notebooks in this folder" : "Folder in Trash")
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(accessibilityValue)
+        .accessibilityHint(accessibilityHint)
+        .accessibilityAddTraits(isSelecting && isSelected ? .isSelected : [])
         .contextMenu { folderActions }
         .modifier(FolderSidebarDragAndDrop(
             isEnabled: !isSelecting && folder.trashedAt == nil,
             payload: LibraryDragPayload.folder(folder.id).encodedValue,
             onDrop: handleDrop
         ))
-        .alert("Rename folder", isPresented: $isRenaming) {
-            TextField("Folder name", text: $proposedName)
-            Button("Rename") { model.renameFolder(folder.id, to: proposedName) }
-            Button("Cancel", role: .cancel) {}
+        .sheet(isPresented: $isEditing) {
+            FolderEditorView(folder: folder) { name, icon, color in
+                model.editFolder(folder.id, name: name, icon: icon, iconColor: color)
+            }
         }
         .alert("Add tag", isPresented: $isAddingTag) {
             TextField("Tag", text: $proposedTag)
@@ -84,6 +92,21 @@ struct LibraryFolderSidebarRow: View {
         }
     }
 
+    private var accessibilityValue: String {
+        guard isSelecting else { return folder.icon.accessibilityDescription }
+        let selectionState = isSelected ? "Selected" : "Not selected"
+        return "\(folder.icon.accessibilityDescription), \(selectionState)"
+    }
+
+    private var accessibilityLabel: String {
+        folder.parentID == nil ? "Folder, \(folder.name)" : "Subfolder, \(folder.name)"
+    }
+
+    private var accessibilityHint: String {
+        if isSelecting { return "Toggles folder selection" }
+        return folder.trashedAt == nil ? "Shows notebooks in this folder" : "Folder in Trash"
+    }
+
     private func handleDrop(_ items: [String]) -> Bool {
         for item in items {
             guard let payload = LibraryDragPayload(encodedValue: item) else { continue }
@@ -92,7 +115,7 @@ struct LibraryFolderSidebarRow: View {
                 model.moveNotebook(id, to: folder.id)
                 return true
             case let .folder(id):
-                guard id != folder.id else { continue }
+                guard model.canMoveFolder(id, to: folder.id) else { continue }
                 model.moveFolder(id, to: folder.id)
                 return true
             }
@@ -103,9 +126,8 @@ struct LibraryFolderSidebarRow: View {
     @ViewBuilder
     private var folderActions: some View {
         if folder.trashedAt == nil {
-            Button("Rename", systemImage: "pencil") {
-                proposedName = folder.name
-                isRenaming = true
+            Button("Edit folder", systemImage: "pencil") {
+                isEditing = true
             }
             Button(folder.isFavorite ? "Remove favorite" : "Favorite", systemImage: "star") {
                 model.toggleFolderFavorite(folder.id)

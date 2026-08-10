@@ -17,6 +17,8 @@ Note Nerds ships from a local Python command patterned after TripMaster. XcodeGe
 
 Apple provides no App Store capability that exactly identifies Apple Intelligence-capable hardware. Note Nerds declares no substitute capability. Features that depend on Apple Intelligence must check their framework availability at runtime.
 
+Before using folder icons or colors in a Notion-connected library, install build 15 or later on every connected device. Build 14 can republish the version 1 manifest without folder appearance fields and remove those fields from the shared backup.
+
 ## What is already configured
 
 - Release and build numbers in `project.yml`

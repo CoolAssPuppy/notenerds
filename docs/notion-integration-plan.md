@@ -200,10 +200,16 @@ The companion manifest contains:
 - Favorite state
 - Tags
 - Trash date
+- Folder icon type and value, including a curated symbol, one emoji, or a normalized PNG
+- Optional folder icon color
+- Inherited Trash date used to distinguish a folder trashed with its parent from a folder trashed directly
+- Notebook inherited Trash dates used for the same distinction during restore
 - Database ID and data-source ID
 - Last complete sync date
 
 The manifest preserves empty folders and folder metadata. A manifest update uses an attached JSON file and a visible summary containing folder count and last update time.
+
+Before changing a folder icon or color, update every device connected to the same Notion database to build 15 or later. Build 14 can read the version 1 manifest but republishes it without the appearance fields, removing those fields from the shared backup.
 
 ## Native transport format
 

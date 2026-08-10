@@ -86,3 +86,11 @@
 - Treat a canvas identifier as part of the PencilKit view's identity. A reused UIKit coordinator can keep callbacks for an earlier canvas and write a later drawing into the wrong document. Test immediate drawing after every canvas switch and confirm all canvases after relaunch.
 - Release verification does not send a TestFlight build. When the user asks to cut or send a release, run the signed upload, wait for App Store Connect to mark the build valid, and confirm the intended tester group can receive it before reporting completion.
 - A drawing persistence regression test must verify the reopened PencilKit drawing after real tool changes and view reconstruction. Checking saved model fields alone can miss a renderer that rebuilds the same stroke with a different width.
+- Folder creation follows the current library selection: no selected folder creates a top-level folder, and a selected top-level folder creates a child. Limit deeper creation in the interface while keeping the folder model capable of arbitrary nesting.
+- Treat folder artwork as untrusted input. Apply byte, dimension, and complexity limits before decoding, prevent SVG scripts and network requests, and persist only a bounded normalized PNG.
+- Keep interface depth rules out of the folder schema. Persisted and synced folder trees must retain deeper data created by an older build or another device.
+- A folder Trash cascade needs explicit provenance. Distinguish direct Trash from inherited Trash so a move, restore, or concurrent device edit cannot revive or delete unrelated descendants.
+- Save incoming sync changes to the local library before advancing the remote cursor. Save outgoing changes to the local outbox before starting network work or completing a background checkpoint.
+- Check every per-record CloudKit result and preserve change sequence order. A successful batch call can still contain failed records.
+- Publish Notion notebook files and deletions before publishing the folder manifest. Restore a notebook at the library root when an interrupted publish leaves its former parent absent.
+- Older clients can erase new fields when they republish a shared version 1 manifest. Require every Notion-connected device to update before those fields are used, or move them to a separately versioned file.

@@ -1,6 +1,11 @@
 import Foundation
 
-actor LocalLibraryRepository {
+protocol LibraryRepository: Sendable {
+    func load() async throws -> LibraryState
+    func save(_ library: LibraryState) async throws
+}
+
+actor LocalLibraryRepository: LibraryRepository {
     private let fileURL: URL
     private var assetsURL: URL {
         fileURL.deletingLastPathComponent().appending(path: "Assets", directoryHint: .isDirectory)
@@ -10,7 +15,7 @@ actor LocalLibraryRepository {
         self.fileURL = fileURL
     }
 
-    func load() throws -> LibraryState {
+    func load() async throws -> LibraryState {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .millisecondsSince1970
         let encodedLibrary: Data
@@ -35,7 +40,7 @@ actor LocalLibraryRepository {
         return library
     }
 
-    func save(_ library: LibraryState) throws {
+    func save(_ library: LibraryState) async throws {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .millisecondsSince1970
         encoder.outputFormatting = [.sortedKeys]

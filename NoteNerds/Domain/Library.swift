@@ -31,6 +31,10 @@ struct Folder: Codable, Hashable, Identifiable, Sendable {
     var isFavorite: Bool
     var tags: Set<String>
     var trashedAt: Date?
+    var icon: FolderIcon
+    var iconColor: FolderIconColor?
+    var appearanceModifiedAt: Date?
+    var inheritedTrashDate: Date?
 
     init(
         id: FolderID = FolderID(),
@@ -40,7 +44,11 @@ struct Folder: Codable, Hashable, Identifiable, Sendable {
         modifiedAt: Date,
         isFavorite: Bool = false,
         tags: Set<String> = [],
-        trashedAt: Date? = nil
+        trashedAt: Date? = nil,
+        icon: FolderIcon = .standard,
+        iconColor: FolderIconColor? = nil,
+        appearanceModifiedAt: Date? = nil,
+        inheritedTrashDate: Date? = nil
     ) {
         self.id = id
         self.name = name
@@ -50,12 +58,18 @@ struct Folder: Codable, Hashable, Identifiable, Sendable {
         self.isFavorite = isFavorite
         self.tags = tags
         self.trashedAt = trashedAt
+        self.icon = icon
+        self.iconColor = iconColor
+        self.appearanceModifiedAt = appearanceModifiedAt
+            ?? ((icon != .standard || iconColor != nil) ? modifiedAt : nil)
+        self.inheritedTrashDate = inheritedTrashDate
     }
 }
 
 extension Folder {
     private enum CodingKeys: String, CodingKey {
         case id, name, parentID, createdAt, modifiedAt, isFavorite, tags, trashedAt
+        case icon, iconColor, appearanceModifiedAt, inheritedTrashDate
     }
 
     init(from decoder: Decoder) throws {
@@ -68,13 +82,24 @@ extension Folder {
         isFavorite = try values.decode(Bool.self, forKey: .isFavorite)
         tags = try values.decodeIfPresent(Set<String>.self, forKey: .tags) ?? []
         trashedAt = try values.decodeIfPresent(Date.self, forKey: .trashedAt)
+        icon = values.contains(.icon)
+            ? try values.decode(FolderIcon.self, forKey: .icon)
+            : .standard
+        iconColor = try values.decodeIfPresent(FolderIconColor.self, forKey: .iconColor)
+        appearanceModifiedAt = try values.decodeIfPresent(Date.self, forKey: .appearanceModifiedAt)
+        inheritedTrashDate = try values.decodeIfPresent(Date.self, forKey: .inheritedTrashDate)
+        if !values.contains(.appearanceModifiedAt), icon != .standard || iconColor != nil {
+            appearanceModifiedAt = modifiedAt
+        }
     }
 }
 
 struct LibraryState: Codable, Equatable, Sendable {
-    private var folderStorage: [FolderID: Folder]
-    private var notebookStorage: [NotebookID: Notebook]
-    private var assetStorage: [AssetID: DocumentAsset]
+    var folderStorage: [FolderID: Folder]
+    var notebookStorage: [NotebookID: Notebook]
+    var assetStorage: [AssetID: DocumentAsset]
+    var inheritedNotebookTrashDates: [NotebookID: Date]
+    var deletionTombstones: LibraryDeletionTombstones
     var preferredSortMode: LibrarySortMode
 
     init(
@@ -85,6 +110,8 @@ struct LibraryState: Codable, Equatable, Sendable {
         folderStorage = Dictionary(uniqueKeysWithValues: folders.map { ($0.id, $0) })
         notebookStorage = Dictionary(uniqueKeysWithValues: notebooks.map { ($0.id, $0) })
         assetStorage = [:]
+        inheritedNotebookTrashDates = [:]
+        deletionTombstones = .empty
         self.preferredSortMode = preferredSortMode
     }
 
@@ -93,9 +120,9 @@ struct LibraryState: Codable, Equatable, Sendable {
     }
 
     mutating func updateFolder(_ folder: Folder) {
+        guard !deletionTombstones.folderIDs.contains(folder.id) else { return }
         folderStorage[folder.id] = folder
     }
-
     func notebook(id: NotebookID) -> Notebook? {
         notebookStorage[id]
     }
@@ -146,11 +173,20 @@ struct LibraryState: Codable, Equatable, Sendable {
         return folder
     }
 
-    mutating func renameFolder(_ id: FolderID, to name: String, at date: Date) throws {
+    mutating func editFolder(
+        _ id: FolderID,
+        name: String,
+        icon: FolderIcon,
+        iconColor: FolderIconColor?,
+        at date: Date
+    ) throws {
         guard folderStorage[id] != nil else { throw LibraryError.folderNotFound }
         let normalizedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedName.isEmpty else { throw LibraryError.folderNameRequired }
         folderStorage[id]?.name = normalizedName
+        folderStorage[id]?.icon = icon
+        folderStorage[id]?.iconColor = iconColor
+        folderStorage[id]?.appearanceModifiedAt = date
         folderStorage[id]?.modifiedAt = date
     }
 
@@ -211,26 +247,58 @@ struct LibraryState: Codable, Equatable, Sendable {
 
     mutating func addNotebook(_ notebook: Notebook, to parentID: FolderID?) throws {
         guard notebookStorage[notebook.id] == nil else { throw LibraryError.notebookAlreadyExists }
+        guard !deletionTombstones.notebookIDs.contains(notebook.id) else { return }
         if let parentID, folderStorage[parentID] == nil { throw LibraryError.folderNotFound }
         var storedNotebook = notebook
         storedNotebook.parentFolderID = parentID
         notebookStorage[storedNotebook.id] = storedNotebook
+        if let parentID,
+           folderStorage[parentID]?.trashedAt == storedNotebook.trashedAt,
+           let trashDate = storedNotebook.trashedAt {
+            inheritedNotebookTrashDates[storedNotebook.id] = trashDate
+        }
     }
 
     mutating func updateNotebook(_ notebook: Notebook) {
+        guard !deletionTombstones.notebookIDs.contains(notebook.id) else { return }
         notebookStorage[notebook.id] = notebook
+        if inheritedNotebookTrashDates[notebook.id] != notebook.trashedAt {
+            inheritedNotebookTrashDates[notebook.id] = nil
+        }
     }
-
+    mutating func markNotebookTrashAsInherited(_ id: NotebookID, at date: Date) {
+        guard notebookStorage[id]?.trashedAt == date else { return }
+        inheritedNotebookTrashDates[id] = date
+    }
+    func inheritedTrashDate(forNotebook id: NotebookID) -> Date? {
+        inheritedNotebookTrashDates[id]
+    }
+    func isPermanentlyDeleted(_ id: NotebookID) -> Bool {
+        deletionTombstones.notebookIDs.contains(id)
+    }
     mutating func moveNotebookToTrash(_ id: NotebookID, at date: Date) {
         notebookStorage[id]?.trashedAt = date
+        inheritedNotebookTrashDates[id] = nil
     }
 
     mutating func restoreNotebook(_ id: NotebookID) {
-        notebookStorage[id]?.trashedAt = nil
+        guard var notebook = notebookStorage[id] else { return }
+        if let parentID = notebook.parentFolderID, folderStorage[parentID] == nil {
+            notebook.parentFolderID = nil
+        }
+        for folderID in ancestorFolderIDs(startingAt: notebook.parentFolderID) {
+            folderStorage[folderID]?.trashedAt = nil
+            folderStorage[folderID]?.inheritedTrashDate = nil
+        }
+        notebook.trashedAt = nil
+        inheritedNotebookTrashDates[id] = nil
+        notebookStorage[id] = notebook
     }
 
     mutating func permanentlyDeleteNotebook(_ id: NotebookID) {
+        deletionTombstones.notebookIDs.insert(id)
         notebookStorage[id] = nil
+        inheritedNotebookTrashDates[id] = nil
     }
 
     mutating func toggleFavorite(_ id: NotebookID) {
@@ -261,44 +329,89 @@ struct LibraryState: Codable, Equatable, Sendable {
     }
 
     mutating func moveFolderToTrash(_ id: FolderID, at date: Date) throws {
+        guard !deletionTombstones.folderIDs.contains(id) else { return }
         guard folderStorage[id] != nil else { throw LibraryError.folderNotFound }
+        setTrashDate(date, forFolderSubtreeRoot: id)
+    }
+    mutating func setTrashDate(_ date: Date, forFolderSubtreeRoot id: FolderID) {
         let affectedFolders = descendantFolderIDs(of: id).union([id])
         for folderID in affectedFolders {
-            folderStorage[folderID]?.trashedAt = date
+            if folderID == id {
+                folderStorage[folderID]?.trashedAt = date
+                folderStorage[folderID]?.inheritedTrashDate = nil
+            } else if folderStorage[folderID]?.trashedAt == nil {
+                folderStorage[folderID]?.trashedAt = date
+                folderStorage[folderID]?.inheritedTrashDate = date
+            }
         }
         for notebookID in Array(notebookStorage.keys) {
             guard let parentID = notebookStorage[notebookID]?.parentFolderID,
-                  affectedFolders.contains(parentID) else { continue }
+                  affectedFolders.contains(parentID),
+                  notebookStorage[notebookID]?.trashedAt == nil else { continue }
             notebookStorage[notebookID]?.trashedAt = date
+            inheritedNotebookTrashDates[notebookID] = date
         }
     }
-
-    mutating func restoreFolder(_ id: FolderID) throws {
-        guard folderStorage[id] != nil else { throw LibraryError.folderNotFound }
+    mutating func clearTrashDate(_ date: Date, forFolderSubtreeRoot id: FolderID) {
         let affectedFolders = descendantFolderIDs(of: id).union([id])
-        for folderID in affectedFolders {
+        for folderID in affectedFolders where folderStorage[folderID]?.inheritedTrashDate == date {
             folderStorage[folderID]?.trashedAt = nil
+            folderStorage[folderID]?.inheritedTrashDate = nil
+        }
+        for notebookID in Array(notebookStorage.keys) {
+            guard inheritedNotebookTrashDates[notebookID] == date,
+                  let notebook = notebookStorage[notebookID],
+                  let parentID = notebook.parentFolderID,
+                  affectedFolders.contains(parentID) else { continue }
+            notebookStorage[notebookID]?.trashedAt = nil
+            inheritedNotebookTrashDates[notebookID] = nil
+        }
+    }
+    mutating func restoreFolder(_ id: FolderID) throws {
+        guard !deletionTombstones.folderIDs.contains(id) else { return }
+        guard let folder = folderStorage[id] else { throw LibraryError.folderNotFound }
+        let restoredSubtree = descendantFolderIDs(of: id).union([id])
+        let restoredAncestors = ancestorFolderIDs(startingAt: folder.parentID)
+        for folderID in restoredSubtree.union(restoredAncestors) {
+            folderStorage[folderID]?.trashedAt = nil
+            folderStorage[folderID]?.inheritedTrashDate = nil
         }
         for notebookID in Array(notebookStorage.keys) {
             guard let parentID = notebookStorage[notebookID]?.parentFolderID,
-                  affectedFolders.contains(parentID) else { continue }
+                  restoredSubtree.contains(parentID) else { continue }
             notebookStorage[notebookID]?.trashedAt = nil
+            inheritedNotebookTrashDates[notebookID] = nil
         }
     }
 
     mutating func permanentlyDeleteFolder(_ id: FolderID) throws {
-        guard folderStorage[id] != nil else { throw LibraryError.folderNotFound }
-        let affectedFolders = descendantFolderIDs(of: id).union([id])
-        folderStorage = folderStorage.filter { !affectedFolders.contains($0.key) }
+        guard folderStorage[id] != nil else {
+            deletionTombstones.folderIDs.insert(id)
+            return
+        }
+        let scope = permanentDeletionScope(forFolder: id)
+        deletionTombstones.folderIDs.formUnion(scope.folderIDs)
+        deletionTombstones.notebookIDs.formUnion(scope.notebookIDs)
+        folderStorage = folderStorage.filter { !scope.folderIDs.contains($0.key) }
         notebookStorage = notebookStorage.filter { _, notebook in
             guard let parentID = notebook.parentFolderID else { return true }
-            return !affectedFolders.contains(parentID)
+            return !scope.folderIDs.contains(parentID)
         }
+        for notebookID in scope.notebookIDs { inheritedNotebookTrashDates[notebookID] = nil }
     }
 
     mutating func emptyTrash() {
+        deletionTombstones.notebookIDs.formUnion(
+            notebookStorage.values.filter { $0.trashedAt != nil }.map(\.id)
+        )
+        deletionTombstones.folderIDs.formUnion(
+            folderStorage.values.filter { $0.trashedAt != nil }.map(\.id)
+        )
         notebookStorage = notebookStorage.filter { $0.value.trashedAt == nil }
         folderStorage = folderStorage.filter { $0.value.trashedAt == nil }
+        inheritedNotebookTrashDates = inheritedNotebookTrashDates.filter {
+            notebookStorage[$0.key] != nil
+        }
     }
 
     func notebooks(sortedBy mode: LibrarySortMode) -> [Notebook] {
@@ -333,7 +446,7 @@ struct LibraryState: Codable, Equatable, Sendable {
         }
     }
 
-    private func descendantFolderIDs(of id: FolderID) -> Set<FolderID> {
+    func descendantFolderIDs(of id: FolderID) -> Set<FolderID> {
         var childrenByParent: [FolderID: [FolderID]] = [:]
         for folder in folderStorage.values {
             guard let parentID = folder.parentID else { continue }
@@ -351,29 +464,34 @@ struct LibraryState: Codable, Equatable, Sendable {
         }
         return descendants
     }
-}
 
-extension LibraryState {
-    private enum CodingKeys: String, CodingKey {
-        case folderStorage
-        case notebookStorage
-        case assetStorage
-        case preferredSortMode
+    private func ancestorFolderIDs(startingAt id: FolderID?) -> Set<FolderID> {
+        var ancestors: Set<FolderID> = []
+        var currentID = id
+        while let folderID = currentID,
+              ancestors.insert(folderID).inserted,
+              let folder = folderStorage[folderID] {
+            currentID = folder.parentID
+        }
+        return ancestors
     }
 
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        folderStorage = try container.decode([FolderID: Folder].self, forKey: .folderStorage)
-        notebookStorage = try container.decode([NotebookID: Notebook].self, forKey: .notebookStorage)
-        assetStorage = try container.decodeIfPresent([AssetID: DocumentAsset].self, forKey: .assetStorage) ?? [:]
-        preferredSortMode = try container.decode(LibrarySortMode.self, forKey: .preferredSortMode)
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(folderStorage, forKey: .folderStorage)
-        try container.encode(notebookStorage, forKey: .notebookStorage)
-        try container.encode(assetStorage, forKey: .assetStorage)
-        try container.encode(preferredSortMode, forKey: .preferredSortMode)
+    mutating func repairFolderCycle(startingAt id: FolderID) {
+        var path: [FolderID] = []
+        var pathIndices: [FolderID: Int] = [:]
+        var currentID: FolderID? = id
+        while let folderID = currentID, let folder = folderStorage[folderID] {
+            if let cycleStart = pathIndices[folderID] {
+                let cycle = path[cycleStart...]
+                let root = cycle.max {
+                    $0.rawValue.uuidString < $1.rawValue.uuidString
+                }
+                if let root { folderStorage[root]?.parentID = nil }
+                return
+            }
+            pathIndices[folderID] = path.count
+            path.append(folderID)
+            currentID = folder.parentID
+        }
     }
 }

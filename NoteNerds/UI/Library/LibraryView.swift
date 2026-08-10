@@ -44,7 +44,7 @@ struct LibraryView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 LibrarySearchControl(text: $model.searchQuery, isExpanded: $isSearchExpanded)
             }
-            if model.selectedSection == .files {
+            if model.selectedSection == .files, model.canCreateNotebook {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("New notebook", systemImage: AppSymbol.newNotebook) {
                         model.createNotebook(paperType: defaultPaperType)

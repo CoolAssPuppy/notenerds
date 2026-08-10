@@ -18,6 +18,7 @@ actor SyncEngine {
     private(set) var lastFailure: SyncProviderFailure?
     private var cursor: SyncCursor?
     private var didRestoreState = false
+    private var shouldSynchronizeAgain = false
 
     init(provider: any SyncProvider, stateStore: (any SyncStateStore)? = nil) {
         self.provider = provider
@@ -39,27 +40,19 @@ actor SyncEngine {
 
     func synchronize() async {
         await restoreStateIfNeeded()
+        guard state != .synchronizing else {
+            shouldSynchronizeAgain = true
+            return
+        }
         state = .synchronizing
         do {
             try await provider.start()
-            for asset in Array(pendingAssets.values) {
-                try await provider.uploadAsset(asset)
-                pendingAssets[asset.id] = nil
-            }
-            if !pendingChanges.isEmpty {
-                try await provider.push(pendingChanges)
-                pendingChanges.removeAll(keepingCapacity: true)
-                pendingChangeIDs.removeAll(keepingCapacity: true)
-            }
-            let batch = try await provider.pull(since: cursor)
-            let newChanges = batch.changes.filter { receivedChangeIDs.insert($0.id).inserted }
-            receivedChanges.append(contentsOf: newChanges)
-            receivedChanges.sort {
-                if $0.sequence != $1.sequence { return $0.sequence < $1.sequence }
-                if $0.timestamp != $1.timestamp { return $0.timestamp < $1.timestamp }
-                return $0.deviceID < $1.deviceID
-            }
-            cursor = batch.cursor
+            repeat {
+                shouldSynchronizeAgain = false
+                try await uploadPendingAssets()
+                try await pushPendingChanges()
+                try await pullRemoteChanges()
+            } while shouldSynchronizeAgain || !pendingAssets.isEmpty || !pendingChanges.isEmpty
             lastFailure = nil
             state = .idle
             await persistState()
@@ -70,6 +63,35 @@ actor SyncEngine {
             lastFailure = .serviceUnavailable
             state = .waitingToRetry
         }
+    }
+
+    private func uploadPendingAssets() async throws {
+        for asset in Array(pendingAssets.values) {
+            try await provider.uploadAsset(asset)
+            guard pendingAssets[asset.id] == asset else { continue }
+            pendingAssets[asset.id] = nil
+        }
+    }
+
+    private func pushPendingChanges() async throws {
+        let changes = pendingChanges
+        guard !changes.isEmpty else { return }
+        try await provider.push(changes)
+        let uploadedIDs = Set(changes.map(\.id))
+        pendingChanges.removeAll { uploadedIDs.contains($0.id) }
+        pendingChangeIDs.subtract(uploadedIDs)
+    }
+
+    private func pullRemoteChanges() async throws {
+        let batch = try await provider.pull(since: cursor)
+        let newChanges = batch.changes.filter { receivedChangeIDs.insert($0.id).inserted }
+        receivedChanges.append(contentsOf: newChanges)
+        receivedChanges.sort {
+            if $0.sequence != $1.sequence { return $0.sequence < $1.sequence }
+            if $0.timestamp != $1.timestamp { return $0.timestamp < $1.timestamp }
+            return $0.deviceID < $1.deviceID
+        }
+        cursor = batch.cursor
     }
 
     func drainReceivedChanges() -> [DocumentChange] {

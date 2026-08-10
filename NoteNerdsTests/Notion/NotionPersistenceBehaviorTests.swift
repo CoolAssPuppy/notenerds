@@ -47,7 +47,9 @@ final class NotionPersistenceBehaviorTests: XCTestCase {
         let root = Folder.fixture(
             name: "Projects",
             isFavorite: true,
-            tags: ["active"]
+            tags: ["active"],
+            icon: .systemSymbol(.briefcase),
+            iconColor: FolderIconColor(red: 0.25, green: 0.5, blue: 0.75, alpha: 1)
         )
         let empty = Folder.fixture(name: "Empty", parentID: root.id)
         let trashed = Folder.fixture(
@@ -55,7 +57,9 @@ final class NotionPersistenceBehaviorTests: XCTestCase {
             parentID: root.id,
             trashedAt: DomainFixtures.fixedDate.addingTimeInterval(60)
         )
-        let library = LibraryState(folders: [trashed, empty, root])
+        let png = try FolderIconPNG(data: try XCTUnwrap(Data(base64Encoded: Self.onePixelPNG)))
+        let art = Folder.fixture(name: "Art", icon: .customPNG(png))
+        let library = LibraryState(folders: [trashed, empty, root, art])
         let manifest = NotionLibraryManifest(
             library: library,
             databaseID: "11111111-1111-1111-1111-111111111111",
@@ -68,17 +72,59 @@ final class NotionPersistenceBehaviorTests: XCTestCase {
         )
 
         XCTAssertEqual(restored, manifest)
-        let expectedIDs = [root.id, empty.id, trashed.id].sorted {
+        let expectedIDs = [root.id, empty.id, trashed.id, art.id].sorted {
             $0.rawValue.uuidString < $1.rawValue.uuidString
         }
         XCTAssertEqual(restored.folders.map(\.id), expectedIDs)
         XCTAssertEqual(restored.folders.first(where: { $0.id == root.id })?.tags, ["active"])
         XCTAssertEqual(restored.folders.first(where: { $0.id == root.id })?.isFavorite, true)
+        XCTAssertEqual(restored.folders.first(where: { $0.id == root.id })?.icon, root.icon)
+        XCTAssertEqual(restored.folders.first(where: { $0.id == root.id })?.iconColor, root.iconColor)
         XCTAssertEqual(restored.folders.first(where: { $0.id == empty.id })?.parentID, root.id)
+        XCTAssertEqual(restored.folders.first(where: { $0.id == art.id })?.icon, .customPNG(png))
         XCTAssertEqual(
             restored.folders.first(where: { $0.id == trashed.id })?.trashedAt,
             DomainFixtures.fixedDate.addingTimeInterval(60)
         )
+    }
+
+    func testLibraryManifestPreservesInheritedTrashProvenance() throws {
+        let root = Folder.fixture(name: "Root")
+        let restoredSibling = Folder.fixture(name: "Restored", parentID: root.id)
+        let inheritedChild = Folder.fixture(name: "Inherited", parentID: root.id)
+        var secondNotebook = DomainFixtures.notebook()
+        secondNotebook.parentFolderID = inheritedChild.id
+        var firstNotebook = DomainFixtures.notebook(
+            id: NotebookID(rawValue: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!)
+        )
+        firstNotebook.parentFolderID = inheritedChild.id
+        let trashDate = DomainFixtures.fixedDate.addingTimeInterval(90)
+        var library = LibraryState(
+            folders: [root, restoredSibling, inheritedChild],
+            notebooks: [secondNotebook, firstNotebook]
+        )
+        try library.moveFolderToTrash(root.id, at: trashDate)
+        try library.restoreFolder(restoredSibling.id)
+        let manifest = NotionLibraryManifest(
+            library: library,
+            databaseID: "11111111-1111-1111-1111-111111111111",
+            dataSourceID: "22222222-2222-2222-2222-222222222222",
+            generatedAt: DomainFixtures.fixedDate
+        )
+
+        let restored = try NotionLibraryManifestCodec.decode(
+            NotionLibraryManifestCodec.encode(manifest)
+        )
+
+        XCTAssertEqual(
+            restored.folders.first(where: { $0.id == inheritedChild.id })?.folder.inheritedTrashDate,
+            trashDate
+        )
+        XCTAssertEqual(
+            restored.notebookTrashProvenance.map(\.notebookID),
+            [firstNotebook.id, secondNotebook.id]
+        )
+        XCTAssertEqual(restored.notebookTrashProvenance.map(\.inheritedTrashDate), [trashDate, trashDate])
     }
 
     func testLibraryManifestEncodingIsStableAcrossFolderInsertionOrder() throws {
@@ -134,9 +180,77 @@ final class NotionPersistenceBehaviorTests: XCTestCase {
         }
     }
 
+    func testLibraryManifestRejectsInvalidFolderAppearanceAndOversizedOutput() throws {
+        let folder = Folder.fixture(name: "Projects")
+        let manifest = NotionLibraryManifest(
+            library: LibraryState(folders: [folder]),
+            databaseID: "11111111-1111-1111-1111-111111111111",
+            dataSourceID: "22222222-2222-2222-2222-222222222222",
+            generatedAt: DomainFixtures.fixedDate
+        )
+        let encoded = try NotionLibraryManifestCodec.encode(manifest)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var folders = try XCTUnwrap(object["folders"] as? [[String: Any]])
+        folders[0]["icon"] = ["unknown": [:]]
+        object["folders"] = folders
+
+        XCTAssertThrowsError(try decodeManifest(object))
+
+        folders[0]["icon"] = NSNull()
+        object["folders"] = folders
+
+        XCTAssertThrowsError(try decodeManifest(object))
+
+        let oversizedFolder = Folder.fixture(
+            name: String(repeating: "a", count: NotionLibraryManifestCodec.maximumByteCount)
+        )
+        let oversizedManifest = NotionLibraryManifest(
+            library: LibraryState(folders: [oversizedFolder]),
+            databaseID: "11111111-1111-1111-1111-111111111111",
+            dataSourceID: "22222222-2222-2222-2222-222222222222",
+            generatedAt: DomainFixtures.fixedDate
+        )
+        XCTAssertThrowsError(try NotionLibraryManifestCodec.encode(oversizedManifest)) { error in
+            XCTAssertEqual(error as? NotionLibraryManifestError, .manifestTooLarge)
+        }
+    }
+
+    func testLegacyLibraryManifestUsesTheStandardFolderAppearance() throws {
+        let folder = Folder.fixture(
+            name: "Projects",
+            icon: .systemSymbol(.briefcase),
+            iconColor: FolderIconColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1)
+        )
+        let manifest = NotionLibraryManifest(
+            library: LibraryState(folders: [folder]),
+            databaseID: "11111111-1111-1111-1111-111111111111",
+            dataSourceID: "22222222-2222-2222-2222-222222222222",
+            generatedAt: DomainFixtures.fixedDate
+        )
+        let encoded = try NotionLibraryManifestCodec.encode(manifest)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var folders = try XCTUnwrap(object["folders"] as? [[String: Any]])
+        folders[0].removeValue(forKey: "icon")
+        folders[0].removeValue(forKey: "iconColor")
+        folders[0].removeValue(forKey: "appearanceModifiedAt")
+        folders[0].removeValue(forKey: "inheritedTrashDate")
+        object["folders"] = folders
+        object.removeValue(forKey: "notebookTrashProvenance")
+
+        let restored = try decodeManifest(object)
+
+        XCTAssertEqual(restored.folders.first?.icon, .standard)
+        XCTAssertNil(restored.folders.first?.iconColor)
+        XCTAssertNil(restored.folders.first?.folder.inheritedTrashDate)
+        XCTAssertTrue(restored.notebookTrashProvenance.isEmpty)
+    }
+
     private func decodeManifest(_ object: [String: Any]) throws -> NotionLibraryManifest {
         try NotionLibraryManifestCodec.decode(JSONSerialization.data(withJSONObject: object))
     }
+
+    private static let onePixelPNG =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/l8xO7wAAAABJRU5ErkJggg=="
 }
 
 private extension Folder {
@@ -146,7 +260,9 @@ private extension Folder {
         parentID: FolderID? = nil,
         isFavorite: Bool = false,
         tags: Set<String> = [],
-        trashedAt: Date? = nil
+        trashedAt: Date? = nil,
+        icon: FolderIcon = .systemSymbol(.folder),
+        iconColor: FolderIconColor? = nil
     ) -> Folder {
         Folder(
             id: id,
@@ -156,7 +272,9 @@ private extension Folder {
             modifiedAt: DomainFixtures.fixedDate.addingTimeInterval(30),
             isFavorite: isFavorite,
             tags: tags,
-            trashedAt: trashedAt
+            trashedAt: trashedAt,
+            icon: icon,
+            iconColor: iconColor
         )
     }
 }

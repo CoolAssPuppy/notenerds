@@ -5,7 +5,6 @@ protocol NotionRemoteLibraryLoading: Sendable {
 }
 
 actor NotionRemoteLibraryLoader: NotionRemoteLibraryLoading {
-    private static let maximumManifestByteCount = 10 * 1_024 * 1_024
     private static let maximumArchiveByteCount = NotionTransportFile.maximumFileByteCount
 
     private let api: any NotionRestoreAPI
@@ -27,7 +26,7 @@ actor NotionRemoteLibraryLoader: NotionRemoteLibraryLoading {
         let manifestURL = try await api.findManagedFile(rootBlockID: rootBlockID)
         let manifestData = try await api.downloadFile(
             from: manifestURL,
-            maximumByteCount: Self.maximumManifestByteCount
+            maximumByteCount: NotionLibraryManifestCodec.maximumByteCount
         )
         let files = try await api.listNativeNotebookFiles(
             dataSourceID: destination.dataSourceID

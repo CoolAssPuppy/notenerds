@@ -1,5 +1,6 @@
 # Lessons
 
+- Center app icon artwork by its visible pixel bounds, not the font frame or text line box. Measure the exported mark before installing or shipping it.
 - For Note Nerds app icon exploration, create twenty editable options in Paper and base every direction on a lowercase “n” unless the user specifies a different mark or count.
 - Treat a named bug as a strict scope boundary. Add one failing behavior test, make the smallest fix, run one review pass, and ask before changing any adjacent system.
 - Stop after 30 minutes when a focused test is still failing. Report the blocker instead of expanding the audit or adding unrelated work.

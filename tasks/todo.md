@@ -1,5 +1,20 @@
 # Current work
 
+## Ship the selected app icon
+
+- [x] Enlarge the selected cursive lowercase “n” by 25 percent in Paper.
+- [x] Center the visible mark within the 1024-pixel icon.
+- [x] Export an RGB icon without transparency and install it in the asset catalog.
+- [x] Run icon and release verification.
+- [ ] Commit and push the icon.
+- [ ] Upload TestFlight build 17 and confirm Apple accepts it.
+
+### App icon review
+
+- The installed icon uses the selected `02 Cursive line` mark at 125 percent of its original size.
+- The visible mark bounds have a center of 511 by 512 pixels on the 1024-pixel canvas.
+- The App Store source is a 1024-pixel RGB PNG without transparency. All 33 release-tool tests, strict SwiftLint across 241 files, release preflight, and `git diff --check` passed.
+
 ## Persist remote sync receipts
 
 - [x] Add interrupted-acknowledgement behavior tests for later-edited insert and add operations.

@@ -36,7 +36,25 @@ struct NoteNerdsApp: App {
             isUITesting: isUITesting,
             processInfo: processInfo
         )
-        _notion = StateObject(wrappedValue: Self.makeNotionModel(configuration: notionConfiguration))
+        let notion = Self.makeNotionModel(configuration: notionConfiguration)
+#if DEBUG
+        if isUITesting && processInfo.arguments.contains("-force-notion-connected") {
+            notion.configureForUITesting(
+                state: .connected(workspaceName: "Personal"),
+                destination: NotionDestination(
+                    databaseID: "11111111-1111-1111-1111-111111111111",
+                    dataSourceID: "22222222-2222-2222-2222-222222222222"
+                )
+            )
+        } else if isUITesting && processInfo.arguments.contains("-force-notion-failure") {
+            notion.configureForUITesting(
+                state: .actionNeeded,
+                destination: nil,
+                failureMessage: "Notion rejected the update."
+            )
+        }
+#endif
+        _notion = StateObject(wrappedValue: notion)
     }
 
     private static func makeNotionModel(

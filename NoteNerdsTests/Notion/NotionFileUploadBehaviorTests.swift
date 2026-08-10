@@ -6,7 +6,6 @@ final class NotionFileUploadBehaviorTests: XCTestCase {
         let uploadID = "11111111-1111-1111-1111-111111111111"
         let payload = Data([0x00, 0x0D, 0x0A, 0xFF])
         let transport = FileUploadTransport(responses: [
-            .json(200, botResponse(maximumFileByteCount: 5 * 1_024 * 1_024)),
             .json(200, uploadResponse(id: uploadID, status: "pending")),
             .json(200, uploadResponse(id: uploadID, status: "uploaded"))
         ])
@@ -21,17 +20,16 @@ final class NotionFileUploadBehaviorTests: XCTestCase {
 
         XCTAssertEqual(result, uploadID)
         XCTAssertEqual(requests.map { $0.url?.path }, [
-            "/v1/users/me",
             "/v1/file_uploads",
             "/v1/file_uploads/\(uploadID)/send"
         ])
-        let createBody = try jsonBody(requests[1])
+        let createBody = try jsonBody(requests[0])
         XCTAssertEqual(createBody["mode"] as? String, "single_part")
         XCTAssertEqual(createBody["filename"] as? String, "canvas.png")
         XCTAssertEqual(createBody["content_type"] as? String, "image/png")
         XCTAssertNil(createBody["number_of_parts"])
         try assertMultipart(
-            requests[2],
+            requests[1],
             filename: "canvas.png",
             contentType: "image/png",
             payload: payload,
@@ -44,7 +42,6 @@ final class NotionFileUploadBehaviorTests: XCTestCase {
         let tenMegabytes = 10 * 1_024 * 1_024
         let payload = Data(repeating: 0xA5, count: (2 * tenMegabytes) + 7)
         let transport = FileUploadTransport(responses: [
-            .json(200, botResponse(maximumFileByteCount: 5 * 1_024 * 1_024 * 1_024)),
             .json(200, uploadResponse(id: uploadID, status: "pending")),
             .json(200, uploadResponse(id: uploadID, status: "pending")),
             .json(200, uploadResponse(id: uploadID, status: "pending")),
@@ -61,40 +58,22 @@ final class NotionFileUploadBehaviorTests: XCTestCase {
         let requests = await transport.allRequests()
 
         XCTAssertEqual(result, uploadID)
-        XCTAssertEqual(requests.count, 6)
-        let createBody = try jsonBody(requests[1])
+        XCTAssertEqual(requests.count, 5)
+        let createBody = try jsonBody(requests[0])
         XCTAssertEqual(createBody["mode"] as? String, "multi_part")
         XCTAssertEqual(createBody["number_of_parts"] as? Int, 3)
         for partIndex in 0..<3 {
             let expectedSize = partIndex == 2 ? 7 : tenMegabytes
             try assertMultipart(
-                requests[partIndex + 2],
+                requests[partIndex + 1],
                 filename: "notebook.notenerds.json",
                 contentType: "application/json",
                 payloadSize: expectedSize,
                 partNumber: partIndex + 1
             )
         }
-        XCTAssertEqual(requests[5].url?.path, "/v1/file_uploads/\(uploadID)/complete")
-        XCTAssertEqual(requests[5].httpMethod, "POST")
-    }
-
-    func testUploadRejectsBeforeCreationWhenConnectedWorkspaceLimitIsExceeded() async {
-        let transport = FileUploadTransport(responses: [
-            .json(200, botResponse(maximumFileByteCount: 5))
-        ])
-        let client = NotionAPIClient(accessToken: "token", transport: transport)
-
-        await assertUploadError(
-            client: client,
-            data: Data(repeating: 0xA5, count: 6),
-            filename: "notebook.notenerds.json",
-            contentType: "application/json",
-            expected: .payloadTooLarge
-        )
-        let requests = await transport.allRequests()
-
-        XCTAssertEqual(requests.map { $0.url?.path }, ["/v1/users/me"])
+        XCTAssertEqual(requests[4].url?.path, "/v1/file_uploads/\(uploadID)/complete")
+        XCTAssertEqual(requests[4].httpMethod, "POST")
     }
 
     func testUploadRejectsUnsafeMetadataAndFilesAboveNotionLimit() async {
@@ -137,7 +116,6 @@ final class NotionFileUploadBehaviorTests: XCTestCase {
         let expectedID = "33333333-3333-3333-3333-333333333333"
         let otherID = "44444444-4444-4444-4444-444444444444"
         let mismatch = FileUploadTransport(responses: [
-            .json(200, botResponse(maximumFileByteCount: 5 * 1_024 * 1_024)),
             .json(200, uploadResponse(id: expectedID, status: "pending")),
             .json(200, uploadResponse(id: otherID, status: "uploaded"))
         ])
@@ -242,12 +220,6 @@ final class NotionFileUploadBehaviorTests: XCTestCase {
         #"{"object":"file_upload","id":"\#(id)","status":"\#(status)"}"#
     }
 
-    private func botResponse(maximumFileByteCount: Int) -> String {
-        """
-        {"object":"user","type":"bot","bot":{"workspace_limits":{
-        "max_file_upload_size_in_bytes":\(maximumFileByteCount)}}}
-        """
-    }
 }
 
 private actor StreamingFileUploadTransport: NotionHTTPTransport {
@@ -263,16 +235,6 @@ private actor StreamingFileUploadTransport: NotionHTTPTransport {
     init(uploadID: String) { self.uploadID = uploadID }
 
     func data(for request: URLRequest) -> (Data, HTTPURLResponse) {
-        if request.url?.path == "/v1/users/me" {
-            let body = """
-            {"object":"user","type":"bot","bot":{"workspace_limits":{
-            "max_file_upload_size_in_bytes":5242880}}}
-            """
-            return response(
-                request: request,
-                body: Data(body.utf8)
-            )
-        }
         return response(
             request: request,
             body: Data(#"{"object":"file_upload","id":"\#(uploadID)","status":"pending"}"#.utf8)

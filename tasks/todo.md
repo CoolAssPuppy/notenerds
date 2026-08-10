@@ -1,5 +1,32 @@
 # Current work
 
+## Publish the Notion reset build
+
+- [x] Run the release-tool tests and release preflight.
+- [ ] Commit the verified Notion settings and reset change.
+- [ ] Create and upload TestFlight build 20.
+- [ ] Confirm Apple accepts the upload.
+- [ ] Commit the build-number change and push both commits.
+
+## Simplify Notion settings and reset
+
+- [x] Add failing tests for connected and failed Notion settings actions.
+- [x] Add a failing test that disconnect removes credentials, destination, queue, and bindings.
+- [x] Remove the workspace-profile request from small preview uploads.
+- [x] Remove Restore from Notion.
+- [x] Show Sync now and Disconnect Notion while connected.
+- [x] Show Try again and Disconnect Notion after failure.
+- [x] Run focused tests, strict lint, build, and `git diff --check`.
+- [x] Report the verified result before another TestFlight upload.
+
+### Notion settings reset review
+
+- The connected screen shows `Sync now` and `Disconnect Notion`. The failure screen shows `Try again` and `Disconnect Notion`. `Restore from Notion` is removed.
+- Disconnect clears the OAuth credentials and the saved destination, notebook bindings, pending queue, manifest state, and meeting links. The confirmation states that notebooks already in Notion remain there.
+- Small preview uploads start with the Notion upload request and no longer depend on a separate workspace-profile response.
+- The focused Notion checks passed 30 tests. Both settings screen tests passed. Strict SwiftLint, the generic iOS Simulator build, and `git diff --check` passed.
+- RED results: `/tmp/NoteNerds-NotionReset-Red` and `/tmp/NoteNerds-NotionSettings-Red`. Final verification: `/tmp/NoteNerds-NotionReset-Regression` and `/tmp/NoteNerds-NotionSettings-Green2`.
+
 ## Publish the Notion reference build
 
 - [x] Finish the preview-only Notion change and its focused checks.

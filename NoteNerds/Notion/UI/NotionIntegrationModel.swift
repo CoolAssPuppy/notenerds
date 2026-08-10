@@ -61,6 +61,9 @@ final class NotionIntegrationModel: ObservableObject {
     private var automaticSyncInFlight: LibraryState?
     private var automaticSyncTask: Task<Void, Never>?
     private var automaticSyncGeneration = 0
+#if DEBUG
+    private var isUITestStateLocked = false
+#endif
     var meetingLinkTask: Task<Void, Never>?
     var meetingNotebookID: NotebookID?
     var meetingLibrary: LibraryState?
@@ -96,6 +99,9 @@ final class NotionIntegrationModel: ObservableObject {
     }
 
     func restore(library: LibraryState? = nil) async {
+#if DEBUG
+        if isUITestStateLocked { return }
+#endif
         guard isConfigured else { return }
         do {
             guard let stored = try connectionManager.currentConnection() else {
@@ -177,6 +183,7 @@ final class NotionIntegrationModel: ObservableObject {
         closeNotebookMeetingLinks()
         failureMessage = nil
         do {
+            try await registry.reset()
             try await connectionManager.disconnect()
             connection = nil
             destinationProvider = nil
@@ -205,18 +212,17 @@ final class NotionIntegrationModel: ObservableObject {
             if let connection {
                 state = .connected(workspaceName: connection.credentials.workspaceName)
             }
-        } catch let error as NotionAPIError {
-            if error.statusCode == 404 {
-                showFailure("A Notion notebook page is missing. Tap Sync now to create a replacement.")
-            } else {
-                showFailure(error.userFacingMessage ?? "Your notebooks could not be sent to Notion.")
-            }
+        } catch let error as NotionAPIError where error.statusCode == 404 {
+            showFailure("A Notion notebook page is missing. Tap Sync now to create a replacement.")
         } catch {
-            showFailure("Your notebooks could not be sent to Notion.")
+            showFailure(Self.syncFailureMessage(error))
         }
     }
 
     func scheduleAutomaticSync(_ library: LibraryState) {
+#if DEBUG
+        if isUITestStateLocked { return }
+#endif
         scheduleAutomaticSync(library, delay: automaticSyncDelay)
     }
 
@@ -322,6 +328,41 @@ final class NotionIntegrationModel: ObservableObject {
         failureMessage = message
         state = .actionNeeded
     }
+
+    private static func syncFailureMessage(_ error: Error) -> String {
+        if let apiError = error as? NotionAPIError {
+            return apiError.userFacingMessage ?? "Notion returned an unreadable response."
+        }
+        if let pageError = error as? NotionManagedPageError {
+            return switch pageError {
+            case .textTooLarge: "A notebook contains more text than Notion accepts."
+            case .missingPreview: "A canvas preview could not be prepared for Notion."
+            }
+        }
+        if error is DecodingError {
+            return "Notion returned data that Note Nerds could not read."
+        }
+        if error is NotionSyncStateError {
+            return "Saved Notion sync information could not be read. Disconnect Notion and reconnect."
+        }
+        if error is NotionOAuthError {
+            return "The Notion connection is no longer valid. Disconnect Notion and reconnect."
+        }
+        return "Note Nerds could not prepare the Notion update. Disconnect Notion and reconnect."
+    }
+
+#if DEBUG
+    func configureForUITesting(
+        state: NotionIntegrationState,
+        destination: NotionDestination?,
+        failureMessage: String? = nil
+    ) {
+        isUITestStateLocked = true
+        self.state = state
+        self.destination = destination
+        self.failureMessage = failureMessage
+    }
+#endif
 
     private func takePendingAutomaticSync() -> LibraryState? {
         defer { pendingAutomaticSync = nil }

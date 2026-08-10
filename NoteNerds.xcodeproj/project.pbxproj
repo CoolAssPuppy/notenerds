@@ -49,6 +49,7 @@
 		2CCCAA59D16143C51E4AC6F5 /* HexagonPaperRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A89BC025216F5B4C409E8A /* HexagonPaperRenderer.swift */; };
 		2D9A3D341172ACA31CC64CD7 /* NotionRestoreAPIBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D89E77BFF729CB2088E187FD /* NotionRestoreAPIBehaviorTests.swift */; };
 		2E58CF10A9BCD7B0353204C6 /* MeetingLinkLifecycleBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10CF4F89CC02F1DAA306663 /* MeetingLinkLifecycleBehaviorTests.swift */; };
+		2EA0D12FC685913C75BA3776 /* NotionConnectionResetBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C09B0860644A145895CC81 /* NotionConnectionResetBehaviorTests.swift */; };
 		30830DE6445AFEBBCDAD0D68 /* NotionPersistenceBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CD784154DA64B660B9E47F1 /* NotionPersistenceBehaviorTests.swift */; };
 		30B37E96FD1D489297AC448F /* CanvasToolbarBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02159E845A0AA160F9515CD9 /* CanvasToolbarBehavior.swift */; };
 		325980567CA6076D1C63B982 /* TypographyBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 253C76E5F05602C1559423D6 /* TypographyBehaviorTests.swift */; };
@@ -368,6 +369,7 @@
 		65E3E99589221D6E8FD346B5 /* PaperRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperRenderer.swift; sourceTree = "<group>"; };
 		668A72FFB52B8B1126C652A2 /* RadialPaletteUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialPaletteUITests.swift; sourceTree = "<group>"; };
 		67096CA66A85041A47B0CBFB /* FolderIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderIcon.swift; sourceTree = "<group>"; };
+		67C09B0860644A145895CC81 /* NotionConnectionResetBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionConnectionResetBehaviorTests.swift; sourceTree = "<group>"; };
 		69B83A66B06430C9EC8BCFFB /* ShapeRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeRecognizer.swift; sourceTree = "<group>"; };
 		6C8EE4EC96BEB638E3E195A0 /* PencilCanvasRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilCanvasRenderer.swift; sourceTree = "<group>"; };
 		6CD784154DA64B660B9E47F1 /* NotionPersistenceBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionPersistenceBehaviorTests.swift; sourceTree = "<group>"; };
@@ -949,6 +951,7 @@
 				A10CF4F89CC02F1DAA306663 /* MeetingLinkLifecycleBehaviorTests.swift */,
 				8FC4414A02D30C22FB6D79EE /* NotionAPIClientBehaviorTests.swift */,
 				88FD4334AAEC09C58ABAECF8 /* NotionAuthenticatedAPIBehaviorTests.swift */,
+				67C09B0860644A145895CC81 /* NotionConnectionResetBehaviorTests.swift */,
 				54DA2CEDF0E89F5EDAE81820 /* NotionConnectionServiceBehaviorTests.swift */,
 				D21D4A9D7E588BA73AB62C6B /* NotionCredentialStoreBehaviorTests.swift */,
 				564EB000BAC305B973FC8E18 /* NotionEndToEndIntegrationTests.swift */,
@@ -1368,6 +1371,7 @@
 				9FC279333058639D84C1CC00 /* NotebookPreviewBehaviorTests.swift in Sources */,
 				6D4AF275F08164EC201AC01D /* NotionAPIClientBehaviorTests.swift in Sources */,
 				35014390603D48F6CB3F2CF8 /* NotionAuthenticatedAPIBehaviorTests.swift in Sources */,
+				2EA0D12FC685913C75BA3776 /* NotionConnectionResetBehaviorTests.swift in Sources */,
 				6BA782C0F4EA37DE799EB8DA /* NotionConnectionServiceBehaviorTests.swift in Sources */,
 				C2724303C0A2FA9EAF77D833 /* NotionCredentialStoreBehaviorTests.swift in Sources */,
 				E399C438C01F71BF51543E9E /* NotionEndToEndIntegrationTests.swift in Sources */,

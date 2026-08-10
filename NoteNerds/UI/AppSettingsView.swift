@@ -7,8 +7,6 @@ struct AppSettingsView: View {
     @AppStorage("defaultPaperType") private var defaultPaperTypeRawValue = PaperType.blankWhite.rawValue
     @State private var isPaperGalleryPresented = false
     @State private var isConfirmingDisconnect = false
-    @State private var isRestoreReviewPresented = false
-    @State private var restoreChoices: [NotebookID: NotionRestoreChoice] = [:]
 
     var body: some View {
         NavigationStack {
@@ -29,13 +27,6 @@ struct AppSettingsView: View {
                     defaultPaperTypeRawValue = $0.rawValue
                 }
             }
-            .sheet(isPresented: $isRestoreReviewPresented) {
-                NotionRestoreReviewView(
-                    candidates: notion.restoreCandidates,
-                    choices: $restoreChoices,
-                    onRestore: restoreSelectedNotebooks
-                )
-            }
             .confirmationDialog(
                 "Disconnect Notion?",
                 isPresented: $isConfirmingDisconnect,
@@ -44,7 +35,10 @@ struct AppSettingsView: View {
                 Button("Disconnect", role: .destructive) { Task { await notion.disconnect() } }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("Your notebooks will remain in Notion. Note Nerds will remove its device credentials.")
+                Text(
+                    "Your notebooks will remain in Notion. Note Nerds will remove its Notion "
+                        + "credentials and saved sync information from this device."
+                )
             }
         }
     }
@@ -95,6 +89,7 @@ struct AppSettingsView: View {
                 Button("Try again") {
                     Task { await notion.retry(library: model.library) }
                 }
+                disconnectNotionButton
             }
         } header: {
             Text("Notion")
@@ -159,32 +154,13 @@ struct AppSettingsView: View {
                 Text(summary)
                     .foregroundStyle(.secondary)
             }
-            Button("Restore from Notion", systemImage: "arrow.down.doc") {
-                Task { await prepareRestore() }
-            }
-            .disabled(isSyncing)
         }
+        disconnectNotionButton.disabled(isSyncing)
+    }
+
+    private var disconnectNotionButton: some View {
         Button("Disconnect Notion", systemImage: "link.badge.minus", role: .destructive) {
             isConfirmingDisconnect = true
         }
-        .disabled(isSyncing)
-    }
-
-    private func prepareRestore() async {
-        let candidates = await notion.prepareRestore(local: model.library)
-        guard notion.state == .reviewingRestore else { return }
-        restoreChoices = Dictionary(
-            uniqueKeysWithValues: candidates.map { ($0.notebookID, $0.defaultChoice) }
-        )
-        isRestoreReviewPresented = true
-    }
-
-    private func restoreSelectedNotebooks() {
-        guard let restored = notion.completeRestore(
-            local: model.library,
-            choices: restoreChoices
-        ) else { return }
-        isRestoreReviewPresented = false
-        Task { await model.replaceLibraryAfterNotionRestore(restored) }
     }
 }

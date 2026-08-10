@@ -156,6 +156,13 @@ actor NotionSyncRegistry {
         try await store.save(state)
     }
 
+    func reset() async throws {
+        let emptyState = NotionSyncState()
+        try await store.save(emptyState)
+        state = emptyState
+        hasLoaded = true
+    }
+
     func recordManifestSuccess(rootBlockID: String, contentHash: String) async throws {
         guard UUID(uuidString: rootBlockID) != nil, contentHash.count == 64 else {
             throw NotionSyncStateError.invalidState

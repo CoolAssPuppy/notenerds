@@ -3,10 +3,17 @@
 ## Publish the Notion reset build
 
 - [x] Run the release-tool tests and release preflight.
-- [ ] Commit the verified Notion settings and reset change.
-- [ ] Create and upload TestFlight build 20.
-- [ ] Confirm Apple accepts the upload.
-- [ ] Commit the build-number change and push both commits.
+- [x] Commit the verified Notion settings and reset change.
+- [x] Create and upload TestFlight build 20.
+- [x] Confirm Apple accepts the upload.
+- [x] Commit the build-number change and push both commits.
+
+### TestFlight build 20 review
+
+- Thirty focused Notion tests and both Notion settings screen tests passed. Strict SwiftLint, the generic iOS Simulator build, Xcode static analysis, all 33 release-tool tests, XcodeGen generation, the secret scan, and `git diff --check` passed.
+- The release preflight confirmed App Store Connect access, the signing key, XcodeGen 2.46.0, and compatible iPhone and iPad simulators.
+- The signed archive and IPA export passed. The archive contains nonempty Notion connection settings.
+- App Store Connect accepted build 20 and reports it as `VALID`. Delivery UUID: `40fb1f1d-3f72-4d7e-a6c3-e36814c8b303`.
 
 ## Simplify Notion settings and reset
 

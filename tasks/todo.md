@@ -3,10 +3,16 @@
 ## Publish the Notion reference build
 
 - [x] Finish the preview-only Notion change and its focused checks.
-- [ ] Commit the verified change.
-- [ ] Run the release preflight and create TestFlight build 19.
-- [ ] Confirm Apple accepts build 19 for TestFlight.
-- [ ] Push the release commit and record the delivery result.
+- [x] Commit the verified change.
+- [x] Run the release preflight and create TestFlight build 19.
+- [x] Confirm Apple accepts build 19 for TestFlight.
+- [x] Push the release commit and record the delivery result.
+
+### TestFlight build 19 review
+
+- The release preflight passed with App Store Connect access, signing credentials, XcodeGen 2.46.0, and compatible iPhone and iPad simulators.
+- The signed archive and IPA export passed. App Store Connect accepted build 19 and marked it valid.
+- Delivery UUID: `5f41b24b-0bd1-43b8-bba7-20fa22e71b7a`.
 
 ## Make Notion a lightweight notebook reference
 

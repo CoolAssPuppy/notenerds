@@ -2,6 +2,36 @@ import XCTest
 @testable import NoteNerds
 
 final class EditingBehaviorTests: XCTestCase {
+    func testReplacingVisibleStrokesHandlesDuplicateLegacyIdentifiers() throws {
+        let layerID = LayerID()
+        let repeatedID = StrokeID()
+        let first = DomainFixtures.stroke(id: repeatedID, layerID: layerID)
+        var second = first
+        second.samples[0].point.x += 40
+        let canvas = Canvas(
+            title: "Legacy notes",
+            layers: [Layer(id: layerID, name: "Notes", objects: [.stroke(first), .stroke(second)])]
+        )
+        var notebook = Notebook(title: "Imported notes", canvases: [canvas])
+        let added = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+
+        let operation = try DocumentOperation.replacingObjects(
+            in: notebook,
+            canvasID: canvas.id,
+            objectIDs: [first.objectID],
+            with: [.stroke(first), .stroke(second), .stroke(added)]
+        )
+        try operation.apply(to: &notebook)
+        var strokes = notebook.canvases[0].layers[0].objects.compactMap(\.strokeValue)
+
+        XCTAssertEqual(strokes, [first, second, added])
+
+        try operation.undo(on: &notebook)
+        strokes = notebook.canvases[0].layers[0].objects.compactMap(\.strokeValue)
+
+        XCTAssertEqual(strokes, [first, second])
+    }
+
     func testSelectionTransformPreservesLayerMembershipAndUndoRestoresExactObjects() throws {
         var notebook = DomainFixtures.notebook()
         let canvas = notebook.canvases[0]

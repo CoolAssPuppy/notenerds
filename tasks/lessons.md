@@ -1,5 +1,6 @@
 # Lessons
 
+- For a repeatable TestFlight crash, copy the iPad system crash reports, match the binary UUID to the archived dSYM, and symbolicate the faulting frames before changing code. Four identical device stacks give a specific regression target.
 - Disconnecting a service must clear its credentials and every saved destination, mapping, pending request, and connection-specific record. Keep Disconnect available in both connected and failed settings states.
 - Diagnose an app integration with the credentials stored by the app. A browser session may belong to another account or workspace and cannot prove which Notion identity the app uses.
 - A successful retry action does not fix the request that failed. Preserve the external service's status and safe error message, confirm the account limit, and test that exact rejection before shipping another build.

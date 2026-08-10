@@ -129,7 +129,7 @@ struct AppSettingsView: View {
         } label: {
             LabeledContent(
                 "Notebook database",
-                value: notion.destination == nil ? "Choose location" : "Connected"
+                value: notion.destination?.displayName ?? "Choose location"
             )
         }
         if notion.destination != nil {

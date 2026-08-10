@@ -168,6 +168,7 @@ final class NotionAPIClientBehaviorTests: XCTestCase {
 
         XCTAssertEqual(destination.databaseID, databaseID)
         XCTAssertEqual(destination.dataSourceID, dataSourceID)
+        XCTAssertEqual(destination.databaseName, "Note Nerds")
         XCTAssertEqual(destination.parentPageID, "33333333-3333-3333-3333-333333333333")
         XCTAssertEqual(request.url?.path, "/v1/databases")
         XCTAssertEqual(Set(initialSource.keys), ["properties"])

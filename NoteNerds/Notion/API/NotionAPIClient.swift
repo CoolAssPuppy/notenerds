@@ -80,7 +80,8 @@ struct NotionAPIClient: Sendable {
         return NotionDestination(
             parentPageID: parentPageID,
             databaseID: response.id,
-            dataSourceID: source.id
+            dataSourceID: source.id,
+            databaseName: source.name
         )
     }
 
@@ -307,5 +308,6 @@ private struct DatabaseResponse: Decodable {
 
     struct DataSource: Decodable {
         let id: String
+        let name: String?
     }
 }

@@ -74,14 +74,22 @@ enum DocumentOperation: Codable, Hashable, Sendable {
         with replacements: [CanvasObject]
     ) throws -> DocumentOperation {
         let before = try notebook.placements(of: objectIDs, in: canvasID)
-        let placementByID = Dictionary(uniqueKeysWithValues: before.map { ($0.object.id, $0) })
-        let after = replacements.map { object in
-            let source = placementByID[object.id]
-            return ObjectPlacement(
+        var placementsByID: [ObjectID: [ObjectPlacement]] = [:]
+        for placement in before {
+            placementsByID[placement.object.id, default: []].append(placement)
+        }
+        var consumedPlacementsByID: [ObjectID: Int] = [:]
+        var after: [ObjectPlacement] = []
+        for object in replacements {
+            let sourceIndex = consumedPlacementsByID[object.id, default: 0]
+            let sources = placementsByID[object.id, default: []]
+            let source = sources.indices.contains(sourceIndex) ? sources[sourceIndex] : nil
+            consumedPlacementsByID[object.id] = sourceIndex + 1
+            after.append(ObjectPlacement(
                 layerID: object.layerID,
                 index: source?.index ?? Int.max,
                 object: object
-            )
+            ))
         }
         return .replaceObjects(canvasID: canvasID, before: before, after: after)
     }

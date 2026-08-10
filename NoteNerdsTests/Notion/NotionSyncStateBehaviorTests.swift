@@ -10,7 +10,8 @@ final class NotionSyncStateBehaviorTests: XCTestCase {
             workspaceID: "workspace-id",
             destination: NotionDestination(
                 databaseID: "11111111-1111-1111-1111-111111111111",
-                dataSourceID: "22222222-2222-2222-2222-222222222222"
+                dataSourceID: "22222222-2222-2222-2222-222222222222",
+                databaseName: "Personal Notes"
             ),
             manifestPageID: "33333333-3333-3333-3333-333333333333",
             bindings: [
@@ -42,6 +43,19 @@ final class NotionSyncStateBehaviorTests: XCTestCase {
         XCTAssertEqual(restored, state)
         XCTAssertNil(serialized.range(of: Data("notebook text".utf8)))
         XCTAssertTrue(FileManager.default.fileExists(atPath: fileURL.path))
+    }
+
+    func testLegacyDestinationUsesTheDefaultDatabaseName() throws {
+        let legacyJSON = """
+        {"databaseID":"11111111-1111-1111-1111-111111111111",\
+        "dataSourceID":"22222222-2222-2222-2222-222222222222"}
+        """
+        let legacy = Data(legacyJSON.utf8)
+
+        let destination = try JSONDecoder().decode(NotionDestination.self, from: legacy)
+
+        XCTAssertEqual(destination.databaseName, nil)
+        XCTAssertEqual(destination.displayName, "Note Nerds")
     }
 
     func testDurableStateRejectsASymbolicLink() async throws {

@@ -50,10 +50,15 @@ final class NotionSettingsUITests: XCTestCase {
 
         openSettings(in: application)
 
+        let databaseRow = application.buttons["Notebook database, Personal Notes"]
+        XCTAssertTrue(databaseRow.waitForExistence(timeout: 2))
         XCTAssertTrue(application.buttons["Sync now"].waitForExistence(timeout: 2))
         XCTAssertTrue(application.buttons["Disconnect Notion"].exists)
         XCTAssertFalse(application.buttons["Restore from Notion"].exists)
         XCTAssertFalse(application.buttons["Try again"].exists)
+
+        databaseRow.tap()
+        XCTAssertTrue(application.navigationBars["Choose Notion location"].waitForExistence(timeout: 2))
     }
 
     func testFailedNotionShowsRetryAndDisconnectWithoutRestore() {

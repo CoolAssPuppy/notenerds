@@ -135,11 +135,24 @@ struct NotionDestination: Codable, Equatable, Sendable {
     let parentPageID: String?
     let databaseID: String
     let dataSourceID: String
+    let databaseName: String?
 
-    init(parentPageID: String? = nil, databaseID: String, dataSourceID: String) {
+    init(
+        parentPageID: String? = nil,
+        databaseID: String,
+        dataSourceID: String,
+        databaseName: String? = nil
+    ) {
         self.parentPageID = parentPageID
         self.databaseID = databaseID
         self.dataSourceID = dataSourceID
+        self.databaseName = databaseName
+    }
+
+    var displayName: String {
+        guard let name = databaseName?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !name.isEmpty else { return "Note Nerds" }
+        return name
     }
 }
 

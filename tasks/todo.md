@@ -1,5 +1,29 @@
 # Current work
 
+## Fix the repeatable writing crash and database label
+
+- [x] Match the latest Note Nerds crash report to the current TestFlight build.
+- [x] Reproduce the confirmed writing failure with a behavior test.
+- [x] Show the connected Notion database name on the right with a disclosure chevron.
+- [x] Fix the crash without changing unrelated editing or sync behavior.
+- [x] Run focused tests, strict lint, static analysis, and a clean build.
+- [x] Record the cause and verified result before another TestFlight upload.
+
+### Writing crash and database label review
+
+- Four iPad crash reports from TestFlight build 20 have the same main-thread `EXC_BREAKPOINT`. The matching build 20 dSYM identifies `DocumentOperation.replacingObjects` at line 77, called when PencilKit finishes a stroke.
+- The affected notebook contains repeated legacy stroke identifiers. Replacing visible strokes no longer assumes those identifiers are unique. The operation preserves the original stroke order and supports undo.
+- Settings now stores the database name returned by Notion and shows it on the right side of the existing Notebook database navigation row. Existing saved connections show `Note Nerds`.
+- The final focused crash, Notion API, saved-state, and Settings screen checks passed. Strict SwiftLint passed 242 files with no violations. Xcode static analysis, the clean build-for-testing, XcodeGen generation, and `git diff --check` passed.
+
+## Publish the writing crash fix
+
+- [ ] Commit and push the verified change.
+- [ ] Run the release preflight.
+- [ ] Create and upload the next TestFlight build.
+- [ ] Confirm Apple marks the build valid.
+- [ ] Commit and push the build-number change.
+
 ## Publish the Notion reset build
 
 - [x] Run the release-tool tests and release preflight.

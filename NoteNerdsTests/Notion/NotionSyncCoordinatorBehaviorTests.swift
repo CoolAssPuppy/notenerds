@@ -2,7 +2,7 @@ import XCTest
 @testable import NoteNerds
 
 final class NotionSyncCoordinatorBehaviorTests: XCTestCase {
-    func testFirstSyncUploadsOnlyLegibleCanvasPreviewsAndCreatesOneNotebookRow() async throws {
+    func testFirstSyncUploadsEveryBackupFileAndCreatesOneNotebookRow() async throws {
         let store = CoordinatorStateStore(state: NotionSyncState(destination: destination))
         let registry = NotionSyncRegistry(store: store)
         let api = RecordingNotionSyncAPI()
@@ -11,12 +11,24 @@ final class NotionSyncCoordinatorBehaviorTests: XCTestCase {
 
         let result = try await coordinator.sync(payload, to: destination)
         let events = await api.events
+        let upsertedFiles = await api.upsertedFiles
         let state = try await registry.snapshot()
 
         XCTAssertEqual(result, .uploaded(pageID: Self.pageID))
-        XCTAssertEqual(events.filter { $0.hasPrefix("upload:") }.count, 2)
-        XCTAssertFalse(events.contains { $0.hasSuffix(".notenerds.json") })
-        XCTAssertFalse(events.contains { $0.hasSuffix(".pdf") })
+        XCTAssertEqual(events.filter { $0.hasPrefix("upload:") }.count, 4)
+        XCTAssertTrue(events.contains(
+            "upload:\(payload.snapshot.row.notebookID.lowercased()).notenerds.json"
+        ))
+        XCTAssertTrue(events.contains(
+            "upload:\(payload.snapshot.row.notebookID.lowercased()).pdf"
+        ))
+        XCTAssertEqual(
+            upsertedFiles,
+            NotionNotebookRemoteFiles(
+                nativeUploadID: "00000000-0000-0000-0000-000000000001",
+                pdfUploadID: "00000000-0000-0000-0000-000000000002"
+            )
+        )
         XCTAssertTrue(events.contains("find:\(payload.snapshot.row.notebookID)"))
         XCTAssertTrue(events.contains("create:\(payload.snapshot.row.notebookID)"))
         XCTAssertFalse(events.contains(where: { $0.hasPrefix("update:") }))
@@ -29,7 +41,7 @@ final class NotionSyncCoordinatorBehaviorTests: XCTestCase {
         )
     }
 
-    func testRepeatedSyncWithSameHashMakesNoNotionRequest() async throws {
+    func testAutomaticSyncWithSameHashMakesNoNotionRequest() async throws {
         let payload = notebookPayload()
         let binding = NotionNotebookBinding(
             notebookID: payload.snapshot.row.notebookID,
@@ -53,6 +65,73 @@ final class NotionSyncCoordinatorBehaviorTests: XCTestCase {
 
         XCTAssertEqual(result, .skippedUnchanged)
         XCTAssertTrue(events.isEmpty)
+    }
+
+    func testForcedReconciliationReuploadsAndUpdatesAnExistingPageWithTheSameHash() async throws {
+        let payload = notebookPayload()
+        let binding = NotionNotebookBinding(
+            notebookID: payload.snapshot.row.notebookID,
+            pageID: Self.pageID,
+            managedRootBlockID: Self.managedRootID,
+            contentHash: payload.snapshot.row.contentHash,
+            syncedAt: DomainFixtures.fixedDate,
+            notionLastEditedAt: nil
+        )
+        let registry = NotionSyncRegistry(store: CoordinatorStateStore(
+            state: NotionSyncState(destination: destination, bindings: [binding])
+        ))
+        let api = RecordingNotionSyncAPI(
+            remotePage: NotionPageBinding(pageID: Self.pageID, url: nil)
+        )
+        let coordinator = NotionSyncCoordinator(api: api, registry: registry)
+
+        let result = try await coordinator.sync(
+            payload,
+            to: destination,
+            forceRemoteReconciliation: true
+        )
+        let events = await api.events
+
+        XCTAssertEqual(result, .uploaded(pageID: Self.pageID))
+        XCTAssertEqual(events.filter { $0.hasPrefix("upload:") }.count, 4)
+        XCTAssertTrue(events.contains("find:\(payload.snapshot.row.notebookID)"))
+        XCTAssertTrue(events.contains("update:\(Self.pageID)"))
+        XCTAssertTrue(events.contains("replace:\(Self.pageID):\(Self.managedRootID)"))
+        XCTAssertFalse(events.contains { $0.hasPrefix("create:") })
+    }
+
+    func testForcedReconciliationRecreatesAMissingPageWhenTheSavedHashMatches() async throws {
+        let payload = notebookPayload()
+        let binding = NotionNotebookBinding(
+            notebookID: payload.snapshot.row.notebookID,
+            pageID: Self.pageID,
+            managedRootBlockID: Self.managedRootID,
+            contentHash: payload.snapshot.row.contentHash,
+            syncedAt: DomainFixtures.fixedDate,
+            notionLastEditedAt: nil
+        )
+        let registry = NotionSyncRegistry(store: CoordinatorStateStore(
+            state: NotionSyncState(destination: destination, bindings: [binding])
+        ))
+        let api = RecordingNotionSyncAPI()
+        let coordinator = NotionSyncCoordinator(api: api, registry: registry)
+
+        let result = try await coordinator.sync(
+            payload,
+            to: destination,
+            forceRemoteReconciliation: true
+        )
+        let events = await api.events
+        let state = try await registry.snapshot()
+
+        XCTAssertEqual(result, .uploaded(pageID: Self.pageID))
+        XCTAssertTrue(events.contains("find:\(payload.snapshot.row.notebookID)"))
+        XCTAssertTrue(events.contains("create:\(payload.snapshot.row.notebookID)"))
+        XCTAssertFalse(events.contains("update:\(Self.pageID)"))
+        XCTAssertEqual(
+            state.binding(notebookID: payload.snapshot.row.notebookID)?.pageID,
+            Self.pageID
+        )
     }
 
     func testChangedNotebookUpdatesBoundPageAndReplacesBoundManagedSection() async throws {
@@ -220,10 +299,16 @@ private actor CoordinatorStateStore: NotionSyncStateStoring {
 
 private actor RecordingNotionSyncAPI: NotionSyncAPI {
     private(set) var events: [String] = []
+    private(set) var upsertedFiles: NotionNotebookRemoteFiles?
     private var uploadNumber = 0
+    private let remotePage: NotionPageBinding?
     private let failure: NotionAPIError?
 
-    init(failure: NotionAPIError? = nil) {
+    init(
+        remotePage: NotionPageBinding? = nil,
+        failure: NotionAPIError? = nil
+    ) {
+        self.remotePage = remotePage
         self.failure = failure
     }
 
@@ -236,7 +321,7 @@ private actor RecordingNotionSyncAPI: NotionSyncAPI {
 
     func findNotebookPage(dataSourceID: String, notebookID: String) -> NotionPageBinding? {
         events.append("find:\(notebookID)")
-        return nil
+        return remotePage
     }
 
     func createNotebookPage(
@@ -245,6 +330,7 @@ private actor RecordingNotionSyncAPI: NotionSyncAPI {
         files: NotionNotebookRemoteFiles
     ) -> NotionPageBinding {
         events.append("create:\(snapshot.row.notebookID)")
+        upsertedFiles = files
         return NotionPageBinding(pageID: NotionSyncCoordinatorBehaviorTests.pageID, url: nil)
     }
 
@@ -254,6 +340,7 @@ private actor RecordingNotionSyncAPI: NotionSyncAPI {
         files: NotionNotebookRemoteFiles
     ) -> NotionPageBinding {
         events.append("update:\(pageID)")
+        upsertedFiles = files
         return NotionPageBinding(pageID: pageID, url: nil)
     }
 

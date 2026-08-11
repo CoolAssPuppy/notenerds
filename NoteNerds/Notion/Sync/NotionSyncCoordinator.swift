@@ -58,20 +58,35 @@ actor NotionSyncCoordinator {
 
     func sync(
         _ payload: NotionNotebookPayload,
-        to destination: NotionDestination
+        to destination: NotionDestination,
+        forceRemoteReconciliation: Bool = false
     ) async throws -> NotionSyncResult {
         let notebookID = payload.snapshot.row.notebookID
-        guard try await registry.needsSync(
+        let needsSync = try await registry.needsSync(
             notebookID: notebookID,
             contentHash: payload.snapshot.row.contentHash,
             destination: destination
-        ) else {
+        )
+        let pageLookup: RemotePageLookup
+        if forceRemoteReconciliation {
+            let remotePage = try await api.findNotebookPage(
+                dataSourceID: destination.dataSourceID,
+                notebookID: notebookID
+            )
+            pageLookup = .verified(remotePage)
+        } else if needsSync {
+            pageLookup = .savedBinding
+        } else {
             return .skippedUnchanged
         }
         try validate(payload)
         try await registry.enqueue(notebookID: notebookID)
         do {
-            return try await performSync(payload, destination: destination)
+            return try await performSync(
+                payload,
+                destination: destination,
+                pageLookup: pageLookup
+            )
         } catch {
             let failure = Self.failureCategory(error)
             if failure == .missingRemotePage {
@@ -90,7 +105,8 @@ actor NotionSyncCoordinator {
 
     private func performSync(
         _ payload: NotionNotebookPayload,
-        destination: NotionDestination
+        destination: NotionDestination,
+        pageLookup: RemotePageLookup
     ) async throws -> NotionSyncResult {
         let notebookID = payload.snapshot.row.notebookID
         let uploads = try await uploadRepresentations(payload, notebookID: notebookID)
@@ -100,6 +116,7 @@ actor NotionSyncCoordinator {
             payload: payload,
             destination: destination,
             existingBinding: existingBinding,
+            pageLookup: pageLookup,
             files: uploads.files
         )
         let oldRootID = try await managedRootID(
@@ -130,8 +147,18 @@ actor NotionSyncCoordinator {
 
     private func uploadRepresentations(
         _ payload: NotionNotebookPayload,
-        notebookID _: String
+        notebookID: String
     ) async throws -> UploadedRepresentations {
+        let nativeID = try await api.uploadFile(
+            data: payload.nativeArchive,
+            filename: "\(notebookID.lowercased()).notenerds.json",
+            contentType: "application/json"
+        )
+        let pdfID = try await api.uploadFile(
+            data: payload.pdf,
+            filename: "\(notebookID.lowercased()).pdf",
+            contentType: "application/pdf"
+        )
         var previewIDs: [String: String] = [:]
         for canvas in payload.snapshot.canvases {
             guard let preview = payload.previews[canvas.canvasID] else {
@@ -144,7 +171,10 @@ actor NotionSyncCoordinator {
             )
         }
         return UploadedRepresentations(
-            files: .empty,
+            files: NotionNotebookRemoteFiles(
+                nativeUploadID: nativeID,
+                pdfUploadID: pdfID
+            ),
             previewIDs: previewIDs
         )
     }
@@ -182,8 +212,23 @@ actor NotionSyncCoordinator {
         payload: NotionNotebookPayload,
         destination: NotionDestination,
         existingBinding: NotionNotebookBinding?,
+        pageLookup: RemotePageLookup,
         files: NotionNotebookRemoteFiles
     ) async throws -> NotionPageBinding {
+        if case let .verified(remotePage) = pageLookup {
+            if let remotePage {
+                return try await api.updateNotebookPage(
+                    pageID: remotePage.pageID,
+                    snapshot: payload.snapshot,
+                    files: files
+                )
+            }
+            return try await api.createNotebookPage(
+                dataSourceID: destination.dataSourceID,
+                snapshot: payload.snapshot,
+                files: files
+            )
+        }
         if let existingBinding {
             return try await api.updateNotebookPage(
                 pageID: existingBinding.pageID,
@@ -209,6 +254,9 @@ actor NotionSyncCoordinator {
     }
 
     private func validate(_ payload: NotionNotebookPayload) throws {
+        guard !payload.nativeArchive.isEmpty, !payload.pdf.isEmpty else {
+            throw NotionAPIError.emptyFile
+        }
         for canvas in payload.snapshot.canvases {
             guard let preview = payload.previews[canvas.canvasID], !preview.isEmpty else {
                 throw NotionManagedPageError.missingPreview(canvas.canvasID)
@@ -241,4 +289,9 @@ actor NotionSyncCoordinator {
 private struct UploadedRepresentations {
     let files: NotionNotebookRemoteFiles
     let previewIDs: [String: String]
+}
+
+private enum RemotePageLookup {
+    case savedBinding
+    case verified(NotionPageBinding?)
 }

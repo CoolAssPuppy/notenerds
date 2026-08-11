@@ -1,5 +1,28 @@
 # Current work
 
+## Restore Notion backups
+
+- [x] Reproduce empty native and PDF attachments from current Notion publishing.
+- [x] Reproduce Empty Trash removing the last Notion backup row.
+- [x] Reproduce Sync now skipping an unchanged notebook whose Notion row is missing.
+- [x] Upload a restorable native notebook, full PDF, and canvas previews.
+- [x] Keep Notion backup rows after permanent local deletion.
+- [x] Make Sync now recreate missing remote content in one run.
+- [x] Run the focused Notion checks, complete behavior suite, and strict lint.
+- [ ] Build, sign, and upload TestFlight build 24.
+- [ ] Commit and push the repair, then supersede build 23 with TestFlight build 24.
+- [ ] Record the cause and verified result.
+
+### Review
+
+- Build 19 changed Notion publishing to previews only. Later syncs sent empty native notebook and PDF file properties, so existing backup attachments were cleared.
+- Empty Trash also moved each permanently deleted notebook page to Notion Trash and removed its saved binding. The last local deletion could leave the selected database empty.
+- Notion publishing now sends a restorable native notebook with referenced assets, a full PDF, and every canvas preview. The saved hash covers the exact native file that Notion receives.
+- Permanent local deletion keeps the Notion page, binding, and meeting links. It removes only obsolete retry work.
+- Sync now republishes every local notebook and repairs an existing or missing row. Unchanged automatic sync skips PDF and preview rendering and makes no Notion requests.
+- Verification passed 23 focused release checks, all 512 app behavior checks, strict SwiftLint across 254 Swift files, `git diff --check`, and an independent release review.
+- The configured Codex Notion connection cannot read the Strategic Nerds page, so the live database will be checked through build 24 after Apple finishes processing it.
+
 ## Stop deleted notebooks from returning
 
 - [x] Reproduce a trashed notebook returning from an older local document snapshot.

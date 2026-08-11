@@ -22,7 +22,7 @@ final class NotionEndToEndIntegrationTests: XCTestCase {
         XCTAssertEqual(events, ["notebook", "manifest"])
     }
 
-    func testNotebookDeletionIsPublishedBeforeTheFolderManifest() async throws {
+    func testFullPublishPreservesABoundNotionBackupMissingFromTheLocalLibrary() async throws {
         let destination = NotionDestination(
             databaseID: "11111111-1111-1111-1111-111111111111",
             dataSourceID: "22222222-2222-2222-2222-222222222222"
@@ -46,7 +46,10 @@ final class NotionEndToEndIntegrationTests: XCTestCase {
             .publish(LibraryState())
 
         let events = await notion.publicationEvents()
-        XCTAssertEqual(events, ["deletion", "manifest"])
+        let state = try await registry.snapshot()
+
+        XCTAssertEqual(events, ["manifest"])
+        XCTAssertNotNil(state.binding(notebookID: "dddddddd-dddd-dddd-dddd-dddddddddddd"))
     }
 
     func testRepeatedLibraryPublishDoesNotUploadAnUnchangedManifest() async throws {
@@ -117,7 +120,47 @@ final class NotionEndToEndIntegrationTests: XCTestCase {
         XCTAssertTrue(trashedPageIDs.isEmpty)
     }
 
-    func testFullPublishTrashesBoundPageForNotebookMissingAfterEmptyTrash() async throws {
+    func testManualReconciliationRecreatesAMissingRowWithAnUnchangedHash() async throws {
+        let notebook = DomainFixtures.notebook()
+        let library = LibraryState(notebooks: [notebook])
+        let destination = NotionDestination(
+            databaseID: "11111111-1111-1111-1111-111111111111",
+            dataSourceID: "22222222-2222-2222-2222-222222222222"
+        )
+        let payload = try await NotionNotebookPayloadBuilder().build(
+            notebook: notebook,
+            library: library,
+            exportedAt: DomainFixtures.fixedDate
+        )
+        let registry = NotionSyncRegistry(store: EndToEndStateStore(state: NotionSyncState(
+            workspaceID: "workspace",
+            destination: destination,
+            manifestPageID: "33333333-3333-3333-3333-333333333333",
+            bindings: [NotionNotebookBinding(
+                notebookID: payload.snapshot.row.notebookID,
+                pageID: "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE",
+                managedRootBlockID: "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
+                contentHash: payload.snapshot.row.contentHash,
+                syncedAt: DomainFixtures.fixedDate,
+                notionLastEditedAt: nil
+            )]
+        )))
+        let notion = LocalNotionService(manifestPageID: "33333333-3333-3333-3333-333333333333")
+        let publisher = NotionLibraryPublisher(api: notion, registry: registry)
+
+        let report = try await publisher.reconcile(library, notebookID: nil)
+        let uploadedIDs = await notion.uploadedNotebookIDs()
+        let state = try await registry.snapshot()
+
+        XCTAssertEqual(report.uploadedNotebookCount, 1)
+        XCTAssertEqual(uploadedIDs, [payload.snapshot.row.notebookID])
+        XCTAssertNotEqual(
+            state.binding(notebookID: payload.snapshot.row.notebookID)?.pageID,
+            "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"
+        )
+    }
+
+    func testEmptyTrashPreservesNotionBackupBindingAndMeetingLinksButClearsRetry() async throws {
         let notebookID = "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD".lowercased()
         let pageID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"
         let meetingLinks = DeletionMeetingCoordinator()
@@ -157,10 +200,10 @@ final class NotionEndToEndIntegrationTests: XCTestCase {
         let trashedPageIDs = await notion.trashedNotebookPageIDs()
         let cleanedNotebookIDs = await meetingLinks.cleanedNotebookIDs
 
-        XCTAssertEqual(report.deletedNotebookCount, 1)
-        XCTAssertEqual(trashedPageIDs, [pageID])
-        XCTAssertEqual(cleanedNotebookIDs, [notebookID])
-        XCTAssertNil(state.binding(notebookID: notebookID))
+        XCTAssertEqual(report.deletedNotebookCount, 0)
+        XCTAssertTrue(trashedPageIDs.isEmpty)
+        XCTAssertTrue(cleanedNotebookIDs.isEmpty)
+        XCTAssertNotNil(state.binding(notebookID: notebookID))
         XCTAssertTrue(state.queue.isEmpty)
     }
 
@@ -198,7 +241,8 @@ final class NotionEndToEndIntegrationTests: XCTestCase {
         XCTAssertNotNil(state.binding(notebookID: notebookID))
     }
 
-    func testPublishCreatesAReferenceWithoutCopyingTheNotebookOrAssetToNotion() async throws {
+    // swiftlint:disable:next function_body_length
+    func testPublishCreatesDownloadableBackupsThatRestoreTheNotebookFolderAndAsset() async throws {
         let destination = NotionDestination(
             databaseID: "11111111-1111-1111-1111-111111111111",
             dataSourceID: "22222222-2222-2222-2222-222222222222"
@@ -240,13 +284,24 @@ final class NotionEndToEndIntegrationTests: XCTestCase {
             now: { DomainFixtures.fixedDate }
         ).publish(source)
         let filenames = await notion.uploadedFilenames()
+        let restoreService = NotionLibraryRestoreService(
+            loader: NotionRemoteLibraryLoader(api: notion, registry: registry)
+        )
+        let candidates = try await restoreService.prepare(local: LibraryState())
+        let restored = try restoreService.complete(
+            local: LibraryState(),
+            choices: Dictionary(uniqueKeysWithValues: candidates.map { ($0.notebookID, .useNotion) })
+        )
 
         XCTAssertEqual(report.uploadedNotebookCount, 1)
         XCTAssertTrue(report.didUploadManifest)
         XCTAssertEqual(filenames.filter { $0.hasSuffix(".png") }.count, notebook.canvases.count)
         XCTAssertTrue(filenames.contains("library-manifest.json"))
-        XCTAssertFalse(filenames.contains { $0.hasSuffix(".notenerds.json") })
-        XCTAssertFalse(filenames.contains { $0.hasSuffix(".pdf") })
+        XCTAssertTrue(filenames.contains { $0.hasSuffix(".notenerds.json") })
+        XCTAssertTrue(filenames.contains { $0.hasSuffix(".pdf") })
+        XCTAssertEqual(restored.folder(id: folder.id), folder)
+        XCTAssertEqual(restored.notebook(id: notebook.id), notebook)
+        XCTAssertEqual(restored.asset(id: assetID), asset)
     }
 }
 
@@ -299,7 +354,7 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
     }
 
     func findNotebookPage(dataSourceID: String, notebookID: String) -> NotionPageBinding? {
-        notebookFiles[notebookID].map { NotionPageBinding(pageID: $0.pageID, url: nil) }
+        return notebookFiles[notebookID].map { NotionPageBinding(pageID: $0.pageID, url: nil) }
     }
 
     func createNotebookPage(
@@ -414,6 +469,7 @@ private actor LocalNotionService: NotionSyncAPI, NotionRestoreAPI {
     func publicationEvents() -> [String] {
         events
     }
+
 }
 
 private final class SequenceDateProvider: @unchecked Sendable {

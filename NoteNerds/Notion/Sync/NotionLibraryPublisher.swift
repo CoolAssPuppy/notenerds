@@ -29,42 +29,73 @@ protocol NotionLibraryPublishing: AnyObject {
         _ library: LibraryState,
         notebookID: NotebookID?
     ) async throws -> NotionPublishReport
+    func reconcile(
+        _ library: LibraryState,
+        notebookID: NotebookID?
+    ) async throws -> NotionPublishReport
 }
 
 extension NotionLibraryPublishing {
     func publish(_ library: LibraryState) async throws -> NotionPublishReport {
         try await publish(library, notebookID: nil)
     }
+
+    func reconcile(
+        _ library: LibraryState,
+        notebookID: NotebookID?
+    ) async throws -> NotionPublishReport {
+        try await publish(library, notebookID: notebookID)
+    }
 }
 
 @MainActor
 final class NotionLibraryPublisher: NotionLibraryPublishing {
-    private let api: any NotionSyncAPI
     private let registry: NotionSyncRegistry
     private let notebookCoordinator: NotionSyncCoordinator
     private let manifestCoordinator: NotionManifestSyncCoordinator
     private let payloadBuilder: NotionNotebookPayloadBuilder
     private let now: @Sendable () -> Date
-    private let meetingLinkCoordinator: (any NotionMeetingLinkCoordinating)?
 
     init(
         api: any NotionSyncAPI,
         registry: NotionSyncRegistry,
-        meetingLinkCoordinator: (any NotionMeetingLinkCoordinating)? = nil,
+        meetingLinkCoordinator _: (any NotionMeetingLinkCoordinating)? = nil,
+        payloadBuilder: NotionNotebookPayloadBuilder = NotionNotebookPayloadBuilder(),
         now: @escaping @Sendable () -> Date = Date.init
     ) {
-        self.api = api
         self.registry = registry
         notebookCoordinator = NotionSyncCoordinator(api: api, registry: registry, now: now)
         manifestCoordinator = NotionManifestSyncCoordinator(api: api, registry: registry)
-        payloadBuilder = NotionNotebookPayloadBuilder()
-        self.meetingLinkCoordinator = meetingLinkCoordinator
+        self.payloadBuilder = payloadBuilder
         self.now = now
     }
 
     func publish(
         _ library: LibraryState,
         notebookID: NotebookID?
+    ) async throws -> NotionPublishReport {
+        try await publish(
+            library,
+            notebookID: notebookID,
+            forceRemoteReconciliation: false
+        )
+    }
+
+    func reconcile(
+        _ library: LibraryState,
+        notebookID: NotebookID?
+    ) async throws -> NotionPublishReport {
+        try await publish(
+            library,
+            notebookID: notebookID,
+            forceRemoteReconciliation: true
+        )
+    }
+
+    private func publish(
+        _ library: LibraryState,
+        notebookID: NotebookID?,
+        forceRemoteReconciliation: Bool
     ) async throws -> NotionPublishReport {
         let state = try await registry.snapshot()
         guard let destination = state.destination else { throw NotionOAuthError.noConnection }
@@ -83,30 +114,64 @@ final class NotionLibraryPublisher: NotionLibraryPublishing {
             0
         }
 
-        var uploadedCount = 0
-        var skippedCount = 0
-        let notebooks = try notebooks(in: library, selectedID: notebookID)
-        for notebook in notebooks.sorted(by: notebookOrder) {
-            let payload = try await payloadBuilder.build(
-                notebook: notebook,
-                library: library,
-                exportedAt: generatedAt
-            )
-            switch try await notebookCoordinator.sync(payload, to: destination) {
-            case .uploaded: uploadedCount += 1
-            case .skippedUnchanged: skippedCount += 1
-            }
-        }
+        let counts = try await publishNotebooks(
+            in: library,
+            selectedID: notebookID,
+            destination: destination,
+            generatedAt: generatedAt,
+            forceRemoteReconciliation: forceRemoteReconciliation
+        )
         let manifestResult = try await manifestCoordinator.sync(
             manifestData,
             contentHash: manifestHash
         )
         return NotionPublishReport(
-            uploadedNotebookCount: uploadedCount,
-            skippedNotebookCount: skippedCount,
+            uploadedNotebookCount: counts.uploaded,
+            skippedNotebookCount: counts.skipped,
             didUploadManifest: manifestResult != .skippedUnchanged,
             deletedNotebookCount: deletedCount
         )
+    }
+
+    private func publishNotebooks(
+        in library: LibraryState,
+        selectedID: NotebookID?,
+        destination: NotionDestination,
+        generatedAt: Date,
+        forceRemoteReconciliation: Bool
+    ) async throws -> (uploaded: Int, skipped: Int) {
+        var counts = (uploaded: 0, skipped: 0)
+        for notebook in try notebooks(in: library, selectedID: selectedID).sorted(by: notebookOrder) {
+            let preparation = try await payloadBuilder.prepare(
+                notebook: notebook,
+                library: library,
+                exportedAt: generatedAt
+            )
+            let shouldUpload: Bool
+            if forceRemoteReconciliation {
+                shouldUpload = true
+            } else {
+                shouldUpload = try await registry.needsSync(
+                    notebookID: preparation.snapshot.row.notebookID,
+                    contentHash: preparation.snapshot.row.contentHash,
+                    destination: destination
+                )
+            }
+            guard shouldUpload else {
+                counts.skipped += 1
+                continue
+            }
+            let payload = try payloadBuilder.render(preparation)
+            switch try await notebookCoordinator.sync(
+                payload,
+                to: destination,
+                forceRemoteReconciliation: forceRemoteReconciliation
+            ) {
+            case .uploaded: counts.uploaded += 1
+            case .skippedUnchanged: counts.skipped += 1
+            }
+        }
+        return counts
     }
 
     private func reconcileDeletedNotebooks(
@@ -116,25 +181,11 @@ final class NotionLibraryPublisher: NotionLibraryPublishing {
         let localNotebookIDs = Set(
             library.notebooks.map { $0.id.rawValue.uuidString.lowercased() }
         )
-        let missingBindings = state.bindings.filter {
-            !localNotebookIDs.contains($0.notebookID)
-        }
-        for binding in missingBindings {
-            try await meetingLinkCoordinator?.removeLinks(notebookID: binding.notebookID)
-            do {
-                try await api.trashNotebookPage(pageID: binding.pageID)
-            } catch let error as NotionAPIError where error.statusCode == 404 {
-                // The Notion page is already gone, so local sync state can be cleared.
-            }
-            try await registry.recordDeletion(notebookID: binding.notebookID)
-        }
-
-        let boundIDs = Set(missingBindings.map(\.notebookID))
         let staleQueuedIDs = Set(state.queue.map(\.notebookID)).subtracting(localNotebookIDs)
-        for notebookID in staleQueuedIDs.subtracting(boundIDs) {
-            try await registry.recordDeletion(notebookID: notebookID)
+        for notebookID in staleQueuedIDs {
+            try await registry.removeQueuedSync(notebookID: notebookID)
         }
-        return missingBindings.count
+        return 0
     }
 
     private func notebookOrder(_ first: Notebook, _ second: Notebook) -> Bool {

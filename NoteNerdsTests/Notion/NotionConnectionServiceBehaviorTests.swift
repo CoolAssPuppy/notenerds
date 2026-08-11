@@ -317,3 +317,31 @@ private actor OAuthTransport: NotionHTTPTransport {
         requests
     }
 }
+
+@MainActor
+final class StubConnectionManager: NotionConnectionManaging {
+    private var current: NotionStoredConnection?
+    private let connected: NotionStoredConnection
+    private(set) var connectCount = 0
+    private(set) var disconnectCount = 0
+
+    init(current: NotionStoredConnection?, connected: NotionStoredConnection) {
+        self.current = current
+        self.connected = connected
+    }
+
+    func currentConnection() throws -> NotionStoredConnection? { current }
+
+    func connect() async throws -> NotionStoredConnection {
+        connectCount += 1
+        current = connected
+        return connected
+    }
+
+    func refresh() async throws -> NotionStoredConnection { connected }
+
+    func disconnect() async throws {
+        disconnectCount += 1
+        current = nil
+    }
+}

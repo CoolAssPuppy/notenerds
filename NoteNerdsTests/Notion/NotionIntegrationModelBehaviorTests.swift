@@ -55,7 +55,7 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         XCTAssertEqual(state.destination, expectedDestination)
         XCTAssertEqual(state.manifestPageID, provider.manifestPage.pageID)
         XCTAssertEqual(createdParentIDs, [page.id, page.id])
-        XCTAssertEqual(publisher.publishedLibraries, [library])
+        XCTAssertEqual(publisher.reconciledLibraries, [library])
         XCTAssertEqual(model.lastSyncSummary, "Sent 1 notebook to Notion.")
     }
 
@@ -111,7 +111,7 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
 
         XCTAssertEqual(model.state, .connected(workspaceName: "Strategic Nerds"))
         XCTAssertEqual(model.lastSyncSummary, "Sent 2 notebooks and moved 1 notebook to Notion Trash.")
-        XCTAssertEqual(publisher.publishedLibraries, [library, library])
+        XCTAssertEqual(publisher.reconciledLibraries, [library, library])
     }
 
     func testActiveSyncKeepsConnectedWorkspaceAvailableToSettings() async throws {
@@ -254,6 +254,7 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(30))
 
         XCTAssertEqual(publisher.publishedLibraries, [library])
+        XCTAssertTrue(publisher.reconciledLibraries.isEmpty)
     }
 
     func testAutomaticSyncRetriesDurableTransientFailureWithoutAnotherEdit() async throws {
@@ -307,6 +308,7 @@ private final class StubLibraryPublisher: NotionLibraryPublishing {
     private let report: NotionPublishReport
     private var remainingFailureCount: Int
     private(set) var publishedLibraries: [LibraryState] = []
+    private(set) var reconciledLibraries: [LibraryState] = []
 
     init(report: NotionPublishReport, failureCount: Int = 0) {
         self.report = report
@@ -318,6 +320,18 @@ private final class StubLibraryPublisher: NotionLibraryPublishing {
         notebookID: NotebookID?
     ) async throws -> NotionPublishReport {
         publishedLibraries.append(library)
+        return try result()
+    }
+
+    func reconcile(
+        _ library: LibraryState,
+        notebookID: NotebookID?
+    ) async throws -> NotionPublishReport {
+        reconciledLibraries.append(library)
+        return try result()
+    }
+
+    private func result() throws -> NotionPublishReport {
         if remainingFailureCount > 0 {
             remainingFailureCount -= 1
             throw NotionAPIError.rejected(status: 400, code: "validation_error", message: "Too large.", requestID: nil)
@@ -421,34 +435,6 @@ private final class SuccessfulRegistryLibraryPublisher: NotionLibraryPublishing 
             skippedNotebookCount: 0,
             didUploadManifest: false
         )
-    }
-}
-
-@MainActor
-private final class StubConnectionManager: NotionConnectionManaging {
-    private var current: NotionStoredConnection?
-    private let connected: NotionStoredConnection
-    private(set) var connectCount = 0
-    private(set) var disconnectCount = 0
-
-    init(current: NotionStoredConnection?, connected: NotionStoredConnection) {
-        self.current = current
-        self.connected = connected
-    }
-
-    func currentConnection() throws -> NotionStoredConnection? { current }
-
-    func connect() async throws -> NotionStoredConnection {
-        connectCount += 1
-        current = connected
-        return connected
-    }
-
-    func refresh() async throws -> NotionStoredConnection { connected }
-
-    func disconnect() async throws {
-        disconnectCount += 1
-        current = nil
     }
 }
 

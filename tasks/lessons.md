@@ -1,5 +1,6 @@
 # Lessons
 
+- A backup destination keeps its remote copy after local permanent deletion. Native files must remain restorable, and a manual sync must verify missing remote content even when the saved content hash is unchanged.
 - A Pencil input fix needs device proof that ink appears during contact, remains responsive through rapid strokes, and survives reopening. Coordinator callback tests and simulator checks alone do not prove the core writing experience.
 - For a repeatable TestFlight crash, copy the iPad system crash reports, match the binary UUID to the archived dSYM, and symbolicate the faulting frames before changing code. Four identical device stacks give a specific regression target.
 - Disconnecting a service must clear its credentials and every saved destination, mapping, pending request, and connection-specific record. Keep Disconnect available in both connected and failed settings states.

@@ -40,9 +40,12 @@ final class NotionManagedPageBehaviorTests: XCTestCase {
             try linkedURL(plan.children[3]),
             "notenerds://notebook/\(snapshot.row.notebookID)"
         )
-        XCTAssertFalse(serializedChildren.contains("Native notebook"))
-        XCTAssertEqual(serializedChildren.components(separatedBy: #""type":"file""#).count - 1, 0)
-        XCTAssertEqual(serializedChildren.components(separatedBy: #""type":"pdf""#).count - 1, 0)
+        XCTAssertTrue(serializedChildren.contains("Native notebook"))
+        XCTAssertTrue(serializedChildren.contains("PDF"))
+        XCTAssertTrue(serializedChildren.contains("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+        XCTAssertTrue(serializedChildren.contains("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
+        XCTAssertEqual(serializedChildren.components(separatedBy: #""type":"file""#).count - 1, 1)
+        XCTAssertEqual(serializedChildren.components(separatedBy: #""type":"pdf""#).count - 1, 1)
         XCTAssertEqual(serializedChildren.components(separatedBy: #""type":"callout""#).count - 1, 1)
         let firstRange = try XCTUnwrap(serializedChildren.range(of: "Opening"))
         let secondRange = try XCTUnwrap(serializedChildren.range(of: "Details"))

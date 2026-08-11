@@ -17,7 +17,7 @@ enum NotionManagedPageBuilder {
     static func plan(
         snapshot: NotionNotebookSnapshot,
         previewUploadIDs: [String: String],
-        files _: NotionNotebookRemoteFiles,
+        files: NotionNotebookRemoteFiles,
         syncedAt: Date
     ) throws -> NotionManagedPagePlan {
         var children = [
@@ -46,6 +46,12 @@ enum NotionManagedPageBuilder {
                 to: &children
             )
             try appendSection(title: "PDF text", values: canvas.embeddedPDFText, to: &children)
+        }
+        if let pdfUploadID = files.pdfUploadID {
+            children.append(pdf(uploadID: pdfUploadID, caption: "PDF"))
+        }
+        if let nativeUploadID = files.nativeUploadID {
+            children.append(file(uploadID: nativeUploadID, caption: "Native notebook"))
         }
         return NotionManagedPagePlan(
             root: .object([
@@ -137,6 +143,28 @@ enum NotionManagedPageBuilder {
             "image": .object([
                 "type": .string("file_upload"),
                 "file_upload": .object(["id": .string(uploadID)])
+            ])
+        ])
+    }
+
+    private static func file(uploadID: String, caption: String) -> NotionJSONValue {
+        .object([
+            "type": .string("file"),
+            "file": .object([
+                "type": .string("file_upload"),
+                "file_upload": .object(["id": .string(uploadID)]),
+                "caption": .array([richText(caption)])
+            ])
+        ])
+    }
+
+    private static func pdf(uploadID: String, caption: String) -> NotionJSONValue {
+        .object([
+            "type": .string("pdf"),
+            "pdf": .object([
+                "type": .string("file_upload"),
+                "file_upload": .object(["id": .string(uploadID)]),
+                "caption": .array([richText(caption)])
             ])
         ])
     }

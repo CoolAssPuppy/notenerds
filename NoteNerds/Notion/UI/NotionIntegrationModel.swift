@@ -198,11 +198,28 @@ final class NotionIntegrationModel: ObservableObject {
     }
 
     func sync(_ library: LibraryState, notebookID: NotebookID? = nil) async {
+        await performSync(
+            library,
+            notebookID: notebookID,
+            shouldReconcileRemotePages: true
+        )
+    }
+
+    private func performSync(
+        _ library: LibraryState,
+        notebookID: NotebookID?,
+        shouldReconcileRemotePages: Bool
+    ) async {
         guard destination != nil, let publisher else { return }
         state = .syncing
         failureMessage = nil
         do {
-            let report = try await publisher.publish(library, notebookID: notebookID)
+            let report: NotionPublishReport
+            if shouldReconcileRemotePages {
+                report = try await publisher.reconcile(library, notebookID: notebookID)
+            } else {
+                report = try await publisher.publish(library, notebookID: notebookID)
+            }
             lastSyncSummary = Self.syncSummary(report)
             try await refreshSyncedNotebookIDs()
             if let connection {
@@ -381,7 +398,11 @@ final class NotionIntegrationModel: ObservableObject {
             guard automaticSyncGeneration == generation else { return }
             guard let library = takePendingAutomaticSync() ?? retryLibrary else { break }
             automaticSyncInFlight = library
-            await sync(library)
+            await performSync(
+                library,
+                notebookID: nil,
+                shouldReconcileRemotePages: false
+            )
             guard automaticSyncGeneration == generation else { return }
             automaticSyncInFlight = nil
             if pendingAutomaticSync != nil {

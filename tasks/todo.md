@@ -2,12 +2,20 @@
 
 ## Release TestFlight build 22
 
-- [ ] Verify release tools, signing settings, App Store Connect access, and the clean change set.
-- [ ] Commit the startup, Pencil input, and folder ordering fixes.
-- [ ] Build, sign, and upload TestFlight build 22 with focused tester notes.
-- [ ] Confirm App Store Connect marks build 22 valid and available to the intended internal testers.
-- [ ] Commit the build-number change and push `main` to `origin`.
-- [ ] Record the release result in this file.
+- [x] Verify release tools, signing settings, App Store Connect access, and the clean change set.
+- [x] Commit the startup, Pencil input, and folder ordering fixes.
+- [x] Build, sign, and upload TestFlight build 22 with focused tester notes.
+- [x] Confirm App Store Connect marks build 22 valid and available to the intended internal testers.
+- [x] Commit the build-number change and push `main` to `origin`.
+- [x] Record the release result in this file.
+
+### Review
+
+- Fixes were committed as `9a291c0`.
+- Release verification passed for Xcode, XcodeGen 2.46.0, signing settings, App Store Connect credentials, and API access.
+- Version 1.0.0 build 22 archived, exported, and uploaded without errors. App Store Connect marked it valid.
+- The Internal Testers group has access to all valid builds, including build 22.
+- Tester notes cover faster startup, reliable rapid Pencil writing, and alphabetical folder order.
 
 ## Fix local-first startup, rapid writing, and folder order
 

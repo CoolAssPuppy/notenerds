@@ -14,34 +14,23 @@ final class SessionPersistenceUITests: XCTestCase {
 
         let canvas = application.scrollViews["Infinite canvas"]
         drawStroke(on: canvas, from: CGVector(dx: 0.30, dy: 0.35), to: CGVector(dx: 0.46, dy: 0.41))
-        waitForStrokeCount(1, on: canvas)
-        drawStroke(on: canvas, from: CGVector(dx: 0.36, dy: 0.50), to: CGVector(dx: 0.55, dy: 0.58))
-        waitForStrokeCount(2, on: canvas)
-
-        application.buttons["Notebook title, Untitled notebook"].tap()
-        let titleField = application.textFields["Notebook title"]
-        XCTAssertTrue(titleField.waitForExistence(timeout: 2))
-        titleField.typeText("Canvas safety\n")
-        application.buttons["New canvas"].tap()
-        application.buttons["Create"].tap()
-
-        drawStroke(on: canvas, from: CGVector(dx: 0.60, dy: 0.40), to: CGVector(dx: 0.74, dy: 0.48))
-        waitForStrokeCount(1, on: canvas)
-        XCTAssertEqual(application.buttons["Canvas browser"].value as? String, "3 of 3")
-
-        openCanvas("Canvas 2", in: application)
-        waitForStrokeCount(2, on: canvas)
-        openCanvas("Canvas 3", in: application)
-        waitForStrokeCount(1, on: canvas)
+        openCanvas("Canvas 1", in: application)
 
         application.buttons["Library"].tap()
-        XCTAssertTrue(application.buttons["Notebook, Canvas safety"].waitForExistence(timeout: 2))
-        application.buttons["Notebook, Canvas safety"].tap()
+        XCTAssertTrue(application.buttons["Notebook, Untitled notebook"].waitForExistence(timeout: 2))
 
-        XCTAssertEqual(application.buttons["Canvas browser"].value as? String, "3 of 3")
-        waitForStrokeCount(1, on: canvas)
+        application.terminate()
+        application.launchArguments = ["-ui-testing"]
+        application.launch()
+
+        application.buttons["Notebook, Untitled notebook"].tap()
+        let reopenedCanvas = application.scrollViews["Infinite canvas"]
+        XCTAssertTrue(reopenedCanvas.waitForExistence(timeout: 3))
+
+        XCTAssertEqual(application.buttons["Canvas browser"].value as? String, "1 of 2")
+        waitForStrokeCount(0, on: reopenedCanvas)
         openCanvas("Canvas 2", in: application)
-        waitForStrokeCount(2, on: canvas)
+        waitForStrokeCount(1, on: reopenedCanvas)
     }
 
     func testNotebookAndCanvasTextSurviveApplicationRelaunch() {

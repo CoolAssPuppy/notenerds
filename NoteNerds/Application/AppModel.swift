@@ -42,6 +42,7 @@ final class AppModel: ObservableObject {
     var didPersistLibrary = true
     var documentPersistenceTask: Task<Void, Never>?
     var documentPersistenceOutcomeTask: Task<Bool, Never>?
+    var documentPersistenceRevision: UInt64 = 0
     var didPersistDocuments = true
     var syncSubmissionTask: Task<Void, Never>?
     var remoteChangeIDsAwaitingPersistence: Set<ChangeID> = []
@@ -147,6 +148,7 @@ final class AppModel: ObservableObject {
                     do {
                         var recovered = try await documentStore.recover(notebookID: notebook.id)
                         appliedRemoteChangeIDsByNotebook[notebook.id] = recovered.appliedRemoteChangeIDs
+                        recovered.notebook = notebook.restoringDocumentContent(from: recovered.notebook)
                         if recovered.notebook.repairDuplicateCanvasIdentifiers() {
                             try await documentStore.save(recovered)
                             didRepairLibrary = true
@@ -259,7 +261,7 @@ final class AppModel: ObservableObject {
             }
         }
         documentPersistenceOutcomeTask = outcomeTask
-        documentPersistenceTask = Task { _ = await outcomeTask.value }
+        setDocumentPersistenceTail(Task { _ = await outcomeTask.value })
     }
 
     func persistCheckpoint(_ notebook: Notebook) {
@@ -284,23 +286,57 @@ final class AppModel: ObservableObject {
             }
         }
         documentPersistenceOutcomeTask = outcomeTask
-        documentPersistenceTask = Task { _ = await outcomeTask.value }
+        setDocumentPersistenceTail(Task { _ = await outcomeTask.value })
     }
 
     func checkpointDocuments() async {
-        await documentPersistenceTask?.value
         guard let documentStore else {
             await libraryPersistenceTask?.value
             await syncSubmissionTask?.value
             return
         }
-        for notebook in library.notebooks {
-            try? await documentStore.save(nativePackage(for: notebook))
-            journalCounts[notebook.id] = 0
+
+        let checkpoints = library.notebooks.map(nativePackage(for:))
+        for checkpoint in checkpoints {
+            journalCounts[checkpoint.notebook.id] = 0
         }
+        let precedingTask = documentPersistenceTask
+        let outcomeTask = Task { () -> Bool in
+            await precedingTask?.value
+            var didSaveEveryDocument = true
+            for checkpoint in checkpoints {
+                do {
+                    try await documentStore.save(checkpoint)
+                } catch {
+                    didSaveEveryDocument = false
+                    presentedError = "Your latest change could not be saved. \(error.localizedDescription)"
+                }
+            }
+            didPersistDocuments = didSaveEveryDocument
+            return didSaveEveryDocument
+        }
+        let persistenceTask = Task { _ = await outcomeTask.value }
+        documentPersistenceOutcomeTask = outcomeTask
+        setDocumentPersistenceTail(persistenceTask)
+        await persistenceTask.value
+
         persistLibrary()
         await libraryPersistenceTask?.value
         await syncSubmissionTask?.value
+        await waitForDocumentPersistenceToFinish()
+    }
+
+    func setDocumentPersistenceTail(_ task: Task<Void, Never>) {
+        documentPersistenceTask = task
+        documentPersistenceRevision &+= 1
+    }
+
+    func waitForDocumentPersistenceToFinish() async {
+        while let persistenceTask = documentPersistenceTask {
+            let revision = documentPersistenceRevision
+            await persistenceTask.value
+            if revision == documentPersistenceRevision { return }
+        }
     }
 
     func nativePackage(for notebook: Notebook) -> NativeNotebookPackage {

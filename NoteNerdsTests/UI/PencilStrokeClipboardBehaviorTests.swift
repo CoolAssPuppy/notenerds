@@ -27,7 +27,7 @@ final class PencilStrokeClipboardBehaviorTests: XCTestCase {
         try assertAlphaPixels(reopened: reopened, expected: expected)
     }
 
-    func testErasingOriginalAfterPasteKeepsTheDuplicateIdentity() throws {
+    func testErasingOriginalAfterPasteKeepsTheDuplicateIdentity() async throws {
         let source = try archivedMaskedStroke()
         let pastedStroke = try XCTUnwrap(
             SelectionClipboardPayload(objects: [.stroke(source.canonical)])
@@ -37,9 +37,13 @@ final class PencilStrokeClipboardBehaviorTests: XCTestCase {
         let canvasView = PKCanvasView()
         canvasView.drawing = PencilCanvasRenderer.drawing(from: [pastedStroke])
         var changedStrokes: [Stroke] = []
+        let published = expectation(description: "Erased drawing published")
         let coordinator = PencilStrokeTestFixture.coordinator(
             onStrokesCompleted: { _ in },
-            onDrawingChanged: { changedStrokes = $0 }
+            onDrawingChanged: {
+                changedStrokes = $0
+                published.fulfill()
+            }
         )
         coordinator.knownStrokeCount = 2
         coordinator.canonicalStrokes = [source.canonical, pastedStroke]
@@ -47,6 +51,7 @@ final class PencilStrokeClipboardBehaviorTests: XCTestCase {
         coordinator.canvasViewDidBeginUsingTool(canvasView)
         coordinator.canvasViewDidEndUsingTool(canvasView)
 
+        await fulfillment(of: [published], timeout: 1)
         XCTAssertEqual(changedStrokes.count, 1)
         XCTAssertEqual(changedStrokes.first?.id, pastedStroke.id)
         XCTAssertEqual(changedStrokes.first?.style, pastedStroke.style)
@@ -58,19 +63,19 @@ final class PencilStrokeClipboardBehaviorTests: XCTestCase {
             color: color,
             mask: UIBezierPath(rect: CGRect(x: 118, y: 198, width: 24, height: 28))
         )
-        let canvasView = PKCanvasView()
-        var completedStrokes: [Stroke] = []
-        let captureCoordinator = PencilStrokeTestFixture.coordinator {
-            completedStrokes.append(contentsOf: $0)
-        }
-        captureCoordinator.configuration = ToolConfiguration(
+        let configuration = ToolConfiguration(
             tool: .marker,
             width: .medium,
             color: color
         )
-        captureCoordinator.canvasViewDidBeginUsingTool(canvasView)
-        canvasView.drawing = PKDrawing(strokes: [pencil])
-        captureCoordinator.canvasViewDidEndUsingTool(canvasView)
+        let completedStrokes = PencilDrawingReconciler.edit(
+            drawing: PKDrawing(strokes: [pencil]),
+            baseline: [],
+            activeLayerID: LayerID(),
+            configuration: configuration,
+            pencilRoll: 0,
+            createdAt: DomainFixtures.fixedDate
+        ).after
         return (try XCTUnwrap(completedStrokes.first), pencil)
     }
 

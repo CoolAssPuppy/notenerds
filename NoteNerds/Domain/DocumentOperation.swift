@@ -48,12 +48,18 @@ enum DocumentOperation: Codable, Hashable, Sendable {
         strokeReplacements: [Stroke] = []
     ) throws -> DocumentOperation {
         let before = try notebook.placements(of: objectIDs, in: canvasID)
-        let replacementByID = Dictionary(
-            uniqueKeysWithValues: strokeReplacements.map { ($0.objectID, $0) }
-        )
+        var replacementsByID: [ObjectID: [Stroke]] = [:]
+        for stroke in strokeReplacements {
+            replacementsByID[stroke.objectID, default: []].append(stroke)
+        }
+        var consumedReplacementsByID: [ObjectID: Int] = [:]
         let after = before.map { placement in
             let transformedObject: CanvasObject
-            if let replacement = replacementByID[placement.object.id] {
+            let replacementIndex = consumedReplacementsByID[placement.object.id, default: 0]
+            let replacements = replacementsByID[placement.object.id, default: []]
+            if replacements.indices.contains(replacementIndex) {
+                let replacement = replacements[replacementIndex]
+                consumedReplacementsByID[placement.object.id] = replacementIndex + 1
                 transformedObject = .stroke(replacement)
             } else {
                 transformedObject = placement.object.applying(transform, around: center)

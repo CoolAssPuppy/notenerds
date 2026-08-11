@@ -71,7 +71,14 @@ struct NativeDocumentSerializer: Sendable {
         guard header.schemaVersion.rawValue <= DocumentSchemaVersion.current.rawValue else {
             throw NativeDocumentError.unsupportedNewerVersion(header.schemaVersion.rawValue)
         }
-        var package = try decoder.decode(NativeNotebookPackage.self, from: data)
+        return try validatedPackage(decoder.decode(NativeNotebookPackage.self, from: data))
+    }
+
+    func validatedPackage(_ package: NativeNotebookPackage) throws -> NativeNotebookPackage {
+        guard package.schemaVersion.rawValue <= DocumentSchemaVersion.current.rawValue else {
+            throw NativeDocumentError.unsupportedNewerVersion(package.schemaVersion.rawValue)
+        }
+        var package = package
         package.schemaVersion = .current
         return package
     }

@@ -18,7 +18,6 @@ extension PencilCanvasView {
         coordinator.selectedPlannerRegionID = selectedPlannerRegionID
         coordinator.isPlannerRegionPagingEnabled = isPlannerRegionPagingEnabled
         coordinator.shouldAnimatePlannerRegionChanges = shouldAnimatePlannerRegionChanges
-        coordinator.configurePlannerSwipeRecognizers(touchCount: isFingerDrawingEnabled ? 2 : 1)
     }
 
     func applyInitialPlannerViewport(to canvasView: PKCanvasView, coordinator: Coordinator) {
@@ -37,34 +36,6 @@ extension PencilCanvasView {
         coordinator.hasAppliedInitialPlannerViewport = true
     }
 
-    func addPlannerSwipeRecognizers(to canvasView: PKCanvasView, coordinator: Coordinator) {
-        let previousRecognizer = plannerSwipeRecognizer(direction: .right, coordinator: coordinator)
-        let nextRecognizer = plannerSwipeRecognizer(direction: .left, coordinator: coordinator)
-        canvasView.addGestureRecognizer(previousRecognizer)
-        canvasView.addGestureRecognizer(nextRecognizer)
-        canvasView.panGestureRecognizer.require(toFail: previousRecognizer)
-        canvasView.panGestureRecognizer.require(toFail: nextRecognizer)
-        canvasView.drawingGestureRecognizer.require(toFail: previousRecognizer)
-        canvasView.drawingGestureRecognizer.require(toFail: nextRecognizer)
-        coordinator.previousRegionSwipeRecognizer = previousRecognizer
-        coordinator.nextRegionSwipeRecognizer = nextRecognizer
-        coordinator.configurePlannerSwipeRecognizers(touchCount: isFingerDrawingEnabled ? 2 : 1)
-    }
-
-    private func plannerSwipeRecognizer(
-        direction: UISwipeGestureRecognizer.Direction,
-        coordinator: Coordinator
-    ) -> UISwipeGestureRecognizer {
-        let recognizer = UISwipeGestureRecognizer(
-            target: coordinator,
-            action: #selector(Coordinator.handlePlannerSwipe(_:))
-        )
-        recognizer.direction = direction
-        recognizer.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.direct.rawValue)]
-        recognizer.cancelsTouchesInView = false
-        recognizer.delegate = coordinator
-        return recognizer
-    }
 }
 
 extension PencilCanvasView.Coordinator {
@@ -88,18 +59,6 @@ extension PencilCanvasView.Coordinator {
             predictedTranslation: predictedTranslation
         ) else { return }
         targetContentOffset.pointee = scrollView.contentOffset
-    }
-
-    @objc func handlePlannerSwipe(_ recognizer: UISwipeGestureRecognizer) {
-        guard !hasRequestedRegionForCurrentPan else { return }
-        _ = requestAdjacentPlannerRegion(offset: recognizer.direction == .left ? 1 : -1)
-    }
-
-    func configurePlannerSwipeRecognizers(touchCount: Int) {
-        for recognizer in [previousRegionSwipeRecognizer, nextRegionSwipeRecognizer].compactMap({ $0 }) {
-            recognizer.numberOfTouchesRequired = touchCount
-            recognizer.isEnabled = isPlannerRegionPagingEnabled
-        }
     }
 
     nonisolated func gestureRecognizer(
@@ -150,12 +109,6 @@ extension PencilCanvasView.Coordinator {
             translation: translation,
             predictedTranslation: predictedTranslation
         )
-        return requestPlannerRegion(destinationIndex, currentIndex: currentIndex)
-    }
-
-    private func requestAdjacentPlannerRegion(offset: Int) -> Bool {
-        guard let currentIndex = currentPlannerRegionIndex else { return false }
-        let destinationIndex = min(plannerRegions.count - 1, max(0, currentIndex + offset))
         return requestPlannerRegion(destinationIndex, currentIndex: currentIndex)
     }
 

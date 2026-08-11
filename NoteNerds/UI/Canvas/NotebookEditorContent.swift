@@ -33,16 +33,16 @@ extension NotebookEditorView {
     }
 
     var currentAssets: [AssetID: Data] {
-        let assetIDs = currentNonStrokeObjects.compactMap { object -> AssetID? in
+        let assetIDs = Set(currentNonStrokeObjects.compactMap { object -> AssetID? in
             switch object {
             case let .image(image): image.assetID
             case let .pdf(pdf): pdf.assetID
             case .stroke, .shape, .text: nil
             }
-        }
-        return Dictionary(uniqueKeysWithValues: assetIDs.compactMap { id in
-            model.asset(id).map { (id, $0.data) }
         })
+        return assetIDs.reduce(into: [:]) { assets, id in
+            assets[id] = model.asset(id)?.data
+        }
     }
 
     var configuration: ToolConfiguration { palette.current }

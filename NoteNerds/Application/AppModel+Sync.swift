@@ -141,7 +141,7 @@ extension AppModel {
                 }
             }
         }
-        documentPersistenceTask = persistenceTask
+        setDocumentPersistenceTail(persistenceTask)
         await persistenceTask.value
     }
 
@@ -224,7 +224,7 @@ extension AppModel {
             didPersistDocuments = didSaveEveryDocument
             return allChangeIDs.subtracting(failedChangeIDs)
         }
-        documentPersistenceTask = Task { _ = await persistenceTask.value }
+        setDocumentPersistenceTail(Task { _ = await persistenceTask.value })
         return await persistenceTask.value
     }
 

@@ -1,5 +1,6 @@
 # Lessons
 
+- A Pencil input fix needs device proof that ink appears during contact, remains responsive through rapid strokes, and survives reopening. Coordinator callback tests and simulator checks alone do not prove the core writing experience.
 - For a repeatable TestFlight crash, copy the iPad system crash reports, match the binary UUID to the archived dSYM, and symbolicate the faulting frames before changing code. Four identical device stacks give a specific regression target.
 - Disconnecting a service must clear its credentials and every saved destination, mapping, pending request, and connection-specific record. Keep Disconnect available in both connected and failed settings states.
 - Diagnose an app integration with the credentials stored by the app. A browser session may belong to another account or workspace and cannot prove which Notion identity the app uses.
@@ -12,7 +13,7 @@
 - Stop after 30 minutes when a focused test is still failing. Report the blocker instead of expanding the audit or adding unrelated work.
 - Test handwriting recognition with an orientation-sensitive real Vision fixture and require the full expected word. Stub results cannot detect an upside-down input image.
 - Treat handwriting recognition as versioned derived data tied to the complete visible stroke set. Clear affected records inside document operations so undo, journal recovery, and sync cannot keep old search text.
-- Save notebook Trash and restore metadata into the notebook checkpoint before relaunch can replace library metadata with an older document copy.
+- Treat library metadata as authoritative during local document recovery. Restore canvases and recognition from notebook checkpoints without letting older document copies overwrite Trash, title, folder, favorite, tags, or last-opened state.
 - Save an applied remote change identifier in the same notebook package as the changed document. Remove it only after sync acknowledgement is saved.
 - Keep Pencil completion work independent of canvas size. Remove only the affected handwriting search entry, then refresh recognition after the delay.
 - Bind async results to local values before passing them to XCTest assertions. XCTest assertion autoclosures cannot contain `await`.
@@ -113,3 +114,8 @@
 - Older clients can erase new fields when they republish a shared version 1 manifest. Require every Notion-connected device to update before those fields are used, or move them to a separately versioned file.
 - Name a child collection screen with its parent object. The canvas browser title must include the notebook name so the user always knows which notebook its canvases belong to.
 - Settings is a direct navigation destination. Put a labeled gear at the bottom of the library sidebar instead of hiding it inside an ellipsis menu.
+- PencilKit may send final pressure before or after `canvasViewDidEndUsingTool`, and it may omit a later callback. Save the `didEnd` snapshot provisionally, leave the native canvas unchanged, and revise the same stroke identifier if a later drawing change arrives.
+- Keep full PencilKit reconciliation away from the main actor. Live drawing callbacks should only capture the native snapshot and contact metadata.
+- Put background checkpoints in the same ordered document-save chain as journal appends. A stale checkpoint must never delete a newer journal entry after the app becomes active again.
+- Bind every delayed Pencil save to the canvas identifier present when the UIKit view was created. Never resolve its destination from later SwiftUI selection state.
+- Treat snapshot replacement and journal deletion as separate crash points. Store a journal watermark in each local snapshot, replay only later entries, and test forced termination between the two file operations. For old files without a watermark, use file modification order once and rewrite them into the sequenced format.

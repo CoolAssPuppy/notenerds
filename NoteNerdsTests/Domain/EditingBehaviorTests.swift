@@ -2,6 +2,203 @@ import XCTest
 @testable import NoteNerds
 
 final class EditingBehaviorTests: XCTestCase {
+    func testCanvasStrokeEditPreservesConcurrentStrokeAndDuplicateLegacyIdentifiers() {
+        let layerID = LayerID()
+        let repeatedID = StrokeID()
+        let first = DomainFixtures.stroke(id: repeatedID, layerID: layerID)
+        var second = first
+        second.samples[0].point.x += 40
+        var concurrentSecond = second
+        concurrentSecond.samples[0].point.y += 30
+        let concurrent = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        let replacement = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        let edit = CanvasStrokeEdit(
+            before: [first, second],
+            after: [second, replacement]
+        )
+
+        let result = edit.applying(to: [first, concurrentSecond, concurrent])
+
+        XCTAssertEqual(result, [concurrentSecond, replacement, concurrent])
+    }
+
+    func testCanvasStrokeEditKeepsRemotelyChangedSurvivingDuplicateLegacyStroke() {
+        let layerID = LayerID()
+        let repeatedID = StrokeID()
+        let first = DomainFixtures.stroke(id: repeatedID, layerID: layerID)
+        var second = first
+        second.samples[0].point.x += 40
+        var remoteSecond = second
+        remoteSecond.samples[0].point.y += 10
+        let edit = CanvasStrokeEdit(
+            before: [first, second],
+            after: [second]
+        )
+
+        let result = edit.applying(to: [remoteSecond])
+
+        XCTAssertEqual(result, [remoteSecond])
+    }
+
+    func testCanvasStrokeEditDoesNotDuplicateAConcurrentlyChangedStroke() {
+        let layerID = LayerID()
+        let original = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        let untouched = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        var remoteVersion = original
+        remoteVersion.samples[0].point.y += 30
+        var localVersion = original
+        localVersion.samples[0].point.x += 40
+        let edit = CanvasStrokeEdit(
+            before: [original, untouched],
+            after: [localVersion, untouched]
+        )
+
+        let result = edit.applying(to: [remoteVersion, untouched])
+
+        XCTAssertEqual(result, [localVersion, untouched])
+    }
+
+    func testCanvasStrokeEditKeepsANewEraserFragmentBesideItsSourceStroke() {
+        let layerID = LayerID()
+        let source = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        let untouched = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        let concurrent = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        var firstFragment = source
+        firstFragment.samples[0].point.x += 20
+        let secondFragment = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        let edit = CanvasStrokeEdit(
+            before: [source, untouched],
+            after: [firstFragment, secondFragment, untouched]
+        )
+
+        let result = edit.applying(to: [source, untouched, concurrent])
+
+        XCTAssertEqual(result, [firstFragment, secondFragment, untouched, concurrent])
+    }
+
+    @MainActor
+    func testVisibleStrokeEditUpdatesOriginalLayersAndPreservesConcurrentInk() throws {
+        let backgroundLayerID = LayerID()
+        let writingLayerID = LayerID()
+        let background = DomainFixtures.stroke(id: StrokeID(), layerID: backgroundLayerID)
+        let writing = DomainFixtures.stroke(id: StrokeID(), layerID: writingLayerID)
+        let concurrent = DomainFixtures.stroke(id: StrokeID(), layerID: writingLayerID)
+        var movedBackground = background
+        movedBackground.samples[0].point.x += 30
+        let canvas = Canvas(
+            title: "Layered writing",
+            layers: [
+                Layer(id: backgroundLayerID, name: "Background", objects: [.stroke(background)]),
+                Layer(id: writingLayerID, name: "Writing", objects: [.stroke(writing), .stroke(concurrent)])
+            ]
+        )
+        let notebook = Notebook(title: "Layered note", canvases: [canvas])
+        let model = AppModel(automaticallyRestore: false)
+        model.library = LibraryState(notebooks: [notebook])
+
+        model.applyVisibleStrokeEdit(
+            CanvasStrokeEdit(
+                before: [background, writing],
+                after: [movedBackground]
+            ),
+            in: notebook.id,
+            canvasID: canvas.id
+        )
+
+        let savedCanvas = try XCTUnwrap(model.notebook(notebook.id)?.canvases.first)
+        XCTAssertEqual(savedCanvas.layers[0].objects.compactMap(\.strokeValue), [movedBackground])
+        XCTAssertEqual(savedCanvas.layers[1].objects.compactMap(\.strokeValue), [concurrent])
+    }
+
+    @MainActor
+    func testVisibleStrokeEditErasesTheCorrectDuplicateAndUndoRestoresExactOrder() throws {
+        let layerID = LayerID()
+        let repeatedID = StrokeID()
+        let first = DomainFixtures.stroke(id: repeatedID, layerID: layerID)
+        var second = first
+        second.samples[0].point.x += 40
+        let text = TextBlock(
+            id: ObjectID(),
+            layerID: layerID,
+            text: "Between duplicate ink",
+            frame: CanvasRect(x: 20, y: 30, width: 160, height: 40),
+            fontSize: 18,
+            alignment: .left,
+            fontName: nil
+        )
+        let originalObjects: [CanvasObject] = [.stroke(first), .text(text), .stroke(second)]
+        let canvas = Canvas(
+            title: "Ordered objects",
+            layers: [Layer(id: layerID, name: "Layer 1", objects: originalObjects)]
+        )
+        let notebook = Notebook(title: "Ordered objects", canvases: [canvas])
+        let model = AppModel(automaticallyRestore: false)
+        model.library = LibraryState(notebooks: [notebook])
+
+        model.applyVisibleStrokeEdit(
+            CanvasStrokeEdit(before: [first, second], after: [second]),
+            in: notebook.id,
+            canvasID: canvas.id
+        )
+
+        XCTAssertEqual(
+            model.notebook(notebook.id)?.canvases[0].layers[0].objects,
+            [.text(text), .stroke(second)]
+        )
+
+        model.undo(notebook.id)
+
+        XCTAssertEqual(model.notebook(notebook.id)?.canvases[0].layers[0].objects, originalObjects)
+    }
+
+    @MainActor
+    func testVisibleStrokeSplitStaysAtTheSourceObjectPositionAndUndoesCleanly() throws {
+        let layerID = LayerID()
+        let source = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        let untouched = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        let concurrent = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        let text = TextBlock(
+            id: ObjectID(),
+            layerID: layerID,
+            text: "Between the ink",
+            frame: CanvasRect(x: 20, y: 30, width: 160, height: 40),
+            fontSize: 18,
+            alignment: .left,
+            fontName: nil
+        )
+        var firstFragment = source
+        firstFragment.samples[0].point.x += 20
+        let secondFragment = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        let originalObjects: [CanvasObject] = [
+            .stroke(source), .text(text), .stroke(untouched), .stroke(concurrent)
+        ]
+        let canvas = Canvas(
+            title: "Split ink",
+            layers: [Layer(id: layerID, name: "Layer 1", objects: originalObjects)]
+        )
+        let notebook = Notebook(title: "Split ink", canvases: [canvas])
+        let model = AppModel(automaticallyRestore: false)
+        model.library = LibraryState(notebooks: [notebook])
+
+        model.applyVisibleStrokeEdit(
+            CanvasStrokeEdit(
+                before: [source, untouched],
+                after: [firstFragment, secondFragment, untouched]
+            ),
+            in: notebook.id,
+            canvasID: canvas.id
+        )
+
+        XCTAssertEqual(
+            model.notebook(notebook.id)?.canvases[0].layers[0].objects,
+            [.stroke(firstFragment), .stroke(secondFragment), .text(text), .stroke(untouched), .stroke(concurrent)]
+        )
+
+        model.undo(notebook.id)
+
+        XCTAssertEqual(model.notebook(notebook.id)?.canvases[0].layers[0].objects, originalObjects)
+    }
+
     func testReplacingVisibleStrokesHandlesDuplicateLegacyIdentifiers() throws {
         let layerID = LayerID()
         let repeatedID = StrokeID()
@@ -30,6 +227,41 @@ final class EditingBehaviorTests: XCTestCase {
         strokes = notebook.canvases[0].layers[0].objects.compactMap(\.strokeValue)
 
         XCTAssertEqual(strokes, [first, second])
+    }
+
+    func testTransformingDuplicateLegacyStrokeIdentifiersDoesNotTrap() throws {
+        let layerID = LayerID()
+        let repeatedID = StrokeID()
+        let first = DomainFixtures.stroke(id: repeatedID, layerID: layerID)
+        var second = first
+        second.samples[0].point.x += 40
+        var movedFirst = first
+        movedFirst.samples[0].point.y += 20
+        var movedSecond = second
+        movedSecond.samples[0].point.y += 30
+        let canvas = Canvas(
+            title: "Legacy selection",
+            layers: [Layer(id: layerID, name: "Notes", objects: [.stroke(first), .stroke(second)])]
+        )
+        var notebook = Notebook(title: "Imported notes", canvases: [canvas])
+
+        let operation = try DocumentOperation.transformObjects(
+            in: notebook,
+            canvasID: canvas.id,
+            objectIDs: [first.objectID],
+            transform: SelectionTransform(
+                scaleX: 1,
+                scaleY: 1,
+                rotation: 0,
+                translation: .zero
+            ),
+            center: .zero,
+            strokeReplacements: [movedFirst, movedSecond]
+        )
+        try operation.apply(to: &notebook)
+
+        let strokes = notebook.canvases[0].layers[0].objects.compactMap(\.strokeValue)
+        XCTAssertEqual(strokes, [movedFirst, movedSecond])
     }
 
     func testSelectionTransformPreservesLayerMembershipAndUndoRestoresExactObjects() throws {
@@ -247,26 +479,5 @@ final class EditingBehaviorTests: XCTestCase {
         palette.select(.eraser)
 
         XCTAssertEqual(palette.current.eraserMode, .precision)
-    }
-
-    private func recognition(text: String, x: Double, y: Double) -> HandwritingRecognitionResult {
-        HandwritingRecognitionResult(
-            text: text,
-            confidence: 0.9,
-            bounds: CanvasRect(x: x, y: y, width: 60, height: 30),
-            sourceStrokeIDs: [],
-            recognizerVersion: "test"
-        )
-    }
-
-    private func timedSample(x: Double, y: Double, time: TimeInterval) -> StrokeSample {
-        StrokeSample(
-            point: CanvasPoint(x: x, y: y),
-            pressure: 0.5,
-            altitude: 1,
-            azimuth: 0,
-            roll: 0,
-            timeOffset: time
-        )
     }
 }

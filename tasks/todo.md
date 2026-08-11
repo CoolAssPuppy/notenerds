@@ -1,5 +1,43 @@
 # Current work
 
+## Stop deleted notebooks from returning
+
+- [x] Reproduce a trashed notebook returning from an older local document snapshot.
+- [x] Reproduce older iCloud metadata clearing a newer local Trash state.
+- [x] Keep library-owned notebook metadata when restoring document content.
+- [x] Keep stale remote metadata from restoring a notebook unless an explicit restore change arrives.
+- [x] Run focused persistence, sync, relaunch, and interface checks.
+- [x] Skip the wired install after the iPad was disconnected and release through TestFlight.
+- [x] Show “No notebooks” and “Your trash is empty.” when Trash has no notebooks.
+- [ ] Commit the verified changes, push `main`, and send the next TestFlight build.
+- [x] Record the cause and verified result.
+
+### Review
+
+- Startup previously replaced current library metadata with an older per-notebook document snapshot. That could clear a saved Trash date and return the notebook to My Notebooks.
+- Active iCloud metadata can no longer clear direct Trash. Restoring a notebook requires the explicit restore change used by current builds.
+- Local recovery keeps title, folder, favorite, tags, last-opened state, and Trash state from the library while restoring canvases and handwriting recognition from the document checkpoint.
+- Empty Trash now shows `No notebooks` and `Your trash is empty.`
+- Verification passed 507 behavior checks, the focused Trash interface check, strict SwiftLint, and `git diff --check`.
+
+## Restore immediate and stable Pencil writing
+
+- [x] Match the build 22 crash report to the uploaded binary and symbolicate the failing stack.
+- [x] Trace the complete PencilKit input path from touch to visible ink, model update, persistence, and sync.
+- [x] Reproduce delayed ink and the crash with tests that use real PencilKit callbacks and view reconstruction.
+- [x] Remove custom reconciliation from the live input path wherever standard PencilKit behavior can own it.
+- [x] Verify rapid writing, erase, canvas switches, model refresh, persistence, relaunch, and device configuration with automated checks.
+- [x] Run the complete automated release gate and audit the final diff before another build is considered.
+- [x] Record the incident cause, fix, and verified results in this file.
+
+### Review
+
+- The build 22 crash report matches the uploaded binary. The main thread trapped while building a dictionary from repeated legacy stroke identifiers during Pencil completion.
+- PencilKit now keeps the live native drawing on screen. Model refreshes do not replace it during contact, completed input is assigned to its original canvas and layer, and full reconciliation runs away from the main actor.
+- Local snapshots now include a journal watermark. Recovery skips operations already included in a newer snapshot, retains later edits, repairs valid records without a final newline, and migrates old files after one ordered recovery.
+- Verification passed 507 behavior checks, 12 focused local recovery checks, the forced-relaunch canvas-switch interface check, the 1,000-stroke reopening performance threshold, Xcode project generation, strict lint across 254 Swift files, and `git diff --check`.
+- A signed Debug build with binary UUID `F99BA7D5-6798-3B40-A7E9-B4143B23DB89` was installed before the iPad was disconnected. The corrected build is being sent through TestFlight.
+
 ## Release TestFlight build 22
 
 - [x] Verify release tools, signing settings, App Store Connect access, and the clean change set.

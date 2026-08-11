@@ -4,6 +4,8 @@ import SwiftUI
 struct NoteNerdsApp: App {
     @StateObject private var model: AppModel
     @StateObject private var notion: NotionIntegrationModel
+    @StateObject private var pencilCanvasSnapshotFlusher: PencilCanvasSnapshotFlusher
+    @StateObject private var backgroundSaveCoordinator: ApplicationBackgroundSaveCoordinator
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -11,16 +13,7 @@ struct NoteNerdsApp: App {
         let isUITesting = processInfo.arguments.contains("-ui-testing")
         let isUnitTesting = processInfo.environment["XCTestConfigurationFilePath"] != nil
         if isUITesting && ProcessInfo.processInfo.arguments.contains("-reset-library") {
-            let supportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            try? FileManager.default.removeItem(at: supportURL.appending(path: "Library"))
-            try? FileManager.default.removeItem(at: supportURL.appending(path: "Documents"))
-            UserDefaults.standard.set(PaperType.blankWhite.rawValue, forKey: "defaultPaperType")
-            UserDefaults.standard.set(false, forKey: "isCanvasToolbarExpanded")
-            UserDefaults.standard.set(true, forKey: "isToolbarOnLeft")
-            UserDefaults.standard.set(
-                CanvasToolbarOrientation.vertical.rawValue,
-                forKey: "canvasToolbarOrientation"
-            )
+            Self.resetLibraryForUITesting()
         }
         let model = AppModel(
             documentStore: AppModel.defaultDocumentStore(),
@@ -32,6 +25,14 @@ struct NoteNerdsApp: App {
             model.syncIssue = "This change is saved locally and is waiting for iCloud sync."
         }
         _model = StateObject(wrappedValue: model)
+        let pencilCanvasSnapshotFlusher = PencilCanvasSnapshotFlusher()
+        _pencilCanvasSnapshotFlusher = StateObject(wrappedValue: pencilCanvasSnapshotFlusher)
+        _backgroundSaveCoordinator = StateObject(
+            wrappedValue: Self.makeBackgroundSaveCoordinator(
+                model: model,
+                snapshotFlusher: pencilCanvasSnapshotFlusher
+            )
+        )
         let notionConfiguration = Self.notionConfiguration(
             isUITesting: isUITesting,
             processInfo: processInfo
@@ -56,6 +57,34 @@ struct NoteNerdsApp: App {
         }
 #endif
         _notion = StateObject(wrappedValue: notion)
+    }
+
+    private static func resetLibraryForUITesting() {
+        let supportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        try? FileManager.default.removeItem(at: supportURL.appending(path: "Library"))
+        try? FileManager.default.removeItem(at: supportURL.appending(path: "Documents"))
+        UserDefaults.standard.set(PaperType.blankWhite.rawValue, forKey: "defaultPaperType")
+        UserDefaults.standard.set(false, forKey: "isCanvasToolbarExpanded")
+        UserDefaults.standard.set(true, forKey: "isToolbarOnLeft")
+        UserDefaults.standard.set(
+            CanvasToolbarOrientation.vertical.rawValue,
+            forKey: "canvasToolbarOrientation"
+        )
+    }
+
+    private static func makeBackgroundSaveCoordinator(
+        model: AppModel,
+        snapshotFlusher: PencilCanvasSnapshotFlusher
+    ) -> ApplicationBackgroundSaveCoordinator {
+        ApplicationBackgroundSaveCoordinator(
+            backgroundTasks: UIApplicationBackgroundTaskManager(),
+            flushPendingSnapshots: {
+                await snapshotFlusher.flushPendingSnapshots()
+            },
+            checkpointDocuments: {
+                await model.checkpointDocuments()
+            }
+        )
     }
 
     private static func makeNotionModel(
@@ -119,6 +148,7 @@ struct NoteNerdsApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(model: model, notion: notion)
+                .environmentObject(pencilCanvasSnapshotFlusher)
                 .onOpenURL { url in
                     Task {
                         await model.restoreLibrary()
@@ -134,12 +164,15 @@ struct NoteNerdsApp: App {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
+                backgroundSaveCoordinator.transition(to: .active)
                 notion.resumeAutomaticSync()
                 notion.resumeMeetingLinks()
             } else {
                 notion.pauseAutomaticSync()
                 notion.pauseMeetingLinks()
-                Task { await model.checkpointDocuments() }
+                backgroundSaveCoordinator.transition(
+                    to: phase == .background ? .background : .inactive
+                )
             }
         }
     }

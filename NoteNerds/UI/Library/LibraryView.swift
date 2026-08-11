@@ -76,6 +76,7 @@ struct LibraryView: View {
 
     private var emptyDescription: String {
         if !model.searchQuery.isEmpty { return "Try another search." }
+        if model.selectedSection == .trash { return "Your trash is empty." }
         return model.selectedSection == .files
             ? "Create a notebook and start writing."
             : "Items appear here as you use Note Nerds."

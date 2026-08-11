@@ -3,6 +3,51 @@ import XCTest
 
 final class StartupBehaviorTests: XCTestCase {
     @MainActor
+    func testTrashedLibraryMetadataWinsOverAnOlderActiveNotebookCheckpoint() async throws {
+        let directoryURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+        let repository = LocalLibraryRepository(fileURL: directoryURL.appending(path: "library.json"))
+        let documentStore = LocalDocumentStore(rootURL: directoryURL.appending(path: "Documents"))
+        let activeNotebook = Notebook(
+            title: "Older title",
+            canvases: [Canvas(title: "Recovered canvas")],
+            createdAt: DomainFixtures.fixedDate,
+            modifiedAt: DomainFixtures.fixedDate,
+            lastOpenedAt: DomainFixtures.fixedDate
+        )
+        var trashedNotebook = activeNotebook
+        trashedNotebook.title = "Test Note"
+        trashedNotebook.canvases = [Canvas(title: "Stale library canvas")]
+        trashedNotebook.modifiedAt = DomainFixtures.fixedDate.addingTimeInterval(30)
+        trashedNotebook.lastOpenedAt = DomainFixtures.fixedDate.addingTimeInterval(60)
+        trashedNotebook.isFavorite = true
+        trashedNotebook.tags = ["keep"]
+        let trashDate = DomainFixtures.fixedDate.addingTimeInterval(90)
+        trashedNotebook.trashedAt = trashDate
+        try await documentStore.save(
+            NativeNotebookPackage(schemaVersion: .current, notebook: activeNotebook)
+        )
+        try await repository.save(LibraryState(notebooks: [trashedNotebook]))
+
+        let reopenedSession = AppModel(
+            repository: repository,
+            documentStore: documentStore,
+            automaticallyRestore: false
+        )
+        await reopenedSession.restoreLibrary()
+
+        let restoredNotebook = try XCTUnwrap(reopenedSession.notebook(activeNotebook.id))
+        XCTAssertEqual(restoredNotebook.title, "Test Note")
+        XCTAssertEqual(restoredNotebook.canvases.map(\.title), ["Recovered canvas"])
+        XCTAssertEqual(restoredNotebook.modifiedAt, trashedNotebook.modifiedAt)
+        XCTAssertEqual(restoredNotebook.lastOpenedAt, trashedNotebook.lastOpenedAt)
+        XCTAssertTrue(restoredNotebook.isFavorite)
+        XCTAssertEqual(restoredNotebook.tags, ["keep"])
+        XCTAssertEqual(restoredNotebook.trashedAt, trashDate)
+        XCTAssertFalse(reopenedSession.visibleNotebooks.contains { $0.id == activeNotebook.id })
+    }
+
+    @MainActor
     func testLocalLibraryOpensWhileInitialCloudSyncIsStillWaiting() async throws {
         let directoryURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directoryURL) }

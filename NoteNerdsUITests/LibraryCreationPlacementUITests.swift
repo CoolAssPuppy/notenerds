@@ -2,6 +2,16 @@ import XCTest
 
 @MainActor
 final class LibraryCreationPlacementUITests: XCTestCase {
+    func testEmptyTrashExplainsThatThereAreNoNotebooks() {
+        let application = makeApplication()
+        application.launch()
+
+        application.staticTexts["Trash"].tap()
+
+        XCTAssertTrue(application.staticTexts["No notebooks"].waitForExistence(timeout: 2))
+        XCTAssertTrue(application.staticTexts["Your trash is empty."].exists)
+    }
+
     func testCreationControlsAndTitlesFollowTheirContent() {
         let application = makeApplication()
         XCUIDevice.shared.orientation = .landscapeLeft

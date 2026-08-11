@@ -20,24 +20,19 @@ enum NotebookCanvasOpeningPolicy {
 
 extension NotebookEditorView {
     var plannerRegions: [CanvasRegion] {
-        PlannerRegionCatalog.regions(for: currentCanvas.template)
+        plannerRegions(for: currentCanvas.id)
     }
 
     var selectedPlannerRegionIndex: Int {
-        plannerRegionSelection.selectedIndex(for: currentCanvas.id, in: plannerRegions)
+        selectedPlannerRegionIndex(for: currentCanvas.id)
     }
 
     var selectedPlannerRegion: CanvasRegion? {
-        guard plannerRegions.indices.contains(selectedPlannerRegionIndex) else { return nil }
-        return plannerRegions[selectedPlannerRegionIndex]
+        selectedPlannerRegion(for: currentCanvas.id)
     }
 
     var isPlannerRegionPagingPresented: Bool {
-        guard !plannerRegions.isEmpty else { return false }
-        #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-force-phone-planner-pager") { return true }
-        #endif
-        return UIDevice.current.userInterfaceIdiom == .phone
+        isPlannerRegionPagingPresented(for: currentCanvas.id)
     }
 
     var allowsFingerDrawingOnCanvas: Bool {
@@ -54,16 +49,22 @@ extension NotebookEditorView {
     }
 
     func plannerContentRegion(at point: CanvasPoint) -> CanvasRegion? {
-        if isPlannerRegionPagingPresented { return selectedPlannerRegion }
-        return PlannerRegionContentPolicy.region(containing: point, in: plannerRegions)
+        plannerContentRegion(at: point, canvasID: currentCanvas.id)
     }
 
     func constrainStrokesToPlannerRegions(_ strokes: [Stroke]) -> [Stroke] {
+        constrainStrokesToPlannerRegions(strokes, canvasID: currentCanvas.id)
+    }
+
+    func constrainStrokesToPlannerRegions(
+        _ strokes: [Stroke],
+        canvasID: CanvasID
+    ) -> [Stroke] {
         strokes.map { stroke in
             guard let firstPoint = stroke.samples.first?.point else { return stroke }
             return PlannerRegionContentPolicy.constrainedStroke(
                 stroke,
-                to: plannerContentRegion(at: firstPoint)?.frame
+                to: plannerContentRegion(at: firstPoint, canvasID: canvasID)?.frame
             )
         }
     }
@@ -73,5 +74,42 @@ extension NotebookEditorView {
         let region = plannerContentRegion(at: textBlock.frame.origin)
         constrained.frame = PlannerRegionContentPolicy.constrainedFrame(textBlock.frame, to: region?.frame)
         return constrained
+    }
+
+    private func plannerRegions(for canvasID: CanvasID) -> [CanvasRegion] {
+        guard let canvas = notebook.canvases.first(where: { $0.id == canvasID }) else { return [] }
+        return PlannerRegionCatalog.regions(for: canvas.template)
+    }
+
+    private func selectedPlannerRegionIndex(for canvasID: CanvasID) -> Int {
+        plannerRegionSelection.selectedIndex(for: canvasID, in: plannerRegions(for: canvasID))
+    }
+
+    private func selectedPlannerRegion(for canvasID: CanvasID) -> CanvasRegion? {
+        let regions = plannerRegions(for: canvasID)
+        let selectedIndex = selectedPlannerRegionIndex(for: canvasID)
+        guard regions.indices.contains(selectedIndex) else { return nil }
+        return regions[selectedIndex]
+    }
+
+    private func isPlannerRegionPagingPresented(for canvasID: CanvasID) -> Bool {
+        guard !plannerRegions(for: canvasID).isEmpty else { return false }
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-force-phone-planner-pager") { return true }
+        #endif
+        return UIDevice.current.userInterfaceIdiom == .phone
+    }
+
+    private func plannerContentRegion(
+        at point: CanvasPoint,
+        canvasID: CanvasID
+    ) -> CanvasRegion? {
+        if isPlannerRegionPagingPresented(for: canvasID) {
+            return selectedPlannerRegion(for: canvasID)
+        }
+        return PlannerRegionContentPolicy.region(
+            containing: point,
+            in: plannerRegions(for: canvasID)
+        )
     }
 }

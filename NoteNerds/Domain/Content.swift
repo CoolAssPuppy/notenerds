@@ -84,6 +84,164 @@ struct Stroke: Codable, Hashable, Sendable {
     var bounds: CanvasRect { CanvasRect.enclosing(samples.map(\.point)) }
 }
 
+struct StrokeOccurrence: Hashable, Sendable {
+    let id: StrokeID
+    let index: Int
+}
+
+struct OccurrenceIndexedStroke: Sendable {
+    let occurrence: StrokeOccurrence
+    let stroke: Stroke
+}
+
+enum StrokeOccurrenceMatcher {
+    static func indexed(
+        _ strokes: [Stroke],
+        matching reference: [OccurrenceIndexedStroke] = [],
+        preferring preferredOccurrences: Set<StrokeOccurrence> = []
+    ) -> [OccurrenceIndexedStroke] {
+        let referenceByID = Dictionary(grouping: reference, by: \.occurrence.id)
+        let targetCountsByID = countsByID(strokes)
+        var nextIndexByID = nextIndicesByID(reference)
+        var assignments = strokes.map { StrokeOccurrence(id: $0.id, index: 0) }
+        var isAssigned = Array(repeating: false, count: strokes.count)
+        var claimed: Set<StrokeOccurrence> = []
+
+        for (index, stroke) in strokes.enumerated() {
+            guard let candidates = referenceByID[stroke.id],
+                  candidates.count > 1 || targetCountsByID[stroke.id, default: 0] > 1,
+                  let exact = candidates.first(where: {
+                      !claimed.contains($0.occurrence) && $0.stroke == stroke
+                  }) else { continue }
+            assignments[index] = exact.occurrence
+            isAssigned[index] = true
+            claimed.insert(exact.occurrence)
+        }
+
+        var fallbackOffsets: [StrokeID: Int] = [:]
+        for (index, stroke) in strokes.enumerated() where !isAssigned[index] {
+            let candidates = referenceByID[stroke.id] ?? []
+            var offset = fallbackOffsets[stroke.id, default: 0]
+            while candidates.indices.contains(offset), claimed.contains(candidates[offset].occurrence) {
+                offset += 1
+            }
+            let occurrence: StrokeOccurrence
+            let preferred = candidates.count > 1 ? candidates.first(where: {
+                preferredOccurrences.contains($0.occurrence) && !claimed.contains($0.occurrence)
+            }) : nil
+            if let preferred {
+                occurrence = preferred.occurrence
+            } else if candidates.indices.contains(offset) {
+                occurrence = candidates[offset].occurrence
+                offset += 1
+            } else {
+                let nextIndex = nextIndexByID[stroke.id, default: 0]
+                occurrence = StrokeOccurrence(id: stroke.id, index: nextIndex)
+                nextIndexByID[stroke.id] = nextIndex + 1
+            }
+            assignments[index] = occurrence
+            fallbackOffsets[stroke.id] = offset
+            claimed.insert(occurrence)
+        }
+
+        return strokes.indices.map { index in
+            OccurrenceIndexedStroke(occurrence: assignments[index], stroke: strokes[index])
+        }
+    }
+
+    private static func countsByID(_ strokes: [Stroke]) -> [StrokeID: Int] {
+        strokes.reduce(into: [:]) { counts, stroke in
+            counts[stroke.id, default: 0] += 1
+        }
+    }
+
+    private static func nextIndicesByID(
+        _ reference: [OccurrenceIndexedStroke]
+    ) -> [StrokeID: Int] {
+        reference.reduce(into: [:]) { result, entry in
+            result[entry.occurrence.id] = max(
+                result[entry.occurrence.id, default: 0],
+                entry.occurrence.index + 1
+            )
+        }
+    }
+}
+
+struct CanvasStrokeEdit: Hashable, Sendable {
+    let before: [Stroke]
+    let after: [Stroke]
+
+    var addedStrokes: [Stroke]? {
+        guard after.count > before.count,
+              zip(before, after).allSatisfy({ source, result in source == result }) else { return nil }
+        return Array(after.dropFirst(before.count))
+    }
+
+    func applying(to current: [Stroke]) -> [Stroke] {
+        let baseline = StrokeOccurrenceMatcher.indexed(before)
+        let local = StrokeOccurrenceMatcher.indexed(after, matching: baseline)
+        let live = StrokeOccurrenceMatcher.indexed(
+            current,
+            matching: baseline,
+            preferring: Set(local.map(\.occurrence))
+        )
+        let baselineByOccurrence = Self.strokesByOccurrence(baseline)
+        let localByOccurrence = Self.strokesByOccurrence(local)
+        var result: [OccurrenceIndexedStroke] = []
+        var includedOccurrences: Set<StrokeOccurrence> = []
+
+        for entry in live {
+            guard let baselineStroke = baselineByOccurrence[entry.occurrence] else {
+                let resolved = localByOccurrence[entry.occurrence] ?? entry.stroke
+                result.append(OccurrenceIndexedStroke(occurrence: entry.occurrence, stroke: resolved))
+                includedOccurrences.insert(entry.occurrence)
+                continue
+            }
+            guard let localStroke = localByOccurrence[entry.occurrence] else { continue }
+            let resolved = localStroke == baselineStroke ? entry.stroke : localStroke
+            result.append(OccurrenceIndexedStroke(occurrence: entry.occurrence, stroke: resolved))
+            includedOccurrences.insert(entry.occurrence)
+        }
+
+        for (index, entry) in local.enumerated() where !includedOccurrences.contains(entry.occurrence) {
+            let wasLocallyChanged = baselineByOccurrence[entry.occurrence] != entry.stroke
+            guard wasLocallyChanged else { continue }
+            Self.insert(entry, from: local, at: index, into: &result)
+            includedOccurrences.insert(entry.occurrence)
+        }
+        return result.map(\.stroke)
+    }
+
+    private static func strokesByOccurrence(_ strokes: [OccurrenceIndexedStroke]) -> [StrokeOccurrence: Stroke] {
+        strokes.reduce(into: [:]) { result, entry in
+            result[entry.occurrence] = entry.stroke
+        }
+    }
+
+    private static func insert(
+        _ entry: OccurrenceIndexedStroke,
+        from local: [OccurrenceIndexedStroke],
+        at localIndex: Int,
+        into result: inout [OccurrenceIndexedStroke]
+    ) {
+        let preceding = local[..<localIndex].reversed()
+        if let anchor = preceding.first(where: { candidate in
+            result.contains(where: { $0.occurrence == candidate.occurrence })
+        }), let anchorIndex = result.firstIndex(where: { $0.occurrence == anchor.occurrence }) {
+            result.insert(entry, at: anchorIndex + 1)
+            return
+        }
+        let following = local[local.index(after: localIndex)...]
+        if let anchor = following.first(where: { candidate in
+            result.contains(where: { $0.occurrence == candidate.occurrence })
+        }), let anchorIndex = result.firstIndex(where: { $0.occurrence == anchor.occurrence }) {
+            result.insert(entry, at: anchorIndex)
+            return
+        }
+        result.append(entry)
+    }
+}
+
 enum RecognizedShapeKind: String, Codable, CaseIterable, Sendable {
     case line
     case arrow

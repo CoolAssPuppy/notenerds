@@ -64,7 +64,9 @@ struct NotebookEditorView: View {
     }
 
     var body: some View {
-        ZStack {
+        let targetCanvasID = currentCanvas.id
+        let persistenceCallbacks = pencilPersistenceCallbacks(for: targetCanvasID)
+        return ZStack {
             PencilCanvasView(
                 strokes: currentStrokes,
                 nonStrokeObjects: currentNonStrokeObjects,
@@ -74,7 +76,7 @@ struct NotebookEditorView: View {
                 highlightedStrokeIDs: highlightedStrokeIDs,
                 recognizedText: currentRecognizedText,
                 configuration: configuration,
-                canvasID: currentCanvas.id,
+                canvasID: targetCanvasID,
                 activeLayerID: activeLayer.id,
                 template: currentCanvas.template,
                 plannerRegions: plannerRegions,
@@ -85,25 +87,8 @@ struct NotebookEditorView: View {
                 textEditingSession: textEditingSession,
                 isTextToolActive: isTextToolActive,
                 shapePlacementKind: selectedShapeKind,
-                onStrokesCompleted: { strokes in
-                    let constrainedStrokes = constrainStrokesToPlannerRegions(strokes)
-                    let didSnapShape = model.addStrokes(
-                        constrainedStrokes,
-                        to: notebook.id,
-                        canvasID: currentCanvas.id,
-                        layerID: activeLayer.id,
-                        shouldConvertToText: configuration.tool == .handwritingToText
-                    )
-                    if didSnapShape { UINotificationFeedbackGenerator().notificationOccurred(.success) }
-                },
-                onDrawingChanged: { strokes in
-                    model.replaceVisibleStrokes(
-                        constrainStrokesToPlannerRegions(strokes),
-                        in: notebook.id,
-                        canvasID: currentCanvas.id,
-                        layerID: activeLayer.id
-                    )
-                },
+                onStrokesCompleted: persistenceCallbacks.onStrokesCompleted,
+                onDrawingChanged: persistenceCallbacks.onDrawingChanged,
                 onConvertStrokesToText: { strokes in
                     model.convertStrokesToText(Set(strokes.map(\.id)), in: notebook.id, canvasID: currentCanvas.id)
                 },
@@ -153,7 +138,7 @@ struct NotebookEditorView: View {
                 onPencilDoubleTap: switchDrawingToolAndEraser,
                 onPlannerRegionPageRequested: selectPlannerRegion
             )
-            .id(currentCanvas.id)
+            .id(targetCanvasID)
             floatingToolbar
             if isPlannerRegionPagingPresented {
                 VStack {

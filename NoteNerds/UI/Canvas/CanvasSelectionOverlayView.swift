@@ -1,5 +1,14 @@
 import UIKit
 
+enum CanvasSelectionOverlayInputPolicy {
+    static func acceptsPencilInput(
+        isLassoEnabled: Bool,
+        isShapePlacementEnabled: Bool
+    ) -> Bool {
+        isLassoEnabled || isShapePlacementEnabled
+    }
+}
+
 @MainActor
 final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
     private let objects: [CanvasObject]
@@ -57,6 +66,14 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
     }
 
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let hasPencilTouch = event?.allTouches?.contains(where: { $0.type == .pencil }) == true
+        if hasPencilTouch,
+           !CanvasSelectionOverlayInputPolicy.acceptsPencilInput(
+               isLassoEnabled: isLassoEnabled,
+               isShapePlacementEnabled: shapePlacementKind != nil
+           ) {
+            return false
+        }
         guard !isLassoEnabled, shapePlacementKind == nil else { return true }
         let hitRegion = CanvasRect(x: point.x - 18, y: point.y - 18, width: 36, height: 36)
         return !spatialIndex.objects(in: hitRegion).isEmpty
@@ -144,8 +161,16 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
         let pan = UIPanGestureRecognizer(target: self, action: #selector(didPan(_:)))
         let pinch = UIPinchGestureRecognizer(target: self, action: #selector(didPinch(_:)))
         let rotation = UIRotationGestureRecognizer(target: self, action: #selector(didRotate(_:)))
+        let acceptsPencilInput = CanvasSelectionOverlayInputPolicy.acceptsPencilInput(
+            isLassoEnabled: isLassoEnabled,
+            isShapePlacementEnabled: shapePlacementKind != nil
+        )
+        let allowedTouchTypes = acceptsPencilInput
+            ? [UITouch.TouchType.direct, .pencil]
+            : [UITouch.TouchType.direct]
         [tap, doubleTap, pan, pinch, rotation].forEach {
             $0.delegate = self
+            $0.allowedTouchTypes = allowedTouchTypes.map { NSNumber(value: $0.rawValue) }
             addGestureRecognizer($0)
         }
     }

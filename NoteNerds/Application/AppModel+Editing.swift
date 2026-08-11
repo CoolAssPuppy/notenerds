@@ -59,6 +59,23 @@ extension AppModel {
             return ObjectPlacement(layerID: layerID, index: Int.max, object: .stroke(storedStroke))
         }
         execute(.replaceObjects(canvasID: canvasID, before: [], after: placements), on: notebookID)
+        return processStoredStrokes(
+            strokes,
+            in: notebookID,
+            canvasID: canvasID,
+            layerID: layerID,
+            shouldConvertToText: shouldConvertToText
+        )
+    }
+
+    func processStoredStrokes(
+        _ strokes: [Stroke],
+        in notebookID: NotebookID,
+        canvasID: CanvasID,
+        layerID: LayerID,
+        shouldConvertToText: Bool
+    ) -> Bool {
+        guard !strokes.isEmpty else { return false }
         let didSnapShape = snapShapeIfNeeded(
             strokes: strokes,
             layerID: layerID,
@@ -210,6 +227,29 @@ extension AppModel {
         execute(operation, on: notebookID)
     }
 
+    func applyVisibleStrokeEdit(
+        _ edit: CanvasStrokeEdit,
+        in notebookID: NotebookID,
+        canvasID: CanvasID
+    ) {
+        guard let notebook = library.notebook(id: notebookID),
+              let canvas = notebook.canvases.first(where: { $0.id == canvasID }) else { return }
+        let visibleLayers = canvas.layers.filter(\.isVisible)
+        let currentStrokes = visibleLayers.flatMap(\.objects).compactMap(\.strokeValue)
+        let editedStrokes = edit.applying(to: currentStrokes)
+        guard currentStrokes != editedStrokes else { return }
+        let replacement = VisibleStrokeReplacement(
+            visibleLayers: visibleLayers,
+            currentStrokes: currentStrokes,
+            editedStrokes: editedStrokes
+        )
+        guard !replacement.before.isEmpty || !replacement.after.isEmpty else { return }
+        execute(
+            .replaceObjects(canvasID: canvasID, before: replacement.before, after: replacement.after),
+            on: notebookID
+        )
+    }
+
     func addTextBlock(_ insertion: TextBlockInsertion, notebookID: NotebookID) {
         let textBlock = TextBlock(
             id: ObjectID(),
@@ -322,5 +362,128 @@ extension AppModel {
               ) else { return false }
         execute(operation, on: notebookID)
         return true
+    }
+}
+
+private struct VisibleStrokeReplacement {
+    let before: [ObjectPlacement]
+    let after: [ObjectPlacement]
+
+    init(visibleLayers: [Layer], currentStrokes: [Stroke], editedStrokes: [Stroke]) {
+        let currentGroups = Self.groups(currentStrokes)
+        let editedGroups = Self.groups(editedStrokes)
+        let allGroupIDs = Set(currentGroups.keys).union(editedGroups.keys)
+        let changedGroupIDs = Set(allGroupIDs.filter { currentGroups[$0] != editedGroups[$0] })
+        before = visibleLayers.flatMap { layer in
+            layer.objects.enumerated().compactMap { index, object in
+                guard let stroke = object.strokeValue,
+                      changedGroupIDs.contains(StrokeGroupID(stroke)) else { return nil }
+                return ObjectPlacement(layerID: layer.id, index: index, object: object)
+            }
+        }
+        after = visibleLayers.flatMap { layer in
+            Self.afterPlacements(
+                in: layer,
+                editedStrokes: editedStrokes.filter { $0.layerID == layer.id },
+                changedGroupIDs: changedGroupIDs
+            )
+        }
+    }
+
+    private static func groups(_ strokes: [Stroke]) -> [StrokeGroupID: [Stroke]] {
+        Dictionary(grouping: strokes, by: StrokeGroupID.init)
+    }
+
+    private static func afterPlacements(
+        in layer: Layer,
+        editedStrokes: [Stroke],
+        changedGroupIDs: Set<StrokeGroupID>
+    ) -> [ObjectPlacement] {
+        let currentEntries = StrokeOccurrenceMatcher.indexed(layer.objects.compactMap(\.strokeValue))
+        let editedEntries = StrokeOccurrenceMatcher.indexed(editedStrokes, matching: currentEntries)
+        var currentEntryIndex = 0
+        var layout = layer.objects.map { object -> StrokeLayoutItem in
+            guard object.strokeValue != nil else { return .object(object, nil) }
+            let entry = currentEntries[currentEntryIndex]
+            currentEntryIndex += 1
+            return changedGroupIDs.contains(StrokeGroupID(entry.stroke))
+                ? .placeholder(entry.occurrence)
+                : .object(object, entry.occurrence)
+        }
+        for (index, entry) in editedEntries.enumerated()
+            where changedGroupIDs.contains(StrokeGroupID(entry.stroke)) {
+            let item = StrokeLayoutItem.object(.stroke(entry.stroke), entry.occurrence)
+            if let placeholderIndex = layout.firstIndex(where: { $0.placeholderKey == entry.occurrence }) {
+                layout[placeholderIndex] = item
+            } else {
+                insert(item, from: editedEntries, at: index, into: &layout)
+            }
+        }
+        layout.removeAll { $0.placeholderKey != nil }
+        return layout.enumerated().compactMap { index, item in
+            guard let object = item.object,
+                  let stroke = object.strokeValue,
+                  changedGroupIDs.contains(StrokeGroupID(stroke)) else { return nil }
+            return ObjectPlacement(layerID: layer.id, index: index, object: object)
+        }
+    }
+
+    private static func insert(
+        _ item: StrokeLayoutItem,
+        from editedEntries: [OccurrenceIndexedStroke],
+        at editedIndex: Int,
+        into layout: inout [StrokeLayoutItem]
+    ) {
+        let precedingKeys = Array(editedEntries[..<editedIndex].map(\.occurrence).reversed())
+        if let anchorIndex = anchorIndex(for: precedingKeys, in: layout) {
+            layout.insert(item, at: anchorIndex + 1)
+            return
+        }
+        let followingKeys = Array(editedEntries[editedEntries.index(after: editedIndex)...].map(\.occurrence))
+        if let anchorIndex = anchorIndex(for: followingKeys, in: layout) {
+            layout.insert(item, at: anchorIndex)
+            return
+        }
+        layout.append(item)
+    }
+
+    private static func anchorIndex(
+        for candidates: [StrokeOccurrence],
+        in layout: [StrokeLayoutItem]
+    ) -> Int? {
+        for candidate in candidates {
+            if let index = layout.firstIndex(where: { $0.strokeKey == candidate }) { return index }
+        }
+        return nil
+    }
+}
+
+private struct StrokeGroupID: Hashable {
+    let strokeID: StrokeID
+    let layerID: LayerID
+
+    init(_ stroke: Stroke) {
+        strokeID = stroke.id
+        layerID = stroke.layerID
+    }
+}
+
+private enum StrokeLayoutItem {
+    case object(CanvasObject, StrokeOccurrence?)
+    case placeholder(StrokeOccurrence)
+
+    var object: CanvasObject? {
+        guard case let .object(object, _) = self else { return nil }
+        return object
+    }
+
+    var strokeKey: StrokeOccurrence? {
+        guard case let .object(_, key) = self else { return nil }
+        return key
+    }
+
+    var placeholderKey: StrokeOccurrence? {
+        guard case let .placeholder(key) = self else { return nil }
+        return key
     }
 }

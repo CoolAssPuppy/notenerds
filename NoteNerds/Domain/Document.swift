@@ -236,6 +236,15 @@ struct Notebook: Codable, Hashable, Identifiable, Sendable {
             parentFolderID: parentFolderID
         )
     }
+
+    func restoringDocumentContent(from recovered: Notebook) -> Notebook {
+        guard recovered.id == id else { return self }
+        var restored = self
+        restored.canvases = recovered.canvases
+        restored.recognitionByCanvas = recovered.recognitionByCanvas
+        restored.modifiedAt = max(modifiedAt, recovered.modifiedAt)
+        return restored
+    }
 }
 
 extension Notebook {

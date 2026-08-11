@@ -2,6 +2,8 @@ import PencilKit
 import SwiftUI
 
 struct PencilCanvasView: UIViewRepresentable {
+    @EnvironmentObject private var snapshotFlusher: PencilCanvasSnapshotFlusher
+
     let strokes: [Stroke]
     let nonStrokeObjects: [CanvasObject]
     let assets: [AssetID: Data]
@@ -21,8 +23,8 @@ struct PencilCanvasView: UIViewRepresentable {
     let textEditingSession: CanvasTextEditingSession?
     let isTextToolActive: Bool
     let shapePlacementKind: RecognizedShapeKind?
-    let onStrokesCompleted: @MainActor ([Stroke]) -> Void
-    let onDrawingChanged: @MainActor ([Stroke]) -> Void
+    let onStrokesCompleted: @MainActor ([CompletedPencilStroke]) -> Void
+    let onDrawingChanged: @MainActor (CanvasStrokeEdit, [CompletedPencilStroke]) -> Void
     let onConvertStrokesToText: @MainActor ([Stroke]) -> Void
     let onTransformObjects: @MainActor (Set<ObjectID>, SelectionTransform, CanvasPoint, [Stroke]) -> Void
     let onDeleteObjects: @MainActor (Set<ObjectID>) -> Void
@@ -55,9 +57,9 @@ struct PencilCanvasView: UIViewRepresentable {
     func makeUIView(context: Context) -> PKCanvasView {
         let canvasView = PKCanvasView()
         let coordinator = context.coordinator
+        coordinator.attachSnapshotFlusher(snapshotFlusher, canvasView: canvasView)
         PencilCanvasInputAccessories.install(on: canvasView, coordinator: coordinator)
         configureViewport(canvasView)
-        addPlannerSwipeRecognizers(to: canvasView, coordinator: context.coordinator)
         updatePlannerContext(context.coordinator)
         applyPaper(to: canvasView, coordinator: context.coordinator)
         canvasView.isOpaque = true
@@ -67,6 +69,7 @@ struct PencilCanvasView: UIViewRepresentable {
         canvasView.drawing = PencilCanvasRenderer.drawing(from: strokes)
         context.coordinator.knownStrokeCount = strokes.count
         context.coordinator.canonicalStrokes = strokes
+        context.coordinator.committedNativeDrawing = canvasView.drawing
         context.coordinator.isApplyingModelDrawing = false
         updateObjectOverlays(in: canvasView, coordinator: context.coordinator)
         updateAccessibility(for: canvasView)
@@ -87,19 +90,23 @@ struct PencilCanvasView: UIViewRepresentable {
         return canvasView
     }
 
+    static func dismantleUIView(_ uiView: PKCanvasView, coordinator: Coordinator) {
+        coordinator.prepareForDismantle(uiView)
+        uiView.delegate = nil
+    }
+
     func updateUIView(_ canvasView: PKCanvasView, context: Context) {
+        context.coordinator.attachSnapshotFlusher(snapshotFlusher, canvasView: canvasView)
+        context.coordinator.updateHandlers(from: self)
         let shouldRedraw = PencilCanvasModelReconciliation.requiresRedraw(
             current: context.coordinator.canonicalStrokes,
             incoming: strokes,
-            isUsingTool: context.coordinator.isUsingTool
+            isUsingTool: context.coordinator.isProtectingNativeDrawing
         )
         context.coordinator.configuration = configuration
         context.coordinator.activeLayerID = activeLayerID
         context.coordinator.receiveModelStrokes(strokes)
         updatePlannerContext(context.coordinator)
-        context.coordinator.configurePlannerSwipeRecognizers(
-            touchCount: isFingerDrawingEnabled ? 2 : 1
-        )
         canvasView.drawingPolicy = isFingerDrawingEnabled ? .anyInput : .pencilOnly
         canvasView.drawingGestureRecognizer.isEnabled = isDrawingGestureEnabled
         if context.coordinator.paperType != template {
@@ -117,240 +124,12 @@ struct PencilCanvasView: UIViewRepresentable {
         updateAccessibility(for: canvasView)
         apply(configuration, to: canvasView, coordinator: context.coordinator)
         if shouldRedraw {
+            let drawing = PencilCanvasRenderer.drawing(from: strokes)
             context.coordinator.isApplyingModelDrawing = true
-            canvasView.drawing = PencilCanvasRenderer.drawing(from: strokes)
+            context.coordinator.tagAppliedModelDrawing(drawing)
+            canvasView.drawing = drawing
             context.coordinator.knownStrokeCount = strokes.count
             context.coordinator.isApplyingModelDrawing = false
-        }
-    }
-
-    @MainActor
-    final class Coordinator: NSObject, PKCanvasViewDelegate, UIPencilInteractionDelegate, UIGestureRecognizerDelegate {
-        var knownStrokeCount = 0
-        var canonicalStrokes: [Stroke] = []
-        var isApplyingModelDrawing = false
-        var lastNavigationCommandID: UUID?
-        var lastEditingCommandID: UUID?
-        weak var objectSelectionOverlay: CanvasSelectionOverlayView?
-        weak var inlineTextEditor: InlineCanvasTextEditor?
-        var overlayStrokes: [Stroke] = []
-        var overlayObjects: [CanvasObject] = []
-        var overlayAssets: [AssetID: Data] = [:]
-        var highlightedStrokeIDs: Set<StrokeID> = []
-        var isLassoOverlayEnabled = false
-        var isTextPlacementOverlayEnabled = false
-        var shapePlacementKind: RecognizedShapeKind?
-        var configuration = ToolConfiguration.favoriteOne
-        var activeDrawingConfiguration: ToolConfiguration?
-        var activeLayerID: LayerID
-        var isUsingTool = false
-        var pendingModelStrokes: [Stroke]?
-        var latestPencilRoll = 0.0
-        var latestPencilLocation: CGPoint?
-        var paperType: PaperType?
-        var hasAppliedInitialPlannerViewport = false
-        var canvasID: CanvasID?
-        var plannerRegions: [CanvasRegion] = []
-        var selectedPlannerRegionID: String?
-        var isPlannerRegionPagingEnabled = false
-        var shouldAnimatePlannerRegionChanges = true
-        var lastFocusedCanvasID: CanvasID?
-        var lastFocusedRegionID: String?
-        var lastPlannerViewportSize = CGSize.zero
-        var isApplyingPlannerViewport = false
-        var hasRequestedRegionForCurrentPan = false
-        weak var previousRegionSwipeRecognizer: UISwipeGestureRecognizer?
-        weak var nextRegionSwipeRecognizer: UISwipeGestureRecognizer?
-        private let onStrokesCompleted: @MainActor ([Stroke]) -> Void
-        private let onDrawingChanged: @MainActor ([Stroke]) -> Void
-        private let onConvertStrokesToText: @MainActor ([Stroke]) -> Void
-        private let onViewportChanged: @MainActor (CanvasRect) -> Void
-        private let onPencilSqueeze: @MainActor (PencilSqueezeResponse, CGPoint?) -> Void
-        private let onPencilDoubleTap: @MainActor () -> Void
-        let onPlannerRegionPageRequested: @MainActor (Int) -> Void
-
-        init(
-            activeLayerID: LayerID,
-            onStrokesCompleted: @escaping @MainActor ([Stroke]) -> Void,
-            onDrawingChanged: @escaping @MainActor ([Stroke]) -> Void,
-            onConvertStrokesToText: @escaping @MainActor ([Stroke]) -> Void,
-            onViewportChanged: @escaping @MainActor (CanvasRect) -> Void,
-            onPencilSqueeze: @escaping @MainActor (PencilSqueezeResponse, CGPoint?) -> Void,
-            onPencilDoubleTap: @escaping @MainActor () -> Void,
-            onPlannerRegionPageRequested: @escaping @MainActor (Int) -> Void
-        ) {
-            self.activeLayerID = activeLayerID
-            self.onStrokesCompleted = onStrokesCompleted
-            self.onDrawingChanged = onDrawingChanged
-            self.onConvertStrokesToText = onConvertStrokesToText
-            self.onViewportChanged = onViewportChanged
-            self.onPencilSqueeze = onPencilSqueeze
-            self.onPencilDoubleTap = onPencilDoubleTap
-            self.onPlannerRegionPageRequested = onPlannerRegionPageRequested
-        }
-
-        func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-            guard !isApplyingModelDrawing, !isUsingTool else { return }
-            synchronizeDrawing(canvasView)
-        }
-
-        func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
-            isUsingTool = true
-            pendingModelStrokes = nil
-            activeDrawingConfiguration = configuration
-        }
-
-        func canvasViewDidEndUsingTool(_ canvasView: PKCanvasView) {
-            isUsingTool = false
-            let shouldApplyPendingModel = pendingModelStrokes != nil
-            synchronizeDrawing(canvasView)
-            if shouldApplyPendingModel {
-                isApplyingModelDrawing = true
-                canvasView.drawing = PencilCanvasRenderer.drawing(from: canonicalStrokes)
-                knownStrokeCount = canonicalStrokes.count
-                isApplyingModelDrawing = false
-            }
-            pendingModelStrokes = nil
-            activeDrawingConfiguration = nil
-        }
-
-        private func synchronizeDrawing(_ canvasView: PKCanvasView) {
-            guard !isApplyingModelDrawing else { return }
-            let baselineStrokes = canonicalStrokes
-            guard canvasView.drawing.strokes.count > knownStrokeCount else {
-                if canvasView.drawing.strokes.count <= knownStrokeCount {
-                    let changedStrokes = reconciledCanonicalStrokes(
-                        from: canvasView.drawing.strokes,
-                        preserving: baselineStrokes
-                    )
-                    canonicalStrokes = mergingPendingModelStrokes(
-                        with: changedStrokes,
-                        comparedTo: baselineStrokes
-                    )
-                    knownStrokeCount = canonicalStrokes.count
-                    onDrawingChanged(canonicalStrokes)
-                    return
-                }
-                knownStrokeCount = canvasView.drawing.strokes.count
-                return
-            }
-            let addedPencilStrokes = canvasView.drawing.strokes.dropFirst(knownStrokeCount)
-            knownStrokeCount = canvasView.drawing.strokes.count
-            let strokeConfiguration = activeDrawingConfiguration ?? configuration
-            guard let instrument = strokeConfiguration.tool.instrument else { return }
-            let addedStrokes = addedPencilStrokes.compactMap { pencilStroke -> Stroke? in
-                let samples = pencilStroke.path.map { point in
-                    canonicalSample(
-                        from: point,
-                        transformedBy: pencilStroke.transform,
-                        roll: latestPencilRoll
-                    )
-                }
-                guard !samples.isEmpty else { return nil }
-                let stroke = Stroke(
-                    id: StrokeID(),
-                    layerID: activeLayerID,
-                    samples: samples,
-                    style: StrokeStyle(
-                        instrument: instrument,
-                        width: strokeConfiguration.width.points,
-                        color: strokeConfiguration.color
-                    ),
-                    createdAt: Date(),
-                    pencilKitArchive: nil
-                )
-                return PencilKitStrokeArchiveCodec.preserving(pencilStroke, in: stroke)
-            }
-            acceptAddedStrokes(addedStrokes, comparedTo: baselineStrokes)
-        }
-
-        private func acceptAddedStrokes(_ addedStrokes: [Stroke], comparedTo baselineStrokes: [Stroke]) {
-            canonicalStrokes = mergingPendingModelStrokes(
-                with: baselineStrokes + addedStrokes,
-                comparedTo: baselineStrokes
-            )
-            knownStrokeCount = canonicalStrokes.count
-            onStrokesCompleted(addedStrokes)
-        }
-
-        func pencilInteraction(
-            _ interaction: UIPencilInteraction,
-            didReceiveSqueeze squeeze: UIPencilInteraction.Squeeze
-        ) {
-            latestPencilRoll = squeeze.hoverPose.map { Double($0.rollAngle) } ?? latestPencilRoll
-            let response = PencilSqueezeBehavior.response(
-                for: UIPencilInteraction.preferredSqueezeAction,
-                phase: squeeze.phase
-            )
-            guard response != .none else { return }
-            UISelectionFeedbackGenerator().selectionChanged()
-            onPencilSqueeze(
-                response,
-                PencilSqueezeBehavior.viewportLocation(
-                    poseLocation: squeeze.hoverPose?.location,
-                    lastHoverLocation: latestPencilLocation,
-                    visibleBounds: interaction.view?.bounds ?? .zero
-                )
-            )
-        }
-
-        @objc func handlePencilHover(_ recognizer: UIHoverGestureRecognizer) {
-            latestPencilRoll = Double(recognizer.rollAngle)
-            switch recognizer.state {
-            case .began, .changed:
-                latestPencilLocation = recognizer.location(in: recognizer.view)
-            case .ended, .cancelled:
-                break
-            default:
-                break
-            }
-        }
-
-        func pencilInteraction(_ interaction: UIPencilInteraction, didReceiveTap tap: UIPencilInteraction.Tap) {
-            onPencilDoubleTap()
-        }
-
-        func scrollViewDidScroll(_ scrollView: UIScrollView) {
-            guard let canvasView = scrollView as? PKCanvasView else { return }
-            focusPlannerRegionIfNeeded(in: canvasView)
-            reportViewport(canvasView)
-        }
-
-        func scrollViewDidZoom(_ scrollView: UIScrollView) {
-            guard let canvasView = scrollView as? PKCanvasView else { return }
-            focusPlannerRegionIfNeeded(in: canvasView)
-            reportViewport(canvasView)
-        }
-
-        func reportViewport(_ canvasView: PKCanvasView) {
-            let zoom = Double(canvasView.zoomScale)
-            onViewportChanged(CanvasRect(
-                x: canvasView.contentOffset.x / zoom,
-                y: canvasView.contentOffset.y / zoom,
-                width: canvasView.bounds.width / zoom,
-                height: canvasView.bounds.height / zoom
-            ))
-        }
-
-        func convertSelectedStrokesToText(in canvasView: PKCanvasView) {
-            if let strokes = objectSelectionOverlay?.selectedStrokes(), !strokes.isEmpty {
-                onConvertStrokesToText(strokes)
-                return
-            }
-            canvasView.copy(nil)
-            let selectedDrawings = UIPasteboard.general.items.flatMap { item in
-                item.values.compactMap { value -> PKDrawing? in
-                    guard let data = value as? Data else { return nil }
-                    return try? PKDrawing(data: data)
-                }
-            }
-            guard let selectedDrawing = selectedDrawings.first(where: { !$0.strokes.isEmpty }) else { return }
-            let selectedBounds = selectedDrawing.strokes.map(\.renderBounds)
-            let selected = canonicalStrokes.filter { stroke in
-                let bounds = stroke.bounds.pencilKitRect.insetBy(dx: -12, dy: -12)
-                return selectedBounds.contains { $0.intersects(bounds) }
-            }
-            onConvertStrokesToText(selected)
         }
     }
 
@@ -456,6 +235,7 @@ extension PencilCanvasView.Coordinator {
             canonicalStrokes: canonicalStrokes
         )
         isApplyingModelDrawing = true
+        tagAppliedModelDrawing(result.drawing)
         canvasView.drawing = result.drawing
         canonicalStrokes = result.canonicalStrokes
         knownStrokeCount = result.canonicalStrokes.count

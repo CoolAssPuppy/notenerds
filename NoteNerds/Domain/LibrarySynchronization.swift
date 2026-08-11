@@ -116,9 +116,6 @@ enum LibrarySyncMutation: Codable, Hashable, Sendable {
             return (incomingTrashDate, nil)
         }
         let parentTrashDate = inheritedTrashDate(for: metadata.parentFolderID, in: library)
-        if parentTrashDate == nil, isLegacyPureRestore(metadata, of: notebook) {
-            return (nil, nil)
-        }
         if let storedTrashDate = notebook.trashedAt,
            library.inheritedTrashDate(forNotebook: notebook.id) == nil {
             return (storedTrashDate, nil)
@@ -143,19 +140,6 @@ enum LibrarySyncMutation: Codable, Hashable, Sendable {
             return false
         }
         return inheritedTrashDate(for: metadata.parentFolderID, in: library) == nil
-    }
-
-    private func isLegacyPureRestore(
-        _ metadata: NotebookSyncMetadata,
-        of notebook: Notebook
-    ) -> Bool {
-        guard notebook.trashedAt != nil, metadata.trashedAt == nil else { return false }
-        return metadata.title == notebook.title
-            && metadata.parentFolderID == notebook.parentFolderID
-            && metadata.modifiedAt == notebook.modifiedAt
-            && metadata.lastOpenedAt == notebook.lastOpenedAt
-            && metadata.isFavorite == notebook.isFavorite
-            && metadata.tags == notebook.tags
     }
 
     private func inheritedTrashDate(

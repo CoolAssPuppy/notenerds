@@ -120,12 +120,13 @@ final class FolderSyncBehaviorTests: XCTestCase {
         XCTAssertNotNil(firstDevice.notebook(id: notebook.id)?.trashedAt)
     }
 
-    func testOlderAppNotebookRestoreClearsIndividualTrashWhenItsFolderIsActive() throws {
+    func testActiveMetadataCannotRestoreAnIndividuallyTrashedNotebook() throws {
         var library = LibraryState()
         let parent = try library.createFolder(named: "Parent", in: nil, at: DomainFixtures.fixedDate)
         let notebook = DomainFixtures.notebook()
         try library.addNotebook(notebook, to: parent.id)
-        library.moveNotebookToTrash(notebook.id, at: DomainFixtures.fixedDate)
+        let trashDate = DomainFixtures.fixedDate.addingTimeInterval(30)
+        library.moveNotebookToTrash(notebook.id, at: trashDate)
         var restoredNotebook = try XCTUnwrap(library.notebook(id: notebook.id))
         restoredNotebook.trashedAt = nil
 
@@ -133,7 +134,7 @@ final class FolderSyncBehaviorTests: XCTestCase {
             NotebookSyncMetadata(notebook: restoredNotebook)
         ).apply(to: &library)
 
-        XCTAssertNil(library.notebook(id: notebook.id)?.trashedAt)
+        XCTAssertEqual(library.notebook(id: notebook.id)?.trashedAt, trashDate)
     }
 
     func testOlderAppNotebookRestoreCannotUndoTrashedFolder() throws {

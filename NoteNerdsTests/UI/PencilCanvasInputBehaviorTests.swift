@@ -25,11 +25,15 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
         )
     }
 
-    func testRepeatedPartialUpdatesPublishOneCompleteStrokeAfterPencilLift() {
+    func testRepeatedPartialUpdatesPublishOneCompleteStrokeAfterPencilLift() async {
         let completeStroke = stroke(sampleCount: 12, xOffset: 0)
         let canvasView = PKCanvasView()
         var publishedStrokes: [[Stroke]] = []
-        let coordinator = PencilStrokeTestFixture.coordinator { publishedStrokes.append($0) }
+        let published = expectation(description: "Complete stroke published")
+        let coordinator = PencilStrokeTestFixture.coordinator {
+            publishedStrokes.append($0)
+            published.fulfill()
+        }
 
         coordinator.canvasViewDidBeginUsingTool(canvasView)
         for sampleCount in 1...completeStroke.samples.count {
@@ -43,20 +47,205 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
 
         coordinator.canvasViewDidEndUsingTool(canvasView)
 
+        await fulfillment(of: [published], timeout: 1)
         XCTAssertEqual(publishedStrokes.count, 1)
         XCTAssertEqual(publishedStrokes[0].count, 1)
         XCTAssertEqual(publishedStrokes[0][0].samples.count, completeStroke.samples.count)
         XCTAssertEqual(publishedStrokes[0][0].samples.map(\.point), completeStroke.samples.map(\.point))
     }
 
-    func testModelRefreshDuringPencilContactKeepsTheCompletedStrokeBaseline() {
+    func testPencilKitFinalUpdatePublishesOnceAfterToolUseEnds() async {
+        let completeStroke = stroke(sampleCount: 12, xOffset: 0)
+        var partialStroke = completeStroke
+        partialStroke.samples = Array(completeStroke.samples.prefix(5))
+        let canvasView = PKCanvasView()
+        var publishedStrokes: [[Stroke]] = []
+        let published = expectation(description: "Final PencilKit drawing published")
+        let coordinator = PencilStrokeTestFixture.coordinator { strokes in
+            publishedStrokes.append(strokes)
+            published.fulfill()
+        }
+
+        coordinator.canvasViewDidBeginUsingTool(canvasView)
+        canvasView.drawing = PencilCanvasRenderer.drawing(from: [partialStroke])
+        coordinator.canvasViewDrawingDidChange(canvasView)
+        coordinator.canvasViewDidEndUsingTool(canvasView)
+
+        XCTAssertTrue(publishedStrokes.isEmpty)
+
+        canvasView.drawing = PencilCanvasRenderer.drawing(from: [completeStroke])
+        coordinator.canvasViewDrawingDidChange(canvasView)
+
+        XCTAssertTrue(publishedStrokes.isEmpty)
+        await fulfillment(of: [published], timeout: 1)
+        XCTAssertEqual(publishedStrokes.count, 1)
+        XCTAssertEqual(publishedStrokes[0][0].samples.count, completeStroke.samples.count)
+        XCTAssertEqual(publishedStrokes[0][0].samples.map(\.point), completeStroke.samples.map(\.point))
+    }
+
+    func testLatePencilKitPressureUpdateRevisesTheSavedStrokeWithoutDuplication() async {
+        let partialStroke = PencilStrokeTestFixture.pencilStroke(
+            color: .black,
+            size: CGSize(width: 3, height: 3),
+            opacity: 1,
+            randomSeed: 41
+        )
+        let intermediateStroke = PencilStrokeTestFixture.pencilStroke(
+            color: .black,
+            size: CGSize(width: 3, height: 3),
+            opacity: 1,
+            randomSeed: 41,
+            forceOffset: 0.2
+        )
+        let finalStroke = PencilStrokeTestFixture.pencilStroke(
+            color: .black,
+            size: CGSize(width: 3, height: 3),
+            opacity: 1,
+            randomSeed: 41,
+            forceOffset: 0.4
+        )
+        let canvasView = PKCanvasView()
+        var completedStrokes: [Stroke] = []
+        var revisedStrokes: [Stroke] = []
+        let revised = expectation(description: "Final pressure saved")
+        let coordinator = PencilStrokeTestFixture.coordinator(
+            onStrokesCompleted: { completedStrokes = $0 },
+            onDrawingChanged: {
+                revisedStrokes = $0
+                revised.fulfill()
+            }
+        )
+
+        coordinator.canvasViewDidBeginUsingTool(canvasView)
+        canvasView.drawing = PKDrawing(strokes: [partialStroke])
+        coordinator.canvasViewDrawingDidChange(canvasView)
+        coordinator.canvasViewDidEndUsingTool(canvasView)
+
+        try? await Task.sleep(for: .milliseconds(180))
+        XCTAssertEqual(completedStrokes.count, 1)
+        let originalID = completedStrokes[0].id
+
+        canvasView.drawing = PKDrawing(strokes: [intermediateStroke])
+        coordinator.canvasViewDrawingDidChange(canvasView)
+        canvasView.drawing = PKDrawing(strokes: [finalStroke])
+        coordinator.canvasViewDrawingDidChange(canvasView)
+        await fulfillment(of: [revised], timeout: 1)
+
+        XCTAssertEqual(revisedStrokes.count, 1)
+        XCTAssertEqual(revisedStrokes[0].id, originalID)
+        let publishedPressure = revisedStrokes[0].samples.map(\.pressure)
+        let finalPressure = finalStroke.path.map { Double($0.force) }
+        XCTAssertEqual(publishedPressure, finalPressure)
+    }
+
+    func testFinalDrawingChangeBeforeToolUseEndsStillPublishesTheStroke() async {
+        let completeStroke = stroke(sampleCount: 12, xOffset: 0)
+        let canvasView = PKCanvasView()
+        let published = expectation(description: "Stroke published without another drawing change")
+        var publishedStrokes: [Stroke] = []
+        let coordinator = PencilStrokeTestFixture.coordinator {
+            publishedStrokes = $0
+            published.fulfill()
+        }
+
+        coordinator.canvasViewDidBeginUsingTool(canvasView)
+        canvasView.drawing = PencilCanvasRenderer.drawing(from: [completeStroke])
+        coordinator.canvasViewDrawingDidChange(canvasView)
+        coordinator.canvasViewDidEndUsingTool(canvasView)
+
+        await fulfillment(of: [published], timeout: 1)
+        XCTAssertEqual(publishedStrokes.count, 1)
+        XCTAssertEqual(publishedStrokes[0].samples.map(\.point), completeStroke.samples.map(\.point))
+    }
+
+    func testPendingStrokePublishesWhenTheCanvasIsRemoved() async throws {
+        let published = expectation(description: "Pending stroke published after canvas removal")
+        var publishedStrokes: [Stroke] = []
+        let coordinator = PencilStrokeTestFixture.coordinator {
+            publishedStrokes = $0
+            published.fulfill()
+        }
+        let finalStroke = stroke(sampleCount: 12, xOffset: 0)
+        weak var removedCanvasView: PKCanvasView?
+        autoreleasepool {
+            let canvasView = PKCanvasView()
+            removedCanvasView = canvasView
+            coordinator.canvasViewDidBeginUsingTool(canvasView)
+            canvasView.drawing = PencilCanvasRenderer.drawing(from: [finalStroke])
+            coordinator.canvasViewDrawingDidChange(canvasView)
+            coordinator.canvasViewDidEndUsingTool(canvasView)
+            PencilCanvasView.dismantleUIView(canvasView, coordinator: coordinator)
+        }
+
+        XCTAssertNil(removedCanvasView)
+
+        await fulfillment(of: [published], timeout: 1)
+        XCTAssertEqual(publishedStrokes.count, 1)
+        XCTAssertEqual(publishedStrokes[0].samples.map(\.point), finalStroke.samples.map(\.point))
+    }
+
+    func testDismantledCanvasSavesPendingInkOnlyToItsOriginalCanvasAfterSelectionChanges() async throws {
+        let directoryURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+        let repository = LocalLibraryRepository(fileURL: directoryURL.appending(path: "library.json"))
+        let documentStore = LocalDocumentStore(rootURL: directoryURL.appending(path: "Documents"))
+        let originalCanvas = Canvas(title: "Original canvas")
+        let selectedCanvas = Canvas(title: "Selected canvas")
+        let notebook = Notebook(title: "Canvas switch", canvases: [originalCanvas, selectedCanvas])
+        let lastViewedCanvasKey = "lastViewedCanvasID.\(notebook.id.rawValue.uuidString.lowercased())"
+        let priorLastViewedCanvasID = UserDefaults.standard.string(forKey: lastViewedCanvasKey)
+        defer {
+            UserDefaults.standard.set(priorLastViewedCanvasID, forKey: lastViewedCanvasKey)
+        }
+        UserDefaults.standard.set(
+            originalCanvas.id.rawValue.uuidString.lowercased(),
+            forKey: lastViewedCanvasKey
+        )
+        try await repository.save(LibraryState(notebooks: [notebook]))
+        try await documentStore.save(NativeNotebookPackage(schemaVersion: .current, notebook: notebook))
+        let firstSession = await PencilStrokeTestFixture.restoredModel(
+            repository: repository,
+            documentStore: documentStore
+        )
+        let snapshotFlusher = dismantleCanvasWithPendingInk(
+            model: firstSession,
+            notebook: notebook,
+            canvas: originalCanvas
+        )
+        UserDefaults.standard.set(
+            selectedCanvas.id.rawValue.uuidString.lowercased(),
+            forKey: lastViewedCanvasKey
+        )
+        let selectedEditor = NotebookEditorView(model: firstSession, notebook: notebook)
+        XCTAssertEqual(selectedEditor.currentCanvas.id, selectedCanvas.id)
+
+        await snapshotFlusher.flushPendingSnapshots()
+        await firstSession.checkpointDocuments()
+        let restoredNotebook = await PencilStrokeTestFixture.restoredNotebook(
+            notebook.id,
+            repository: repository,
+            documentStore: documentStore
+        )
+        let reopened = try XCTUnwrap(restoredNotebook)
+        let originalStrokes = reopened.canvases[0].layers[0].objects.compactMap(\.strokeValue)
+        let selectedStrokes = reopened.canvases[1].layers[0].objects.compactMap(\.strokeValue)
+        XCTAssertEqual(originalStrokes.count, 1)
+        XCTAssertEqual(PencilKitStrokeArchiveCodec.randomSeed(for: originalStrokes[0]), 811)
+        XCTAssertTrue(selectedStrokes.isEmpty)
+    }
+
+    func testModelRefreshDuringPencilContactDoesNotReplaceTheNativeDrawing() async {
         let existingStroke = stroke(sampleCount: 8, xOffset: 0)
         let remoteStroke = stroke(sampleCount: 6, xOffset: 100)
         let localStroke = stroke(sampleCount: 12, xOffset: 200)
         let canvasView = PKCanvasView()
         canvasView.drawing = PencilCanvasRenderer.drawing(from: [existingStroke])
         var publishedStrokes: [[Stroke]] = []
-        let coordinator = PencilStrokeTestFixture.coordinator { publishedStrokes.append($0) }
+        let published = expectation(description: "Local stroke published")
+        let coordinator = PencilStrokeTestFixture.coordinator {
+            publishedStrokes.append($0)
+            published.fulfill()
+        }
         coordinator.knownStrokeCount = 1
         coordinator.canonicalStrokes = [existingStroke]
 
@@ -68,24 +257,50 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
 
         coordinator.canvasViewDidEndUsingTool(canvasView)
 
+        await fulfillment(of: [published], timeout: 1)
         XCTAssertEqual(publishedStrokes.count, 1)
         XCTAssertEqual(publishedStrokes[0].count, 1)
         XCTAssertEqual(publishedStrokes[0][0].samples.map(\.point), localStroke.samples.map(\.point))
         XCTAssertEqual(
             coordinator.canonicalStrokes.map(\.id),
-            [existingStroke.id, remoteStroke.id, publishedStrokes[0][0].id]
+            [existingStroke.id, publishedStrokes[0][0].id]
         )
+        XCTAssertEqual(canvasView.drawing.strokes.count, 2)
     }
 
-    func testModelRefreshDuringEraseKeepsRemoteStrokesAfterPencilLift() {
+    func testModelReturningToTheCurrentDrawingClearsAnOlderDeferredRefresh() async {
+        let currentStroke = stroke(sampleCount: 8, xOffset: 0)
+        let staleStroke = stroke(sampleCount: 6, xOffset: 100)
+        let currentDrawing = PencilCanvasRenderer.drawing(from: [currentStroke])
+        let canvasView = PKCanvasView()
+        canvasView.drawing = currentDrawing
+        let coordinator = PencilStrokeTestFixture.coordinator { _ in }
+        coordinator.knownStrokeCount = 1
+        coordinator.canonicalStrokes = [currentStroke]
+
+        coordinator.canvasViewDidBeginUsingTool(canvasView)
+        coordinator.receiveModelStrokes([staleStroke])
+        coordinator.receiveModelStrokes([currentStroke])
+        coordinator.canvasViewDidEndUsingTool(canvasView)
+        try? await Task.sleep(for: .milliseconds(170))
+
+        XCTAssertEqual(coordinator.canonicalStrokes.map(\.id), [currentStroke.id])
+        XCTAssertEqual(canvasView.drawing, currentDrawing)
+    }
+
+    func testModelRefreshDuringEraseLeavesTheNativeResultUntouched() async {
         let existingStroke = stroke(sampleCount: 8, xOffset: 0)
         let remoteStroke = stroke(sampleCount: 6, xOffset: 100)
         let canvasView = PKCanvasView()
         canvasView.drawing = PencilCanvasRenderer.drawing(from: [existingStroke])
         var changedStrokes: [[Stroke]] = []
+        let published = expectation(description: "Erase published")
         let coordinator = PencilStrokeTestFixture.coordinator(
             onStrokesCompleted: { _ in },
-            onDrawingChanged: { changedStrokes.append($0) }
+            onDrawingChanged: {
+                changedStrokes.append($0)
+                published.fulfill()
+            }
         )
         coordinator.knownStrokeCount = 1
         coordinator.canonicalStrokes = [existingStroke]
@@ -95,25 +310,35 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
         coordinator.receiveModelStrokes([existingStroke, remoteStroke])
         coordinator.canvasViewDidEndUsingTool(canvasView)
 
-        XCTAssertEqual(changedStrokes.map { $0.map(\.id) }, [[remoteStroke.id]])
-        XCTAssertEqual(coordinator.canonicalStrokes.map(\.id), [remoteStroke.id])
-        XCTAssertEqual(canvasView.drawing.strokes.count, 1)
+        await fulfillment(of: [published], timeout: 1)
+        XCTAssertEqual(changedStrokes, [[]])
+        XCTAssertTrue(coordinator.canonicalStrokes.isEmpty)
+        XCTAssertTrue(canvasView.drawing.strokes.isEmpty)
     }
 
-    func testRapidConsecutiveStrokesEachPublishOnceWithCompleteSamples() {
+    func testRapidConsecutiveStrokesCoalesceIntoOneCompleteUpdate() async {
         let firstStroke = stroke(sampleCount: 8, xOffset: 0)
         let secondStroke = stroke(sampleCount: 10, xOffset: 100)
         let canvasView = PKCanvasView()
         var publishedStrokes: [[Stroke]] = []
-        let coordinator = PencilStrokeTestFixture.coordinator { publishedStrokes.append($0) }
+        let published = expectation(description: "Rapid strokes published")
+        let coordinator = PencilStrokeTestFixture.coordinator {
+            publishedStrokes.append($0)
+            published.fulfill()
+        }
 
-        draw(firstStroke, withExisting: [], on: canvasView, coordinator: coordinator)
-        draw(secondStroke, withExisting: [firstStroke], on: canvasView, coordinator: coordinator)
+        coordinator.canvasViewDidBeginUsingTool(canvasView)
+        canvasView.drawing = PencilCanvasRenderer.drawing(from: [firstStroke])
+        coordinator.canvasViewDidEndUsingTool(canvasView)
+        coordinator.canvasViewDidBeginUsingTool(canvasView)
+        canvasView.drawing = PencilCanvasRenderer.drawing(from: [firstStroke, secondStroke])
+        coordinator.canvasViewDidEndUsingTool(canvasView)
 
-        XCTAssertEqual(publishedStrokes.map(\.count), [1, 1])
+        await fulfillment(of: [published], timeout: 1)
+        XCTAssertEqual(publishedStrokes.map(\.count), [2])
         XCTAssertEqual(publishedStrokes[0][0].samples.map(\.point), firstStroke.samples.map(\.point))
-        XCTAssertEqual(publishedStrokes[1][0].samples.map(\.point), secondStroke.samples.map(\.point))
-        let storedStrokes = publishedStrokes.flatMap { $0 }
+        XCTAssertEqual(publishedStrokes[0][1].samples.map(\.point), secondStroke.samples.map(\.point))
+        let storedStrokes = publishedStrokes[0]
         XCTAssertEqual(coordinator.canonicalStrokes, storedStrokes)
         XCTAssertFalse(PencilCanvasModelReconciliation.requiresRedraw(
             current: coordinator.canonicalStrokes,
@@ -121,15 +346,86 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
         ))
     }
 
-    func testExistingStrokeGeometryPublishesOnlyAfterToolUseEnds() {
+    func testFinishingInputDoesNotReplacePencilKitsNativeDrawing() async {
+        let stroke = stroke(sampleCount: 12, xOffset: 0)
+        let canvasView = DrawingWriteCountingCanvasView()
+        var publishedStrokes: [Stroke] = []
+        let published = expectation(description: "Native drawing published")
+        let coordinator = PencilStrokeTestFixture.coordinator {
+            publishedStrokes = $0
+            published.fulfill()
+        }
+
+        coordinator.canvasViewDidBeginUsingTool(canvasView)
+        canvasView.drawing = PencilCanvasRenderer.drawing(from: [stroke])
+        canvasView.resetDrawingWriteCount()
+        coordinator.canvasViewDidEndUsingTool(canvasView)
+
+        await fulfillment(of: [published], timeout: 1)
+        XCTAssertEqual(publishedStrokes.count, 1)
+        XCTAssertEqual(canvasView.drawingWriteCount, 0)
+    }
+
+    func testDuplicateLegacyIdentifiersRemainSafeDuringAConcurrentModelUpdate() async {
+        let repeatedID = StrokeID()
+        let first = stroke(sampleCount: 8, xOffset: 0, id: repeatedID)
+        let second = stroke(sampleCount: 8, xOffset: 80, id: repeatedID)
+        let concurrent = stroke(sampleCount: 6, xOffset: 160)
+        let local = stroke(sampleCount: 10, xOffset: 240)
+        let canvasView = PKCanvasView()
+        canvasView.drawing = PencilCanvasRenderer.drawing(from: [first, second])
+        let published = expectation(description: "Local stroke published")
+        var publishedStrokes: [Stroke] = []
+        let coordinator = PencilStrokeTestFixture.coordinator {
+            publishedStrokes = $0
+            published.fulfill()
+        }
+        coordinator.knownStrokeCount = 2
+        coordinator.canonicalStrokes = [first, second]
+
+        coordinator.canvasViewDidBeginUsingTool(canvasView)
+        canvasView.drawing = PencilCanvasRenderer.drawing(from: [first, second, local])
+        coordinator.receiveModelStrokes([first, second, concurrent])
+        coordinator.canvasViewDidEndUsingTool(canvasView)
+
+        await fulfillment(of: [published], timeout: 1)
+        XCTAssertEqual(publishedStrokes.count, 1)
+        XCTAssertEqual(canvasView.drawing.strokes.count, 3)
+    }
+
+    func testTaggedModelDrawingDelegateEchoCreatesNoLocalChange() async {
+        let stroke = stroke(sampleCount: 8, xOffset: 0)
+        let drawing = PencilCanvasRenderer.drawing(from: [stroke])
+        let canvasView = PKCanvasView()
+        var publicationCount = 0
+        let coordinator = PencilStrokeTestFixture.coordinator(
+            onStrokesCompleted: { _ in publicationCount += 1 },
+            onDrawingChanged: { _ in publicationCount += 1 }
+        )
+        coordinator.canonicalStrokes = [stroke]
+        coordinator.tagAppliedModelDrawing(drawing)
+        canvasView.drawing = drawing
+
+        coordinator.canvasViewDrawingDidChange(canvasView)
+        try? await Task.sleep(for: .milliseconds(60))
+
+        XCTAssertEqual(publicationCount, 0)
+        XCTAssertFalse(coordinator.isProtectingNativeDrawing)
+    }
+
+    func testExistingStrokeGeometryPublishesOnlyAfterToolUseEnds() async {
         let original = stroke(sampleCount: 6, xOffset: 0)
         let moved = stroke(sampleCount: 6, xOffset: 300)
         let canvasView = PKCanvasView()
         canvasView.drawing = PencilCanvasRenderer.drawing(from: [moved])
         var changedStrokes: [[Stroke]] = []
+        let published = expectation(description: "Geometry change published")
         let coordinator = PencilStrokeTestFixture.coordinator(
             onStrokesCompleted: { _ in },
-            onDrawingChanged: { changedStrokes.append($0) }
+            onDrawingChanged: {
+                changedStrokes.append($0)
+                published.fulfill()
+            }
         )
         coordinator.knownStrokeCount = 1
         coordinator.canonicalStrokes = [original]
@@ -141,132 +437,15 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
 
         coordinator.canvasViewDidEndUsingTool(canvasView)
 
+        await fulfillment(of: [published], timeout: 1)
         XCTAssertEqual(changedStrokes.count, 1)
         XCTAssertEqual(changedStrokes[0][0].id, original.id)
         XCTAssertEqual(changedStrokes[0][0].samples.map(\.point), moved.samples.map(\.point))
     }
+}
 
-    func testCompletedStrokeKeepsToolActiveWhenPencilContactBegan() throws {
-        let initialColor = InkColor(red: 0.8, green: 0.1, blue: 0.2, alpha: 1)
-        let initialConfiguration = ToolConfiguration(
-            tool: .ballpoint,
-            width: .thin,
-            color: initialColor
-        )
-        let canvasView = PKCanvasView()
-        var completedStrokes: [Stroke] = []
-        let coordinator = PencilStrokeTestFixture.coordinator {
-            completedStrokes.append(contentsOf: $0)
-        }
-        coordinator.configuration = initialConfiguration
-
-        coordinator.canvasViewDidBeginUsingTool(canvasView)
-        coordinator.configuration = ToolConfiguration(
-            tool: .marker,
-            width: .extraBold,
-            color: .black
-        )
-        canvasView.drawing = PKDrawing(strokes: [
-            PencilStrokeTestFixture.pencilStroke(
-                inkType: .pen,
-                color: initialColor,
-                size: CGSize(width: 1.5, height: 1.5),
-                opacity: 1,
-                randomSeed: 44
-            )
-        ])
-        coordinator.canvasViewDidEndUsingTool(canvasView)
-
-        let stroke = try XCTUnwrap(completedStrokes.first)
-        XCTAssertEqual(stroke.style.instrument, .ballpoint)
-        XCTAssertEqual(stroke.style.width, ToolWidth.thin.points)
-        XCTAssertEqual(stroke.style.color, initialColor)
-    }
-
-    func testObjectEraserKeepsTheIdentityAndStyleOfSurvivingStrokes() {
-        let sequence = PencilStrokeTestFixture.markerHighlightMarkerSequence()
-        let captured = PencilStrokeTestFixture.capture(
-            sequence.pencilStrokes,
-            configurations: sequence.configurations
-        )
-        let canvasView = PKCanvasView()
-        canvasView.drawing = PKDrawing(strokes: [
-            sequence.pencilStrokes[0],
-            sequence.pencilStrokes[2]
-        ])
-        var changedStrokes: [Stroke] = []
-        let coordinator = PencilStrokeTestFixture.coordinator(
-            onStrokesCompleted: { _ in },
-            onDrawingChanged: { changedStrokes = $0 }
-        )
-        coordinator.knownStrokeCount = captured.count
-        coordinator.canonicalStrokes = captured
-
-        coordinator.canvasViewDidBeginUsingTool(canvasView)
-        coordinator.canvasViewDidEndUsingTool(canvasView)
-
-        XCTAssertEqual(changedStrokes.map(\.id), [captured[0].id, captured[2].id])
-        XCTAssertEqual(changedStrokes.map(\.style), [captured[0].style, captured[2].style])
-        XCTAssertEqual(
-            PencilCanvasRenderer.drawing(from: changedStrokes).strokes.map(\.randomSeed),
-            [11, 33]
-        )
-    }
-
-    func testPencilAccessoriesTrackHoverWithoutAddingAVisualTarget() {
-        let canvasView = PKCanvasView()
-        let existingSubviews = Set(canvasView.subviews.map(ObjectIdentifier.init))
-        let coordinator = PencilStrokeTestFixture.coordinator { _ in }
-
-        PencilCanvasInputAccessories.install(on: canvasView, coordinator: coordinator)
-
-        let addedSubviews = canvasView.subviews.filter {
-            !existingSubviews.contains(ObjectIdentifier($0))
-        }
-        XCTAssertTrue(addedSubviews.isEmpty)
-        XCTAssertTrue(canvasView.interactions.contains { $0 is UIPencilInteraction })
-        XCTAssertTrue(canvasView.gestureRecognizers?.contains { $0 is UIHoverGestureRecognizer } == true)
-    }
-
-    func testInfiniteCanvasSelectionAndLassoUseVisibleVectorPaths() {
-        let parent = CALayer()
-        let outlines = CanvasSelectionOutlineLayers()
-        outlines.add(to: parent)
-
-        outlines.update(
-            selectionBounds: CGRect(x: 9_000, y: 9_000, width: 600, height: 400),
-            handlePoints: [CGPoint(x: 9_000, y: 9_000)],
-            lassoPoints: [CGPoint(x: 9_100, y: 9_100), CGPoint(x: 9_500, y: 9_400)]
-        )
-
-        XCTAssertEqual(parent.sublayers?.count, 3)
-        XCTAssertTrue(outlines.isSelectionVisible)
-        XCTAssertTrue(outlines.isLassoVisible)
-        XCTAssertTrue(outlines.isSelectionAnimating)
-        XCTAssertEqual(outlines.selectionPathBounds, CGRect(x: 8_994, y: 8_994, width: 612, height: 412))
-        XCTAssertEqual(outlines.lassoPathBounds, CGRect(x: 9_100, y: 9_100, width: 400, height: 300))
-    }
-
-    func testLassoOutlineUsesAnimatedMarchingAnts() {
-        let outline = CanvasLassoOutlineLayer()
-
-        XCTAssertEqual(outline.lineDashPattern, [6, 4])
-        XCTAssertNotNil(outline.animation(forKey: "marchingAnts"))
-    }
-
-    private func draw(
-        _ stroke: Stroke,
-        withExisting existing: [Stroke],
-        on canvasView: PKCanvasView,
-        coordinator: PencilCanvasView.Coordinator
-    ) {
-        coordinator.canvasViewDidBeginUsingTool(canvasView)
-        canvasView.drawing = PencilCanvasRenderer.drawing(from: existing + [stroke])
-        coordinator.canvasViewDrawingDidChange(canvasView)
-        coordinator.canvasViewDidEndUsingTool(canvasView)
-    }
-
-    private func stroke(
+extension PencilCanvasInputBehaviorTests {
+    func stroke(
         sampleCount: Int,
         xOffset: Double,
         id: StrokeID = StrokeID()
@@ -283,5 +462,39 @@ final class PencilCanvasInputBehaviorTests: XCTestCase {
             )
         }
         return result
+    }
+
+    private func dismantleCanvasWithPendingInk(
+        model: AppModel,
+        notebook: Notebook,
+        canvas: Canvas
+    ) -> PencilCanvasSnapshotFlusher {
+        let callbacks = NotebookEditorView(model: model, notebook: notebook)
+            .pencilPersistenceCallbacks(for: canvas.id)
+        let coordinator = PencilStrokeTestFixture.coordinator(
+            activeLayerID: canvas.layers[0].id,
+            onCompletedPencilStrokes: callbacks.onStrokesCompleted
+        )
+        let snapshotFlusher = PencilCanvasSnapshotFlusher()
+        let canvasView = PKCanvasView()
+        coordinator.attachSnapshotFlusher(snapshotFlusher, canvasView: canvasView)
+        coordinator.canvasViewDidBeginUsingTool(canvasView)
+        canvasView.drawing = PKDrawing(strokes: [PencilStrokeTestFixture.blackStroke(randomSeed: 811)])
+        coordinator.canvasViewDrawingDidChange(canvasView)
+        coordinator.canvasViewDidEndUsingTool(canvasView)
+        PencilCanvasView.dismantleUIView(canvasView, coordinator: coordinator)
+        return snapshotFlusher
+    }
+}
+@MainActor
+private final class DrawingWriteCountingCanvasView: PKCanvasView {
+    private(set) var drawingWriteCount = 0
+
+    override var drawing: PKDrawing {
+        didSet { drawingWriteCount += 1 }
+    }
+
+    func resetDrawingWriteCount() {
+        drawingWriteCount = 0
     }
 }

@@ -31,6 +31,10 @@ final class AppModel: ObservableObject {
     var conversionTasks: [CanvasID: Task<Void, Never>] = [:]
     var pendingConversionStrokeIDs: [CanvasID: Set<StrokeID>] = [:]
     let conversionDelay: Duration
+    let recognitionDelay: Duration
+    let deferredCheckpointDelay: Duration
+    var notebookIDsAwaitingCheckpoint: Set<NotebookID> = []
+    var deferredCheckpointTask: Task<Void, Never>?
     var searchIndex = LibrarySearchIndex()
     let syncEngine: SyncEngine?
     let syncChangeEncoder: SyncChangeEncoder
@@ -61,8 +65,12 @@ final class AppModel: ObservableObject {
             recognizer: AppleHandwritingRecognizer()
         ),
         conversionDelay: Duration = .milliseconds(700),
+        recognitionDelay: Duration = .seconds(3),
+        deferredCheckpointDelay: Duration = .seconds(4),
         automaticallyRestore: Bool = true
     ) {
+        self.recognitionDelay = recognitionDelay
+        self.deferredCheckpointDelay = deferredCheckpointDelay
         self.repository = repository
         self.documentStore = documentStore
         self.recognitionCoordinator = recognitionCoordinator
@@ -139,14 +147,20 @@ final class AppModel: ObservableObject {
     }
 
     private func performLibraryRestore() async {
-        defer { hasRestoredLibrary = true }
+        CanvasDiagnostics.mark("library restore began")
+        defer {
+            CanvasDiagnostics.mark("library restore finished notebooks=\(library.notebooks.count)")
+            hasRestoredLibrary = true
+        }
         do {
             library = try await repository.load()
+            CanvasDiagnostics.mark("library index loaded notebooks=\(library.notebooks.count)")
             var didRepairLibrary = false
             if let documentStore {
                 for notebook in library.notebooks {
                     do {
                         var recovered = try await documentStore.recover(notebookID: notebook.id)
+                        CanvasDiagnostics.mark("recovered notebook \(notebook.title)")
                         appliedRemoteChangeIDsByNotebook[notebook.id] = recovered.appliedRemoteChangeIDs
                         recovered.notebook = notebook.restoringDocumentContent(from: recovered.notebook)
                         if recovered.notebook.repairDuplicateCanvasIdentifiers() {
@@ -217,6 +231,7 @@ final class AppModel: ObservableObject {
             } else {
                 updateSearchIndex(after: operation, in: notebook)
             }
+            delayPendingCheckpoints()
             persist(operation, notebook: notebook)
             enqueueForSync(operation, notebookID: notebookID)
         } catch {
@@ -264,6 +279,53 @@ final class AppModel: ObservableObject {
         setDocumentPersistenceTail(Task { _ = await outcomeTask.value })
     }
 
+    /// Marks a notebook as needing a full snapshot without writing one now.
+    ///
+    /// Handwriting recognition is derived data, but writing it used to send a
+    /// whole notebook to disk the moment recognition finished. On device that
+    /// put 100–500ms file writes in the middle of live Pencil input, including
+    /// for notebooks that were not even open. The write is coalesced and held
+    /// until editing has been quiet, and flushed when the app backgrounds.
+    func scheduleDeferredCheckpoint(for notebookID: NotebookID) {
+        notebookIDsAwaitingCheckpoint.insert(notebookID)
+        restartDeferredCheckpointTimer()
+    }
+
+    /// Pushes any deferred checkpoint further out because editing is ongoing.
+    ///
+    /// Called on every document change so a snapshot never lands between two
+    /// strokes.
+    func delayPendingCheckpoints() {
+        guard !notebookIDsAwaitingCheckpoint.isEmpty else { return }
+        restartDeferredCheckpointTimer()
+    }
+
+    private func restartDeferredCheckpointTimer() {
+        deferredCheckpointTask?.cancel()
+        deferredCheckpointTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await Task.sleep(for: deferredCheckpointDelay)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            flushDeferredCheckpoints()
+        }
+    }
+
+    /// Writes every notebook that a deferred checkpoint is waiting on.
+    func flushDeferredCheckpoints() {
+        deferredCheckpointTask?.cancel()
+        deferredCheckpointTask = nil
+        let notebookIDs = notebookIDsAwaitingCheckpoint
+        notebookIDsAwaitingCheckpoint = []
+        for notebookID in notebookIDs {
+            guard let notebook = library.notebook(id: notebookID) else { continue }
+            persistCheckpoint(notebook)
+        }
+    }
+
     func persistCheckpoint(_ notebook: Notebook) {
         guard let documentStore else {
             persistLibrary()
@@ -290,6 +352,7 @@ final class AppModel: ObservableObject {
     }
 
     func checkpointDocuments() async {
+        flushDeferredCheckpoints()
         guard let documentStore else {
             await libraryPersistenceTask?.value
             await syncSubmissionTask?.value

@@ -165,7 +165,14 @@ final class SyncPersistenceBehaviorTests: XCTestCase {
     @MainActor
     func testSavedLocalCanvasInsertIsNotAppliedAgainWhenRestartOccursBeforeEchoHandling() async throws {
         let notebook = DomainFixtures.notebook(title: "Local canvas echo")
-        let insertedCanvas = Canvas(title: "Local canvas")
+        // Fixed timestamps: the change is compared after a JSON round trip, and
+        // `Date()` carries sub-millisecond precision that the encoding cannot
+        // return exactly, which made this test fail at random.
+        let insertedCanvas = Canvas(
+            title: "Local canvas",
+            createdAt: DomainFixtures.fixedDate,
+            modifiedAt: DomainFixtures.fixedDate
+        )
         let operation = DocumentOperation.insertCanvas(canvas: insertedCanvas, index: 1)
         let fixture = try await makePreHandlingLocalEchoFixture(
             operation: operation,

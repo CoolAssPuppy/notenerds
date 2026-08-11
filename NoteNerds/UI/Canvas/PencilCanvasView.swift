@@ -84,8 +84,7 @@ struct PencilCanvasView: UIViewRepresentable {
         apply(editingCommand, to: canvasView, coordinator: context.coordinator)
         updateInlineTextEditor(in: canvasView, coordinator: context.coordinator)
         bringCanvasOverlaysToFront(in: canvasView, coordinator: context.coordinator)
-        canvasView.drawingPolicy = isFingerDrawingEnabled ? .anyInput : .pencilOnly
-        canvasView.drawingGestureRecognizer.isEnabled = isDrawingGestureEnabled
+        applyInputPolicy(to: canvasView)
         canvasView.delegate = context.coordinator
         return canvasView
     }
@@ -96,6 +95,12 @@ struct PencilCanvasView: UIViewRepresentable {
     }
 
     func updateUIView(_ canvasView: PKCanvasView, context: Context) {
+        CanvasDiagnostics.measure("updateUIView strokes=\(strokes.count)") {
+            performUpdate(canvasView, context: context)
+        }
+    }
+
+    private func performUpdate(_ canvasView: PKCanvasView, context: Context) {
         context.coordinator.attachSnapshotFlusher(snapshotFlusher, canvasView: canvasView)
         context.coordinator.updateHandlers(from: self)
         let shouldRedraw = PencilCanvasModelReconciliation.requiresRedraw(
@@ -107,8 +112,7 @@ struct PencilCanvasView: UIViewRepresentable {
         context.coordinator.activeLayerID = activeLayerID
         context.coordinator.receiveModelStrokes(strokes)
         updatePlannerContext(context.coordinator)
-        canvasView.drawingPolicy = isFingerDrawingEnabled ? .anyInput : .pencilOnly
-        canvasView.drawingGestureRecognizer.isEnabled = isDrawingGestureEnabled
+        applyInputPolicy(to: canvasView)
         if context.coordinator.paperType != template {
             applyPaper(to: canvasView, coordinator: context.coordinator)
         }
@@ -133,17 +137,28 @@ struct PencilCanvasView: UIViewRepresentable {
         }
     }
 
+    /// Assigns the drawing tool only when it actually changes, and never during
+    /// a live contact.
+    ///
+    /// `updateUIView` runs on every model change, and assigning
+    /// `PKCanvasView.tool` interrupts a stroke that is still being drawn. A
+    /// Pencil squeeze or double tap can change tools while the tip is down, so
+    /// the new tool waits for the contact to end.
     private func apply(_ configuration: ToolConfiguration, to canvasView: PKCanvasView, coordinator: Coordinator) {
         coordinator.configuration = configuration
+        coordinator.applyToolIfNeeded(to: canvasView)
+    }
+
+    static func tool(for configuration: ToolConfiguration) -> PKTool {
         switch configuration.tool {
         case .eraser:
-            canvasView.tool = configuration.eraserMode == .stroke
+            return configuration.eraserMode == .stroke
                 ? PKEraserTool(.vector)
                 : PKEraserTool(.bitmap, width: configuration.width.points * 4)
         case .lasso:
-            canvasView.tool = PKLassoTool()
+            return PKLassoTool()
         default:
-            canvasView.tool = PKInkingTool(
+            return PKInkingTool(
                 configuration.tool.inkType,
                 color: UIColor(configuration.color),
                 width: configuration.width.points
@@ -153,6 +168,18 @@ struct PencilCanvasView: UIViewRepresentable {
 
     private var isDrawingGestureEnabled: Bool {
         !isTextToolActive && shapePlacementKind == nil && configuration.tool != .lasso
+    }
+
+    /// Writes the input policy only on a real change. Reassigning either value
+    /// can cancel touches that PencilKit is already tracking.
+    private func applyInputPolicy(to canvasView: PKCanvasView) {
+        let policy: PKCanvasViewDrawingPolicy = isFingerDrawingEnabled ? .anyInput : .pencilOnly
+        if canvasView.drawingPolicy != policy {
+            canvasView.drawingPolicy = policy
+        }
+        if canvasView.drawingGestureRecognizer.isEnabled != isDrawingGestureEnabled {
+            canvasView.drawingGestureRecognizer.isEnabled = isDrawingGestureEnabled
+        }
     }
 
     private func apply(

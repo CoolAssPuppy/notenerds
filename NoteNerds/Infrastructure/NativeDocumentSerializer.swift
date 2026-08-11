@@ -1,7 +1,15 @@
 import Foundation
 
 struct DocumentSchemaVersion: RawRepresentable, Codable, Hashable, Sendable {
-    static let current = DocumentSchemaVersion(rawValue: 6)
+    static let current = DocumentSchemaVersion(rawValue: 7)
+
+    /// The first version whose strokes are guaranteed to drop their PencilKit
+    /// archive whenever their samples or style change.
+    ///
+    /// Notes written before this could hold an archive describing ink the
+    /// stroke no longer has, so they are repaired once as they load. Notes at
+    /// or above it are trusted, which keeps that work off every launch.
+    static let selfInvalidatingStrokeArchives = DocumentSchemaVersion(rawValue: 7)
 
     let rawValue: Int
 }
@@ -71,7 +79,10 @@ struct NativeDocumentSerializer: Sendable {
         guard header.schemaVersion.rawValue <= DocumentSchemaVersion.current.rawValue else {
             throw NativeDocumentError.unsupportedNewerVersion(header.schemaVersion.rawValue)
         }
-        return try validatedPackage(decoder.decode(NativeNotebookPackage.self, from: data))
+        let decoded = try decoder.decode(NativeNotebookPackage.self, from: data)
+        var package = try validatedPackage(decoded)
+        package.repairStrokeArchivesIfWrittenBeforeSelfInvalidation(storedVersion: decoded.schemaVersion)
+        return package
     }
 
     func validatedPackage(_ package: NativeNotebookPackage) throws -> NativeNotebookPackage {
@@ -81,5 +92,42 @@ struct NativeDocumentSerializer: Sendable {
         var package = package
         package.schemaVersion = .current
         return package
+    }
+}
+
+extension NativeNotebookPackage {
+    /// Clears PencilKit archives that no longer match their stroke, for notes
+    /// written before strokes invalidated their own archive.
+    ///
+    /// Rendering trusts a stored archive rather than re-deriving it, so older
+    /// notes are repaired once. Gating on the stored version keeps this off the
+    /// launch path for every note the app has already saved: a repaired note is
+    /// written back at the current version and never re-checked.
+    mutating func repairStrokeArchivesIfWrittenBeforeSelfInvalidation(
+        storedVersion: DocumentSchemaVersion
+    ) {
+        guard storedVersion.rawValue < DocumentSchemaVersion.selfInvalidatingStrokeArchives.rawValue else {
+            return
+        }
+        let title = notebook.title
+        notebook = CanvasDiagnostics.measure("repair archives \(title)") {
+            var repaired = notebook
+            repaired.performStrokeArchiveRepair()
+            return repaired
+        }
+    }
+}
+
+extension Notebook {
+    fileprivate mutating func performStrokeArchiveRepair() {
+        for canvasIndex in canvases.indices {
+            for layerIndex in canvases[canvasIndex].layers.indices {
+                let objects = canvases[canvasIndex].layers[layerIndex].objects
+                canvases[canvasIndex].layers[layerIndex].objects = objects.map { object in
+                    guard case let .stroke(stroke) = object else { return object }
+                    return .stroke(PencilKitStrokeArchiveCodec.validated(stroke))
+                }
+            }
+        }
     }
 }

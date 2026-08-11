@@ -19,6 +19,7 @@ extension PencilCanvasView {
         var isTextPlacementOverlayEnabled = false
         var shapePlacementKind: RecognizedShapeKind?
         var configuration = ToolConfiguration.favoriteOne
+        var appliedToolConfiguration: ToolConfiguration?
         var activeLayerID: LayerID
         var isUsingTool = false
         var latestNativeDrawing: PKDrawing?
@@ -91,6 +92,7 @@ extension PencilCanvasView {
         }
 
         func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
+            CanvasDiagnostics.mark("contact began strokes=\(canvasView.drawing.strokes.count)")
             drawingCommitTask?.cancel()
             drawingCommitTask = nil
             if committedNativeDrawing == nil,
@@ -110,9 +112,21 @@ extension PencilCanvasView {
         }
 
         func canvasViewDidEndUsingTool(_ canvasView: PKCanvasView) {
+            CanvasDiagnostics.mark("contact ended strokes=\(canvasView.drawing.strokes.count)")
             isUsingTool = false
             completeActiveContact(with: canvasView.drawing)
+            applyToolIfNeeded(to: canvasView)
             captureNativeDrawing(from: canvasView)
+        }
+
+        /// Installs the selected tool on the canvas when it differs from the one
+        /// already there. A tool chosen during a contact, through a Pencil
+        /// squeeze or double tap, waits until the tip lifts so the stroke in
+        /// progress is not cancelled.
+        func applyToolIfNeeded(to canvasView: PKCanvasView) {
+            guard appliedToolConfiguration != configuration, !isUsingTool else { return }
+            appliedToolConfiguration = configuration
+            canvasView.tool = PencilCanvasView.tool(for: configuration)
         }
 
         var isProtectingNativeDrawing: Bool {
@@ -121,7 +135,10 @@ extension PencilCanvasView {
 
         func receiveModelStrokes(_ strokes: [Stroke]) {
             guard !isProtectingNativeDrawing else {
-                deferredModelStrokes = strokes == canonicalStrokes ? nil : strokes
+                deferredModelStrokes = PencilCanvasModelReconciliation.isSameRenderedContent(
+                    strokes,
+                    canonicalStrokes
+                ) ? nil : strokes
                 return
             }
             canonicalStrokes = strokes
@@ -221,6 +238,9 @@ extension PencilCanvasView {
             drawing: PKDrawing,
             in canvasView: PKCanvasView?
         ) {
+            CanvasDiagnostics.mark(
+                "commit publish=\(result.publication) strokes=\(result.edit.after.count)"
+            )
             let edit = result.edit
             canonicalStrokes = edit.after
             knownStrokeCount = edit.after.count
@@ -242,7 +262,10 @@ extension PencilCanvasView {
 
         private func applyDeferredModelDrawingIfNeeded(to canvasView: PKCanvasView) {
             guard let deferredModelStrokes,
-                  deferredModelStrokes != canonicalStrokes else {
+                  !PencilCanvasModelReconciliation.isSameRenderedContent(
+                      deferredModelStrokes,
+                      canonicalStrokes
+                  ) else {
                 self.deferredModelStrokes = nil
                 return
             }
@@ -339,6 +362,7 @@ extension PencilCanvasView {
             _ interaction: UIPencilInteraction,
             didReceiveSqueeze squeeze: UIPencilInteraction.Squeeze
         ) {
+            CanvasDiagnostics.mark("pencil squeeze phase=\(squeeze.phase.rawValue)")
             latestPencilRoll = squeeze.hoverPose.map { Double($0.rollAngle) } ?? latestPencilRoll
             let response = PencilSqueezeBehavior.response(
                 for: UIPencilInteraction.preferredSqueezeAction,
@@ -369,6 +393,7 @@ extension PencilCanvasView {
         }
 
         func pencilInteraction(_ interaction: UIPencilInteraction, didReceiveTap tap: UIPencilInteraction.Tap) {
+            CanvasDiagnostics.mark("pencil double tap")
             onPencilDoubleTap()
         }
 

@@ -25,6 +25,8 @@ actor LocalDocumentStore {
     private struct DecodedSnapshot {
         let envelope: SnapshotEnvelope
         let isLegacy: Bool
+        /// The schema version the file was written with, before normalisation.
+        let storedSchemaVersion: DocumentSchemaVersion
     }
 
     private let rootURL: URL
@@ -45,6 +47,12 @@ actor LocalDocumentStore {
     }
 
     func save(_ package: NativeNotebookPackage) throws {
+        try CanvasDiagnostics.measure("snapshot save \(package.notebook.title)") {
+            try performSave(package)
+        }
+    }
+
+    private func performSave(_ package: NativeNotebookPackage) throws {
         try createDirectories()
         let notebookID = package.notebook.id
         let watermark = try currentJournalSequence(for: notebookID)
@@ -65,12 +73,17 @@ actor LocalDocumentStore {
     func load(notebookID: NotebookID) throws -> NativeNotebookPackage {
         let url = snapshotURL(for: notebookID)
         do {
-            let snapshot = try decodeSnapshot(readData(url)).envelope
+            let decodedSnapshot = try decodeSnapshot(readData(url))
+            let snapshot = decodedSnapshot.envelope
             journalSequences[notebookID] = max(
                 journalSequences[notebookID, default: 0],
                 snapshot.journalWatermark
             )
-            return snapshot.package
+            var package = snapshot.package
+            package.repairStrokeArchivesIfWrittenBeforeSelfInvalidation(
+                storedVersion: decodedSnapshot.storedSchemaVersion
+            )
+            return package
         } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
             throw LocalDocumentStoreError.notebookNotFound
         }
@@ -113,6 +126,9 @@ actor LocalDocumentStore {
             if decodedSnapshot.isLegacy {
                 try save(package)
             }
+            package.repairStrokeArchivesIfWrittenBeforeSelfInvalidation(
+                storedVersion: decodedSnapshot.storedSchemaVersion
+            )
             return package
         }
         let isLegacyJournalCovered = decodedSnapshot.isLegacy
@@ -127,6 +143,9 @@ actor LocalDocumentStore {
         if decodedSnapshot.isLegacy || hasLegacyEntries {
             try save(package)
         }
+        package.repairStrokeArchivesIfWrittenBeforeSelfInvalidation(
+            storedVersion: decodedSnapshot.storedSchemaVersion
+        )
         return package
     }
 
@@ -212,7 +231,8 @@ actor LocalDocumentStore {
                     journalWatermark: envelope.journalWatermark,
                     package: try serializer.validatedPackage(envelope.package)
                 ),
-                isLegacy: false
+                isLegacy: false,
+                storedSchemaVersion: envelope.package.schemaVersion
             )
         }
         return DecodedSnapshot(
@@ -221,7 +241,8 @@ actor LocalDocumentStore {
                 journalWatermark: 0,
                 package: try serializer.decode(data)
             ),
-            isLegacy: true
+            isLegacy: true,
+            storedSchemaVersion: .current
         )
     }
 

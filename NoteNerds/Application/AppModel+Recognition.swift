@@ -7,17 +7,18 @@ extension AppModel {
             pendingRecognitionBackfill[notebookID] = nil
         }
         recognitionTasks[canvasID]?.cancel()
+        let delay = recognitionDelay
         recognitionTasks[canvasID] = Task { [weak self] in
             do {
-                try await Task.sleep(for: .milliseconds(700))
+                try await Task.sleep(for: delay)
             } catch {
                 return
             }
             guard let self,
                   !Task.isCancelled,
                   await recognizeHandwriting(notebookID: notebookID, canvasID: canvasID),
-                  let notebook = library.notebook(id: notebookID) else { return }
-            persistCheckpoint(notebook)
+                  library.notebook(id: notebookID) != nil else { return }
+            scheduleDeferredCheckpoint(for: notebookID)
         }
     }
 
@@ -121,8 +122,8 @@ extension AppModel {
                 let didRecognize = await recognizeHandwriting(notebookID: notebookID, canvasID: canvasID)
                 didRecognizeNotebook = didRecognize || didRecognizeNotebook
             }
-            if didRecognizeNotebook, let notebook = library.notebook(id: notebookID) {
-                persistCheckpoint(notebook)
+            if didRecognizeNotebook, library.notebook(id: notebookID) != nil {
+                scheduleDeferredCheckpoint(for: notebookID)
             }
         }
         recognitionBackfillTask = nil

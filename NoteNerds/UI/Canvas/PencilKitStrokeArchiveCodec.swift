@@ -10,12 +10,28 @@ enum PencilKitStrokeArchiveCodec {
         return archivedStroke
     }
 
+    /// Returns the PencilKit stroke a saved archive renders.
+    ///
+    /// The archive is trusted rather than re-derived. `Stroke` drops its archive
+    /// whenever its samples or style change, and `validated(_:)` clears archives
+    /// that older builds left behind, so an archive that is present always
+    /// matches the stroke holding it.
     static func stroke(for stroke: Stroke) -> PKStroke? {
+        guard let archive = stroke.pencilKitArchive else { return nil }
+        return PencilStrokeArchiveCache.shared.stroke(for: archive)
+    }
+
+    /// Drops an archive that no longer describes its stroke.
+    ///
+    /// Builds before archive invalidation moved into `Stroke` could transform a
+    /// stroke's samples while leaving its archive in place. Those notes are
+    /// repaired once when they load instead of being re-checked on every render.
+    static func validated(_ stroke: Stroke) -> Stroke {
         guard let archive = stroke.pencilKitArchive,
-              archive.renderingFingerprint == renderingFingerprint(for: stroke),
-              let drawing = try? PKDrawing(data: archive.data),
-              drawing.strokes.count == 1 else { return nil }
-        return drawing.strokes[0]
+              archive.renderingFingerprint != renderingFingerprint(for: stroke) else { return stroke }
+        var repaired = stroke
+        repaired.pencilKitArchive = nil
+        return repaired
     }
 
     static func randomSeed(for stroke: Stroke) -> UInt32 {

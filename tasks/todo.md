@@ -1,5 +1,51 @@
 # Current work
 
+## Remove canvas input lag
+
+Device trace evidence: `tasks/canvas-audit.md`.
+
+The first four stages were derived from reading the code and removed real work
+that grows with page size. A trace from the iPad showed they were not what the
+user was hitting: the stall happened at 5 to 19 strokes, where page size cannot
+matter. Measuring first would have found the cause in one pass.
+
+### Measured cause
+
+Handwriting recognition wrote a complete notebook snapshot the moment it
+finished, 700ms after the pen paused. On device that is a 100 to 500ms file
+write landing inside the next Pencil contact, and the backfill did it for every
+notebook in the library, including ones that were not open.
+
+### Fixes from the trace
+
+- [x] Recognition marks a notebook for checkpoint instead of writing one.
+- [x] Deferred checkpoints coalesce and are pushed back by every edit.
+- [x] Deferred checkpoints flush when the app leaves the foreground.
+- [x] Recognition waits 3 seconds, past a normal pause between words.
+- [x] The stroke-archive repair runs once per old note, not on every launch.
+- [x] Regression tests that fail without each fix.
+
+### Stages from the earlier static audit
+
+- [x] Stage 1: viewport reports no longer re-evaluate the editor body.
+- [x] Stage 2: the drawing tool is not reassigned during a live contact.
+- [x] Stage 3: stroke archives decode once and are cached.
+- [x] Stage 4: canvas redraw decisions compare identity, not every sample.
+- [ ] Stage 5: incremental reconciliation. Still real, no longer urgent.
+- [ ] Stage 6: single stroke representation. Changes the stored format.
+- [ ] Stage 7: single owner for canvas stroke state.
+
+Stages 6 and 7 are deliberately not done. Both are large rewrites whose
+motivation was page-size scaling, which the device trace did not support, and
+both risk the stroke-loss regressions recorded in `tasks/lessons.md`. They
+should not land unattended before a build the user cannot verify.
+
+### Behaviour change to know about
+
+Handwriting recognition results now reach disk when the app backgrounds rather
+than immediately. They are derived data and are recomputed if lost, so the
+trade buys a canvas that never stalls mid-stroke.
+
 ## Restore Notion backups
 
 - [x] Reproduce empty native and PDF attachments from current Notion publishing.

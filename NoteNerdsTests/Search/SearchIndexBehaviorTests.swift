@@ -119,7 +119,7 @@ final class SearchIndexBehaviorTests: XCTestCase {
         notebook.recognitionByCanvas[canvas.id] = [
             PersistedHandwritingRecognition(result: recognition, sourceStrokes: [stroke])
         ]
-        let model = AppModel(automaticallyRestore: false)
+        let model = AppModel(recognitionDelay: .milliseconds(10), automaticallyRestore: false)
         model.library = LibraryState(notebooks: [notebook])
         model.refreshSearchIndex(for: notebook.id)
         model.searchQuery = "project estimate"
@@ -157,6 +157,7 @@ final class SearchIndexBehaviorTests: XCTestCase {
             recognitionCoordinator: HandwritingRecognitionCoordinator(
                 recognizer: SearchHandwritingRecognizer(result: recognition)
             ),
+            recognitionDelay: .milliseconds(10),
             automaticallyRestore: false
         )
         model.library = LibraryState(notebooks: [notebook])
@@ -188,7 +189,7 @@ final class SearchIndexBehaviorTests: XCTestCase {
             PersistedHandwritingRecognition(result: recognition, sourceStrokes: [stroke])
         ]
         notebook.canvases.append(Canvas(title: "Canvas 2"))
-        let model = AppModel(automaticallyRestore: false)
+        let model = AppModel(recognitionDelay: .milliseconds(10), automaticallyRestore: false)
         model.library = LibraryState(notebooks: [notebook])
         model.refreshSearchIndex(for: notebook.id)
         model.searchQuery = "canvas transcript"
@@ -215,7 +216,7 @@ final class SearchIndexBehaviorTests: XCTestCase {
         notebook.recognitionByCanvas[canvas.id] = [
             PersistedHandwritingRecognition(result: recognition, sourceStrokes: [stroke])
         ]
-        let model = AppModel(automaticallyRestore: false)
+        let model = AppModel(recognitionDelay: .milliseconds(10), automaticallyRestore: false)
         model.library = LibraryState(notebooks: [notebook])
         model.refreshSearchIndex(for: notebook.id)
         model.searchQuery = "selected handwriting"
@@ -241,6 +242,7 @@ final class SearchIndexBehaviorTests: XCTestCase {
         ))
         let model = AppModel(
             recognitionCoordinator: HandwritingRecognitionCoordinator(recognizer: recognizer),
+            recognitionDelay: .milliseconds(10),
             automaticallyRestore: false
         )
         model.library = LibraryState(notebooks: [notebook])
@@ -281,6 +283,7 @@ final class SearchIndexBehaviorTests: XCTestCase {
         ))
         let model = AppModel(
             recognitionCoordinator: HandwritingRecognitionCoordinator(recognizer: recognizer),
+            recognitionDelay: .milliseconds(10),
             automaticallyRestore: false
         )
         model.library = LibraryState(notebooks: [notebook])

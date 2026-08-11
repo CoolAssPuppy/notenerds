@@ -78,7 +78,10 @@ extension AppModel {
         )
         var acknowledgedIDs = outcome.immediateAcknowledgements
         if !outcome.localEchoesAwaitingPersistence.isEmpty {
-            await documentPersistenceTask?.value
+            // Awaiting the task that happens to be current is not enough: a save
+            // scheduled while we were suspended would leave the echo
+            // acknowledged before its own document reached disk.
+            await waitForDocumentPersistenceToFinish()
             await libraryPersistenceTask?.value
             if didPersistDocuments, didPersistLibrary {
                 acknowledgedIDs.formUnion(outcome.localEchoesAwaitingPersistence)

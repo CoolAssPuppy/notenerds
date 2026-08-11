@@ -32,6 +32,7 @@ final class RemoteHandwritingSyncTests: XCTestCase {
             syncProvider: provider,
             syncStateStore: stateStore,
             deviceID: "receiving-device",
+            recognitionDelay: .milliseconds(10),
             automaticallyRestore: false
         )
         await receivingSession.restoreLibrary()
@@ -59,6 +60,7 @@ final class RemoteHandwritingSyncTests: XCTestCase {
             syncProvider: provider,
             syncStateStore: stateStore,
             deviceID: "receiving-device",
+            recognitionDelay: .milliseconds(10),
             automaticallyRestore: false
         )
         await reopenedSession.restoreLibrary()
@@ -98,6 +100,7 @@ final class RemoteHandwritingSyncTests: XCTestCase {
             syncProvider: provider,
             syncStateStore: stateStore,
             deviceID: "receiving-device",
+            recognitionDelay: .milliseconds(10),
             automaticallyRestore: false
         )
         model.library = LibraryState(notebooks: [notebook])
@@ -147,6 +150,7 @@ final class RemoteHandwritingSyncTests: XCTestCase {
             syncProvider: InMemorySyncProvider(),
             syncStateStore: restoredStateStore,
             deviceID: "receiving-device",
+            recognitionDelay: .milliseconds(10),
             automaticallyRestore: false
         )
 
@@ -200,6 +204,7 @@ final class RemoteHandwritingSyncTests: XCTestCase {
             syncProvider: InMemorySyncProvider(),
             syncStateStore: restoredStateStore,
             deviceID: "receiving-device",
+            recognitionDelay: .milliseconds(10),
             automaticallyRestore: false
         )
 
@@ -231,6 +236,7 @@ final class RemoteHandwritingSyncTests: XCTestCase {
             recognitionCoordinator: HandwritingRecognitionCoordinator(
                 recognizer: SyncPersistenceHandwritingRecognizer(text: fixture.phrase)
             ),
+            recognitionDelay: .milliseconds(10),
             automaticallyRestore: false
         )
         receivingSession.searchQuery = fixture.phrase
@@ -239,14 +245,17 @@ final class RemoteHandwritingSyncTests: XCTestCase {
         for _ in 0..<150 where receivingSession.searchResults.isEmpty {
             try await Task.sleep(for: .milliseconds(20))
         }
-        await receivingSession.documentPersistenceTask?.value
-        await receivingSession.libraryPersistenceTask?.value
+        // Recognition results are derived data and are now coalesced into the
+        // checkpoint the app takes when it leaves the foreground, so that a
+        // whole notebook is never written between two Pencil strokes.
+        await receivingSession.checkpointDocuments()
         let reopenedSession = AppModel(
             repository: fixture.repository,
             documentStore: fixture.documentStore,
             recognitionCoordinator: HandwritingRecognitionCoordinator(
                 recognizer: FailingSyncRecognizer()
             ),
+            recognitionDelay: .milliseconds(10),
             automaticallyRestore: false
         )
         await reopenedSession.restoreLibrary()

@@ -136,6 +136,7 @@ final class HandwritingRecognitionBehaviorTests: XCTestCase {
             recognitionCoordinator: HandwritingRecognitionCoordinator(
                 recognizer: StubRecognizer(result: recognition)
             ),
+            recognitionDelay: .milliseconds(10),
             automaticallyRestore: false
         )
         model.library = LibraryState(notebooks: [notebook])
@@ -172,6 +173,7 @@ final class HandwritingRecognitionBehaviorTests: XCTestCase {
         let recognizer = PausingHandwritingRecognizer(result: recognition)
         let model = AppModel(
             recognitionCoordinator: HandwritingRecognitionCoordinator(recognizer: recognizer),
+            recognitionDelay: .milliseconds(10),
             automaticallyRestore: false
         )
         model.library = LibraryState(notebooks: [notebook])
@@ -221,6 +223,7 @@ final class HandwritingRecognitionBehaviorTests: XCTestCase {
             repository: LocalLibraryRepository(fileURL: repositoryURL),
             recognitionCoordinator: HandwritingRecognitionCoordinator(recognizer: StubRecognizer(result: result)),
             conversionDelay: .milliseconds(20),
+            recognitionDelay: .milliseconds(10),
             automaticallyRestore: false
         )
         model.library = LibraryState(notebooks: [notebook])

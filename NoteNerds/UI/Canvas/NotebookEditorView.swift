@@ -21,7 +21,7 @@ struct NotebookEditorView: View {
     @State var exportContentType = UTType.pdf
     @State var exportFilename = "Notebook"
     @State private var navigationCommand: CanvasNavigationCommand?
-    @State private var visibleCanvasBounds = CanvasRect(x: 9_500, y: 9_500, width: 1_024, height: 1_366)
+    @State private var viewport = CanvasViewportModel()
     @State private var isMinimapVisible = false
     @State private var editingCommand: CanvasEditingCommand?
     @State private var isObjectSelectionActive = false
@@ -131,7 +131,7 @@ struct NotebookEditorView: View {
                 onCommitText: commitText,
                 onCancelText: { textEditingSession = nil },
                 onObjectSelectionChanged: { isObjectSelectionActive = $0 },
-                onViewportChanged: { visibleCanvasBounds = $0 },
+                onViewportChanged: { viewport.report($0) },
                 onPencilSqueeze: { response, location in
                     handlePencilSqueeze(response, location: location)
                 },
@@ -168,9 +168,9 @@ struct NotebookEditorView: View {
                 )
             }
             if isMinimapVisible {
-                CanvasMinimapView(
-                    contentBounds: currentCanvas.contentBounds ?? visibleCanvasBounds,
-                    viewportBounds: visibleCanvasBounds
+                CanvasViewportMinimap(
+                    viewport: viewport,
+                    contentBounds: currentCanvas.contentBounds
                 )
                 .frame(width: 190, height: 120)
                 .padding(24)

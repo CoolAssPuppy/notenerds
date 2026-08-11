@@ -1,5 +1,21 @@
 import SwiftUI
 
+/// Draws the minimap from the live viewport.
+///
+/// This is the only view that observes `CanvasViewportModel`, which keeps
+/// scroll and zoom reports from re-evaluating the whole editor body.
+struct CanvasViewportMinimap: View {
+    @ObservedObject var viewport: CanvasViewportModel
+    let contentBounds: CanvasRect?
+
+    var body: some View {
+        CanvasMinimapView(
+            contentBounds: contentBounds ?? viewport.bounds,
+            viewportBounds: viewport.bounds
+        )
+    }
+}
+
 struct CanvasMinimapView: View {
     let contentBounds: CanvasRect
     let viewportBounds: CanvasRect

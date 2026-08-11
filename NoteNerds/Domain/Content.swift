@@ -75,13 +75,66 @@ struct PencilKitStrokeArchive: Codable, Hashable, Sendable {
 struct Stroke: Codable, Hashable, Sendable {
     let id: StrokeID
     var layerID: LayerID
-    var samples: [StrokeSample]
-    var style: StrokeStyle
+    /// Changing either the sampled path or the style drops the PencilKit
+    /// archive, which described the previous ink.
+    ///
+    /// Rendering trusts a stored archive instead of re-deriving it from the
+    /// samples on every read, so the archive has to be cleared at the moment
+    /// the stroke changes. Doing it here means no caller can forget.
+    var samples: [StrokeSample] { didSet { pencilKitArchive = nil } }
+    var style: StrokeStyle { didSet { pencilKitArchive = nil } }
     let createdAt: Date
-    var pencilKitArchive: PencilKitStrokeArchive?
+    var pencilKitArchive: PencilKitStrokeArchive? { didSet { renderedContentID = UUID() } }
+
+    /// Names the current rendered content so the canvas can tell whether it
+    /// needs to redraw without comparing every sample of every stroke.
+    ///
+    /// Two strokes that hold the same value carry the same identifier, because
+    /// it travels with the value through the model. A stroke that has been
+    /// rebuilt or reloaded gets a fresh one, which costs a single redraw and
+    /// never leaves stale ink on screen.
+    ///
+    /// Deliberately outside equality, hashing, and the stored format: it
+    /// describes an in-memory copy, not the stroke a note is made of.
+    private(set) var renderedContentID = UUID()
 
     var objectID: ObjectID { ObjectID(rawValue: id.rawValue) }
     var bounds: CanvasRect { CanvasRect.enclosing(samples.map(\.point)) }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case layerID
+        case samples
+        case style
+        case createdAt
+        case pencilKitArchive
+    }
+
+    static func == (lhs: Stroke, rhs: Stroke) -> Bool {
+        lhs.id == rhs.id
+            && lhs.layerID == rhs.layerID
+            && lhs.createdAt == rhs.createdAt
+            && lhs.style == rhs.style
+            && lhs.pencilKitArchive == rhs.pencilKitArchive
+            && lhs.samples == rhs.samples
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(layerID)
+        hasher.combine(createdAt)
+        hasher.combine(style)
+        hasher.combine(pencilKitArchive)
+        hasher.combine(samples)
+    }
+
+    /// True when both strokes are the same in-memory ink.
+    ///
+    /// A false result only costs a redraw, so this is safe to use in place of
+    /// full equality wherever the question is "does the canvas need refreshing".
+    func isSameRenderedContent(as other: Stroke) -> Bool {
+        id == other.id && layerID == other.layerID && renderedContentID == other.renderedContentID
+    }
 }
 
 struct StrokeOccurrence: Hashable, Sendable {

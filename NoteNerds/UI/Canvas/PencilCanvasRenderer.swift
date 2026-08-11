@@ -7,12 +7,31 @@ enum PencilCanvasModelReconciliation {
         incoming: [Stroke],
         isUsingTool: Bool = false
     ) -> Bool {
-        !isUsingTool && current != incoming
+        !isUsingTool && !isSameRenderedContent(current, incoming)
+    }
+
+    /// Compares two stroke lists by identity rather than by sample data.
+    ///
+    /// This runs on the main thread every time the model changes. Full equality
+    /// walked every sample and every archived byte of the whole page, so the
+    /// cost of deciding not to redraw grew with the size of the note.
+    static func isSameRenderedContent(_ current: [Stroke], _ incoming: [Stroke]) -> Bool {
+        guard current.count == incoming.count else { return false }
+        for index in current.indices where !current[index].isSameRenderedContent(as: incoming[index]) {
+            return false
+        }
+        return true
     }
 }
 
 enum PencilCanvasRenderer {
     static func drawing(from strokes: [Stroke]) -> PKDrawing {
+        CanvasDiagnostics.measure("render drawing strokes=\(strokes.count)") {
+            buildDrawing(from: strokes)
+        }
+    }
+
+    private static func buildDrawing(from strokes: [Stroke]) -> PKDrawing {
         let pencilStrokes = strokes.compactMap { stroke -> PKStroke? in
             if let archivedStroke = PencilKitStrokeArchiveCodec.stroke(for: stroke) {
                 return archivedStroke

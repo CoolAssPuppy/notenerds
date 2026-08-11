@@ -1,5 +1,33 @@
 # Current work
 
+## Release TestFlight build 22
+
+- [ ] Verify release tools, signing settings, App Store Connect access, and the clean change set.
+- [ ] Commit the startup, Pencil input, and folder ordering fixes.
+- [ ] Build, sign, and upload TestFlight build 22 with focused tester notes.
+- [ ] Confirm App Store Connect marks build 22 valid and available to the intended internal testers.
+- [ ] Commit the build-number change and push `main` to `origin`.
+- [ ] Record the release result in this file.
+
+## Fix local-first startup, rapid writing, and folder order
+
+- [x] Add a failing behavior test that requires the local library to appear while initial iCloud sync is still waiting.
+- [x] Add failing behavior tests for rapid Pencil changes while model and sync updates occur.
+- [x] Add a failing interface test that requires sidebar folders to use ascending alphabetical order.
+- [x] Make startup local-first and keep iCloud and Notion sync in background work.
+- [x] Preserve rapid Pencil additions and erases without waiting for a server response.
+- [x] Display folders A-Z at every hierarchy level.
+- [x] Run focused tests, the complete behavior suite, strict lint, a simulator build, and `git diff --check`.
+- [x] Record the cause and verified result in this file.
+
+### Review
+
+- Startup opens the saved local library before iCloud responds. The existing cloud-aware restore method still waits when recovery callers need that behavior.
+- Pencil model updates received during contact are saved and combined with additions, moves, or erases after lift.
+- Sidebar roots and children use the existing localized, case-insensitive A-Z order regardless of notebook sort settings.
+- Verification passed: 12 focused startup and Pencil checks, the folder ordering interface check, strict lint across 243 Swift files, Xcode project generation, a clean simulator build, and `git diff --check`.
+- The full behavior run executed 456 checks. One existing timing-sensitive sync persistence check failed with equal printed values and passed when rerun alone; the other 455 passed in the full run.
+
 ## Fix the repeatable writing crash and database label
 
 - [x] Match the latest Note Nerds crash report to the current TestFlight build.

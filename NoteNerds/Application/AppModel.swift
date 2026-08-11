@@ -48,6 +48,7 @@ final class AppModel: ObservableObject {
     var remoteNotebookIDsAwaitingPersistence: [ChangeID: Set<NotebookID>] = [:]
     var appliedRemoteChangeIDsByNotebook: [NotebookID: Set<ChangeID>] = [:]
     private var libraryRestoreTask: Task<Void, Never>?
+    private var initialSyncTask: Task<Void, Never>?
 
     init(
         repository: any LibraryRepository = AppModel.defaultRepository(),
@@ -119,6 +120,11 @@ final class AppModel: ObservableObject {
     }
 
     func restoreLibrary() async {
+        await restoreLocalLibrary()
+        await initialSyncTask?.value
+    }
+
+    func restoreLocalLibrary() async {
         if let libraryRestoreTask {
             await libraryRestoreTask.value
             return
@@ -167,7 +173,10 @@ final class AppModel: ObservableObject {
                 try await repository.save(library)
             }
             restoreHandwritingSearch()
-            await synchronize()
+            hasRestoredLibrary = true
+            initialSyncTask = Task { [weak self] in
+                await self?.synchronize()
+            }
         } catch {
             presentedError = "Your local library could not be opened. \(error.localizedDescription)"
         }

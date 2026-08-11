@@ -1,6 +1,30 @@
 import PencilKit
 
 extension PencilCanvasView.Coordinator {
+    func receiveModelStrokes(_ strokes: [Stroke]) {
+        guard !isUsingTool else {
+            pendingModelStrokes = strokes
+            return
+        }
+        canonicalStrokes = strokes
+        pendingModelStrokes = nil
+    }
+
+    func mergingPendingModelStrokes(
+        with localStrokes: [Stroke],
+        comparedTo baselineStrokes: [Stroke]
+    ) -> [Stroke] {
+        guard let pendingModelStrokes else { return localStrokes }
+        let baselineIDs = Set(baselineStrokes.map(\.id))
+        let localStrokesByID = Dictionary(uniqueKeysWithValues: localStrokes.map { ($0.id, $0) })
+        var mergedStrokes = pendingModelStrokes.compactMap { stroke in
+            baselineIDs.contains(stroke.id) ? localStrokesByID[stroke.id] : stroke
+        }
+        let mergedIDs = Set(mergedStrokes.map(\.id))
+        mergedStrokes.append(contentsOf: localStrokes.filter { !mergedIDs.contains($0.id) })
+        return mergedStrokes
+    }
+
     func reconciledCanonicalStrokes(
         from pencilStrokes: [PKStroke],
         preserving sourceStrokes: [Stroke]

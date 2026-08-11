@@ -81,7 +81,7 @@ struct LibrarySidebarView: View {
     }
 
     private var folderTree: [LibraryFolderNode] {
-        let folders = model.library.folders(sortedBy: model.library.preferredSortMode)
+        let folders = model.library.folders(sortedBy: .nameAscending)
             .filter { $0.trashedAt == nil }
         let foldersByParent = Dictionary(grouping: folders, by: \.parentID)
         func nodes(parentID: FolderID?) -> [LibraryFolderNode] {

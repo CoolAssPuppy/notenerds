@@ -105,6 +105,23 @@ final class LibraryCreationPlacementUITests: XCTestCase {
         )
     }
 
+    func testSidebarFoldersStayAlphabeticalWhenNotebookSortUsesTime() {
+        let application = makeApplication()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        application.launch()
+
+        application.buttons["New folder"].tap()
+        renameFolder("Folder, New folder", appending: " Alpha", in: application)
+        application.buttons["New folder"].tap()
+        renameFolder("Folder, New folder", appending: " zebra", in: application)
+
+        let alphaFolder = application.buttons["Folder, New folder Alpha"]
+        let zebraFolder = application.buttons["Folder, New folder zebra"]
+        XCTAssertTrue(alphaFolder.waitForExistence(timeout: 2))
+        XCTAssertTrue(zebraFolder.waitForExistence(timeout: 2))
+        XCTAssertLessThan(alphaFolder.frame.minY, zebraFolder.frame.minY)
+    }
+
     func testFolderEditorChangesTheNameSymbolAndColorTogether() {
         let application = makeApplication()
         XCUIDevice.shared.orientation = .landscapeLeft
@@ -203,5 +220,17 @@ final class LibraryCreationPlacementUITests: XCTestCase {
         let application = XCUIApplication()
         application.launchArguments = ["-ui-testing", "-reset-library"]
         return application
+    }
+
+    private func renameFolder(_ accessibilityLabel: String, appending suffix: String, in application: XCUIApplication) {
+        let folder = application.buttons[accessibilityLabel]
+        XCTAssertTrue(folder.waitForExistence(timeout: 2))
+        folder.press(forDuration: 1)
+        application.buttons["Edit folder"].tap()
+        let nameField = application.textFields["Folder name"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 2))
+        nameField.tap()
+        nameField.typeText(suffix)
+        application.buttons["Save"].tap()
     }
 }

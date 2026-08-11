@@ -95,7 +95,7 @@ struct PencilCanvasView: UIViewRepresentable {
         )
         context.coordinator.configuration = configuration
         context.coordinator.activeLayerID = activeLayerID
-        context.coordinator.canonicalStrokes = strokes
+        context.coordinator.receiveModelStrokes(strokes)
         updatePlannerContext(context.coordinator)
         context.coordinator.configurePlannerSwipeRecognizers(
             touchCount: isFingerDrawingEnabled ? 2 : 1
@@ -144,6 +144,7 @@ struct PencilCanvasView: UIViewRepresentable {
         var activeDrawingConfiguration: ToolConfiguration?
         var activeLayerID: LayerID
         var isUsingTool = false
+        var pendingModelStrokes: [Stroke]?
         var latestPencilRoll = 0.0
         var latestPencilLocation: CGPoint?
         var paperType: PaperType?
@@ -195,26 +196,39 @@ struct PencilCanvasView: UIViewRepresentable {
 
         func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
             isUsingTool = true
+            pendingModelStrokes = nil
             activeDrawingConfiguration = configuration
         }
 
         func canvasViewDidEndUsingTool(_ canvasView: PKCanvasView) {
             isUsingTool = false
+            let shouldApplyPendingModel = pendingModelStrokes != nil
             synchronizeDrawing(canvasView)
+            if shouldApplyPendingModel {
+                isApplyingModelDrawing = true
+                canvasView.drawing = PencilCanvasRenderer.drawing(from: canonicalStrokes)
+                knownStrokeCount = canonicalStrokes.count
+                isApplyingModelDrawing = false
+            }
+            pendingModelStrokes = nil
             activeDrawingConfiguration = nil
         }
 
         private func synchronizeDrawing(_ canvasView: PKCanvasView) {
             guard !isApplyingModelDrawing else { return }
+            let baselineStrokes = canonicalStrokes
             guard canvasView.drawing.strokes.count > knownStrokeCount else {
                 if canvasView.drawing.strokes.count <= knownStrokeCount {
                     let changedStrokes = reconciledCanonicalStrokes(
                         from: canvasView.drawing.strokes,
-                        preserving: canonicalStrokes
+                        preserving: baselineStrokes
                     )
-                    knownStrokeCount = changedStrokes.count
-                    canonicalStrokes = changedStrokes
-                    onDrawingChanged(changedStrokes)
+                    canonicalStrokes = mergingPendingModelStrokes(
+                        with: changedStrokes,
+                        comparedTo: baselineStrokes
+                    )
+                    knownStrokeCount = canonicalStrokes.count
+                    onDrawingChanged(canonicalStrokes)
                     return
                 }
                 knownStrokeCount = canvasView.drawing.strokes.count
@@ -247,7 +261,15 @@ struct PencilCanvasView: UIViewRepresentable {
                 )
                 return PencilKitStrokeArchiveCodec.preserving(pencilStroke, in: stroke)
             }
-            canonicalStrokes.append(contentsOf: addedStrokes)
+            acceptAddedStrokes(addedStrokes, comparedTo: baselineStrokes)
+        }
+
+        private func acceptAddedStrokes(_ addedStrokes: [Stroke], comparedTo baselineStrokes: [Stroke]) {
+            canonicalStrokes = mergingPendingModelStrokes(
+                with: baselineStrokes + addedStrokes,
+                comparedTo: baselineStrokes
+            )
+            knownStrokeCount = canonicalStrokes.count
             onStrokesCompleted(addedStrokes)
         }
 

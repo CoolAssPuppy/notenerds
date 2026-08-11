@@ -51,7 +51,7 @@ struct RootView: View {
             }
         }
         .task {
-            await model.restoreLibrary()
+            await model.restoreLocalLibrary()
             await notion.restore(library: model.library)
             if let notebookID = model.selectedNotebookID {
                 notion.openNotebook(notebookID, library: model.library)

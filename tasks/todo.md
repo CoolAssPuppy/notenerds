@@ -9,9 +9,9 @@
 - [x] Keep Notion backup rows after permanent local deletion.
 - [x] Make Sync now recreate missing remote content in one run.
 - [x] Run the focused Notion checks, complete behavior suite, and strict lint.
-- [ ] Build, sign, and upload TestFlight build 24.
-- [ ] Commit and push the repair, then supersede build 23 with TestFlight build 24.
-- [ ] Record the cause and verified result.
+- [x] Build, sign, and upload TestFlight build 24.
+- [x] Commit and push the repair, then supersede build 23 with TestFlight build 24.
+- [x] Record the cause and verified result.
 
 ### Review
 
@@ -22,6 +22,7 @@
 - Sync now republishes every local notebook and repairs an existing or missing row. Unchanged automatic sync skips PDF and preview rendering and makes no Notion requests.
 - Verification passed 23 focused release checks, all 512 app behavior checks, strict SwiftLint across 254 Swift files, `git diff --check`, and an independent release review.
 - The configured Codex Notion connection cannot read the Strategic Nerds page, so the live database will be checked through build 24 after Apple finishes processing it.
+- The repair was committed as `f3f3d2e` and pushed to `origin/main`. TestFlight build 24 archived, signed, exported, and uploaded successfully with delivery UUID `6b47679a-50a2-4ad0-a78c-4128c797af0b`.
 
 ## Stop deleted notebooks from returning
 

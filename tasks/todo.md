@@ -9,7 +9,7 @@
 - [x] Run focused persistence, sync, relaunch, and interface checks.
 - [x] Skip the wired install after the iPad was disconnected and release through TestFlight.
 - [x] Show “No notebooks” and “Your trash is empty.” when Trash has no notebooks.
-- [ ] Commit the verified changes, push `main`, and send the next TestFlight build.
+- [x] Commit the verified changes, push `main`, and send the next TestFlight build.
 - [x] Record the cause and verified result.
 
 ### Review
@@ -19,6 +19,7 @@
 - Local recovery keeps title, folder, favorite, tags, last-opened state, and Trash state from the library while restoring canvases and handwriting recognition from the document checkpoint.
 - Empty Trash now shows `No notebooks` and `Your trash is empty.`
 - Verification passed 507 behavior checks, the focused Trash interface check, strict SwiftLint, and `git diff --check`.
+- The implementation was committed as `72bf6be` and pushed to `origin/main`. TestFlight build 23 uploaded successfully with delivery UUID `93cff7f9-e3f2-4a15-bc07-0262e82983b3`.
 
 ## Restore immediate and stable Pencil writing
 

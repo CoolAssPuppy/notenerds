@@ -1,5 +1,25 @@
 # Current work
 
+## Release Notion and toolbar fixes in build 28
+
+- [x] Run release-tool tests and App Store Connect preflight.
+- [x] Archive, export, and upload TestFlight build 28.
+- [x] Confirm Apple marks build 28 valid and internal testers can receive it.
+- [x] Commit the build-number and release record on `canvas-performance`.
+
+### Build 28 review
+
+- Release preflight authenticated with App Store Connect, and all 33 release-tool
+  tests passed.
+- Version 1.0.0 build 28 archived, exported, and uploaded without errors. Apple
+  marked it valid. Delivery UUID: `f009c787-d5b8-445f-96b0-2a7be3becf62`.
+- The signed IPA uses bundle identifier `com.strategicnerds.notenerds`, Apple
+  Distribution signing, and team `955GSY56UT`.
+- The `Internal Testers` group has access to every build, including build 28.
+- Tester notes cover Notion destination selection, delayed initial sync, and the
+  saved floating-toolbar state.
+- The release remains on `canvas-performance`; nothing was merged to `main`.
+
 ## Fix Notion destination selection freeze
 
 - [x] Trace destination selection from Settings through database setup.

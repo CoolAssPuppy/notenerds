@@ -1,5 +1,26 @@
 # Current work
 
+## Dismiss the Notion destination picker
+
+- [x] Reproduce the picker remaining open after successful database creation.
+- [x] Keep Settings navigation stable while the initial Notion sync begins.
+- [x] Add a failing regression test for successful dismissal.
+- [x] Run focused tests, the complete suites, and strict lint.
+- [x] Record and commit the correction separately.
+
+### Destination dismissal review
+
+- The picker dismissed only after database creation, manifest-page creation, and
+  local state persistence completed. A slow Notion request therefore kept the
+  picker visible even though the tap had succeeded.
+- Tapping a destination now returns to Settings before network work begins.
+  Settings shows its existing database-creation status while setup continues.
+- The interface regression uses a three-second fake Notion response and requires
+  Settings to reappear within half a second. It failed before the fix and passed
+  after it.
+- All 569 app and performance tests and all 6 Notion Settings interface tests
+  passed. Strict SwiftLint and `git diff --check` passed.
+
 ## Release Notion and toolbar fixes in build 28
 
 - [x] Run release-tool tests and App Store Connect preflight.

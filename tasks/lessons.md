@@ -1,5 +1,8 @@
 # Lessons
 
+- A successful async selection is incomplete until its presented interface closes.
+  Test the real navigation or presentation binding across every state change started
+  by the selection, including background work scheduled immediately afterward.
 - A destination picker should dismiss after its remote destination and local
   identifiers are saved. Run the initial full-library publish through background
   sync so PDF, preview, and network work cannot keep the picker open.

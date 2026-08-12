@@ -39,7 +39,9 @@ struct NoteNerdsApp: App {
         )
         let notion = Self.makeNotionModel(configuration: notionConfiguration)
 #if DEBUG
-        if isUITesting && processInfo.arguments.contains("-force-notion-connected") {
+        if isUITesting && processInfo.arguments.contains("-force-notion-destination-selection") {
+            notion.configureDestinationSelectionForUITesting()
+        } else if isUITesting && processInfo.arguments.contains("-force-notion-connected") {
             notion.configureForUITesting(
                 state: .connected(workspaceName: "Personal"),
                 destination: NotionDestination(

@@ -9,9 +9,9 @@ struct NotionDestinationPickerView: View {
     var body: some View {
         List(model.pages) { page in
             Button {
+                dismiss()
                 Task {
                     await model.selectDestination(parentPage: page, library: library)
-                    if model.destination != nil { dismiss() }
                 }
             } label: {
                 Label {

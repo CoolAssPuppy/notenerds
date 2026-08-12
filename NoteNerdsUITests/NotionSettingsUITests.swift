@@ -21,7 +21,7 @@ final class NotionSettingsUITests: XCTestCase {
 
         openSettings(in: application)
 
-        XCTAssertTrue(application.navigationBars["Settings"].waitForExistence(timeout: 2))
+        XCTAssertTrue(application.navigationBars["Settings"].waitForExistence(timeout: 0.5))
         XCTAssertTrue(
             application.staticTexts["Notion is unavailable in this build"]
                 .waitForExistence(timeout: 2)
@@ -59,6 +59,26 @@ final class NotionSettingsUITests: XCTestCase {
 
         databaseRow.tap()
         XCTAssertTrue(application.navigationBars["Choose Notion location"].waitForExistence(timeout: 2))
+    }
+
+    func testSuccessfulDestinationSelectionReturnsToSettings() {
+        let application = XCUIApplication()
+        application.launchArguments = [
+            "-ui-testing", "-reset-library", "-force-notion-destination-selection"
+        ]
+        application.launch()
+        openSettings(in: application)
+
+        application.buttons["Notebook database, Choose location"].tap()
+        XCTAssertTrue(application.navigationBars["Choose Notion location"].waitForExistence(timeout: 2))
+
+        application.buttons["Product, Create the Note Nerds database here"].tap()
+
+        XCTAssertTrue(application.navigationBars["Settings"].waitForExistence(timeout: 2))
+        XCTAssertFalse(application.navigationBars["Choose Notion location"].exists)
+        XCTAssertTrue(
+            application.buttons["Notebook database, Note Nerds"].waitForExistence(timeout: 2)
+        )
     }
 
     func testFailedNotionShowsRetryAndDisconnectWithoutRestore() {

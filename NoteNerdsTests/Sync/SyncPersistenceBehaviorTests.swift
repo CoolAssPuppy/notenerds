@@ -233,7 +233,8 @@ final class SyncPersistenceBehaviorTests: XCTestCase {
         await stateStore.waitUntilLoadStarted()
         let checkpointTask = Task {
             await model.checkpointDocuments()
-            await completion.finish()
+            let hasResumed = await stateStore.hasResumed()
+            await completion.finish(afterOutboxSave: hasResumed)
         }
         for _ in 0..<100 { await Task.yield() }
 
@@ -243,6 +244,11 @@ final class SyncPersistenceBehaviorTests: XCTestCase {
         await stateStore.resumeLoad()
         await checkpointTask.value
 
+        let didWaitForOutboxSave = await completion.didFinishAfterOutboxSave
+        XCTAssertTrue(
+            didWaitForOutboxSave,
+            "The background checkpoint returned before the sync outbox had been saved"
+        )
         let savedState = await stateStore.load()
         XCTAssertEqual(savedState?.pendingChanges.count, 1)
     }
@@ -447,6 +453,7 @@ private actor PausingInitialLoadSyncStateStore: SyncStateStore {
     private var hasStartedLoading = false
     private var loadContinuation: CheckedContinuation<Void, Never>?
     private var loadWaiters: [CheckedContinuation<Void, Never>] = []
+    private var hasResumedLoad = false
 
     func load() async -> SyncEngineSnapshot? {
         guard !hasStartedLoading else { return snapshot }
@@ -467,16 +474,23 @@ private actor PausingInitialLoadSyncStateStore: SyncStateStore {
     }
 
     func resumeLoad() {
+        hasResumedLoad = true
         loadContinuation?.resume()
         loadContinuation = nil
+    }
+
+    func hasResumed() -> Bool {
+        hasResumedLoad
     }
 }
 
 private actor CheckpointCompletionProbe {
     private var didFinish = false
+    private(set) var didFinishAfterOutboxSave = false
 
-    func finish() {
+    func finish(afterOutboxSave: Bool) {
         didFinish = true
+        didFinishAfterOutboxSave = afterOutboxSave
     }
 
     func isFinished() -> Bool {

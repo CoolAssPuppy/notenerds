@@ -103,18 +103,20 @@ extension NativeNotebookPackage {
     /// notes are repaired once. Gating on the stored version keeps this off the
     /// launch path for every note the app has already saved: a repaired note is
     /// written back at the current version and never re-checked.
+    /// Returns whether the note needed repairing, so the caller can write the
+    /// repaired copy back and stop it being checked again.
+    @discardableResult
     mutating func repairStrokeArchivesIfWrittenBeforeSelfInvalidation(
         storedVersion: DocumentSchemaVersion
-    ) {
+    ) -> Bool {
         guard storedVersion.rawValue < DocumentSchemaVersion.selfInvalidatingStrokeArchives.rawValue else {
-            return
+            return false
         }
         let title = notebook.title
-        notebook = CanvasDiagnostics.measure("repair archives \(title)") {
-            var repaired = notebook
-            repaired.performStrokeArchiveRepair()
-            return repaired
+        CanvasDiagnostics.measure("repair archives \(title)") {
+            notebook.performStrokeArchiveRepair()
         }
+        return true
     }
 }
 

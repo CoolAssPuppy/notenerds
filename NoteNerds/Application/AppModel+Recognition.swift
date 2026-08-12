@@ -16,8 +16,7 @@ extension AppModel {
             }
             guard let self,
                   !Task.isCancelled,
-                  await recognizeHandwriting(notebookID: notebookID, canvasID: canvasID),
-                  library.notebook(id: notebookID) != nil else { return }
+                  await recognizeHandwriting(notebookID: notebookID, canvasID: canvasID) else { return }
             scheduleDeferredCheckpoint(for: notebookID)
         }
     }
@@ -122,7 +121,7 @@ extension AppModel {
                 let didRecognize = await recognizeHandwriting(notebookID: notebookID, canvasID: canvasID)
                 didRecognizeNotebook = didRecognize || didRecognizeNotebook
             }
-            if didRecognizeNotebook, library.notebook(id: notebookID) != nil {
+            if didRecognizeNotebook {
                 scheduleDeferredCheckpoint(for: notebookID)
             }
         }

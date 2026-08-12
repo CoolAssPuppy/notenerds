@@ -17,8 +17,7 @@ enum PencilKitStrokeArchiveCodec {
     /// that older builds left behind, so an archive that is present always
     /// matches the stroke holding it.
     static func stroke(for stroke: Stroke) -> PKStroke? {
-        guard let archive = stroke.pencilKitArchive else { return nil }
-        return PencilStrokeArchiveCache.shared.stroke(for: archive)
+        PencilStrokeArchiveCache.shared.stroke(for: stroke)
     }
 
     /// Drops an archive that no longer describes its stroke.

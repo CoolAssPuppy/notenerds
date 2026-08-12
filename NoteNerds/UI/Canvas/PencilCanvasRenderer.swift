@@ -13,14 +13,11 @@ enum PencilCanvasModelReconciliation {
     /// Compares two stroke lists by identity rather than by sample data.
     ///
     /// This runs on the main thread every time the model changes. Full equality
-    /// walked every sample and every archived byte of the whole page, so the
-    /// cost of deciding not to redraw grew with the size of the note.
+    /// short-circuits when SwiftUI hands back the same array, but once the array
+    /// has genuinely been rebuilt it walks every sample and every archived byte
+    /// of the whole page.
     static func isSameRenderedContent(_ current: [Stroke], _ incoming: [Stroke]) -> Bool {
-        guard current.count == incoming.count else { return false }
-        for index in current.indices where !current[index].isSameRenderedContent(as: incoming[index]) {
-            return false
-        }
-        return true
+        current.elementsEqual(incoming) { $0.isSameRenderedContent(as: $1) }
     }
 }
 

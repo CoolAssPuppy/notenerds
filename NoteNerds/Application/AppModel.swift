@@ -160,7 +160,7 @@ final class AppModel: ObservableObject {
                 for notebook in library.notebooks {
                     do {
                         var recovered = try await documentStore.recover(notebookID: notebook.id)
-                        CanvasDiagnostics.mark("recovered notebook \(notebook.title)")
+                        CanvasDiagnostics.mark("recovered notebook")
                         appliedRemoteChangeIDsByNotebook[notebook.id] = recovered.appliedRemoteChangeIDs
                         recovered.notebook = notebook.restoringDocumentContent(from: recovered.notebook)
                         if recovered.notebook.repairDuplicateCanvasIdentifiers() {
@@ -256,17 +256,17 @@ final class AppModel: ObservableObject {
         let notebookID = notebook.id
         let count = journalCounts[notebookID, default: 0] + 1
         journalCounts[notebookID] = count
-        let checkpoint = count >= 20 ? nativePackage(for: notebook) : nil
+        // Compacting the journal means writing the whole notebook, so it waits
+        // for a pause in editing like every other snapshot. The journal already
+        // holds these operations, so nothing is at risk while it waits.
+        if count >= 20 {
+            scheduleDeferredCheckpoint(for: notebookID)
+        }
         let precedingTask = documentPersistenceTask
         let outcomeTask = Task { () -> Bool in
             await precedingTask?.value
             do {
                 try await documentStore.append(operation, notebookID: notebookID)
-                if let checkpoint {
-                    try await documentStore.save(checkpoint)
-                    journalCounts[notebookID] = 0
-                    persistLibrary()
-                }
                 didPersistDocuments = true
                 return true
             } catch {
@@ -309,21 +309,26 @@ final class AppModel: ObservableObject {
             } catch {
                 return
             }
-            guard !Task.isCancelled else { return }
             flushDeferredCheckpoints()
         }
     }
 
     /// Writes every notebook that a deferred checkpoint is waiting on.
     func flushDeferredCheckpoints() {
-        deferredCheckpointTask?.cancel()
-        deferredCheckpointTask = nil
-        let notebookIDs = notebookIDsAwaitingCheckpoint
-        notebookIDsAwaitingCheckpoint = []
-        for notebookID in notebookIDs {
+        for notebookID in cancelDeferredCheckpoints() {
             guard let notebook = library.notebook(id: notebookID) else { continue }
             persistCheckpoint(notebook)
         }
+    }
+
+    /// Stops the timer and returns the notebooks it was holding, for a caller
+    /// that is about to write them itself.
+    @discardableResult
+    func cancelDeferredCheckpoints() -> Set<NotebookID> {
+        deferredCheckpointTask?.cancel()
+        deferredCheckpointTask = nil
+        defer { notebookIDsAwaitingCheckpoint = [] }
+        return notebookIDsAwaitingCheckpoint
     }
 
     func persistCheckpoint(_ notebook: Notebook) {
@@ -352,12 +357,17 @@ final class AppModel: ObservableObject {
     }
 
     func checkpointDocuments() async {
-        flushDeferredCheckpoints()
         guard let documentStore else {
+            flushDeferredCheckpoints()
             await libraryPersistenceTask?.value
             await syncSubmissionTask?.value
             return
         }
+        // Everything below writes every notebook, so anything the timer was
+        // holding is already covered. Flushing as well would write those
+        // notebooks twice inside the limited window the system grants for
+        // backgrounding.
+        cancelDeferredCheckpoints()
 
         let checkpoints = library.notebooks.map(nativePackage(for:))
         for checkpoint in checkpoints {

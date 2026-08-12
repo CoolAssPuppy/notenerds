@@ -118,12 +118,12 @@ extension CanvasObject {
     func applying(_ transform: SelectionTransform, around center: CanvasPoint) -> CanvasObject {
         switch self {
         case var .stroke(stroke):
+            stroke.style.width *= sqrt(abs(transform.scaleX * transform.scaleY))
             stroke.samples = stroke.samples.map { sample in
                 var transformed = sample
                 transformed.point = transform.point(sample.point, around: center)
                 return transformed
             }
-            stroke.style.width *= sqrt(abs(transform.scaleX * transform.scaleY))
             return .stroke(stroke)
         case var .shape(shape):
             shape.points = shape.points.map { transform.point($0, around: center) }

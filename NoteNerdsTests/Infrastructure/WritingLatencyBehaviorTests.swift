@@ -34,6 +34,32 @@ final class WritingLatencyBehaviorTests: XCTestCase {
         )
     }
 
+    func testCompactingTheJournalDoesNotInterruptWriting() async throws {
+        let context = try makeContext(title: "Journal rollover")
+        defer { context.removeDirectory() }
+        let canvas = context.notebook.canvases[0]
+        let layer = canvas.layers[0]
+
+        // Past the point where the journal is compacted into a snapshot. That
+        // compaction used to run inline, so roughly a paragraph of handwriting
+        // put a whole-notebook write back on the writing path.
+        for _ in 0..<25 {
+            _ = context.model.addStrokes(
+                [DomainFixtures.stroke(id: StrokeID(), layerID: layer.id)],
+                to: context.notebook.id,
+                canvasID: canvas.id,
+                layerID: layer.id
+            )
+        }
+        await context.model.waitForDocumentPersistenceToFinish()
+
+        XCTAssertEqual(
+            context.snapshotWrites.count,
+            0,
+            "Compacting the journal wrote a whole notebook while strokes were arriving"
+        )
+    }
+
     func testADeferredSnapshotIsWrittenOnceWritingStops() async throws {
         let context = try makeContext(title: "Quiet after writing")
         defer { context.removeDirectory() }

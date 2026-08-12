@@ -313,7 +313,8 @@ extension AppModel {
             } else {
                 updateSearchIndex(after: operation, in: notebook)
             }
-            persistCheckpoint(notebook)
+            delayPendingCheckpoints()
+            scheduleDeferredCheckpoint(for: notebookID)
             enqueueForSync(SyncedDocumentAction(operation: operation, direction: .undo), notebookID: notebookID)
         } catch DocumentHistoryError.nothingToUndo {
             return
@@ -335,7 +336,8 @@ extension AppModel {
             } else {
                 updateSearchIndex(after: operation, in: notebook)
             }
-            persistCheckpoint(notebook)
+            delayPendingCheckpoints()
+            scheduleDeferredCheckpoint(for: notebookID)
             enqueueForSync(SyncedDocumentAction(operation: operation, direction: .apply), notebookID: notebookID)
         } catch DocumentHistoryError.nothingToRedo {
             return

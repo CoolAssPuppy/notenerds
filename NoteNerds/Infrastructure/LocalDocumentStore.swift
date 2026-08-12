@@ -80,9 +80,11 @@ actor LocalDocumentStore {
                 snapshot.journalWatermark
             )
             var package = snapshot.package
-            package.repairStrokeArchivesIfWrittenBeforeSelfInvalidation(
+            if package.repairStrokeArchivesIfWrittenBeforeSelfInvalidation(
                 storedVersion: decodedSnapshot.storedSchemaVersion
-            )
+            ) {
+                try save(package)
+            }
             return package
         } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
             throw LocalDocumentStoreError.notebookNotFound
@@ -121,31 +123,29 @@ actor LocalDocumentStore {
         }
         let snapshot = decodedSnapshot.envelope
         var package = snapshot.package
-        guard let data = try journalData(for: notebookID) else {
+        var needsRewrite = decodedSnapshot.isLegacy
+        if let data = try journalData(for: notebookID) {
+            let isLegacyJournalCovered = decodedSnapshot.isLegacy
+                && isSnapshotNewerThanJournal(for: notebookID)
+            needsRewrite = try applyJournal(
+                data,
+                to: &package,
+                notebookID: notebookID,
+                snapshotWatermark: snapshot.journalWatermark,
+                isLegacyJournalCovered: isLegacyJournalCovered
+            ) || needsRewrite
+        } else {
             journalSequences[notebookID] = snapshot.journalWatermark
-            if decodedSnapshot.isLegacy {
-                try save(package)
-            }
-            package.repairStrokeArchivesIfWrittenBeforeSelfInvalidation(
-                storedVersion: decodedSnapshot.storedSchemaVersion
-            )
-            return package
         }
-        let isLegacyJournalCovered = decodedSnapshot.isLegacy
-            && isSnapshotNewerThanJournal(for: notebookID)
-        let hasLegacyEntries = try applyJournal(
-            data,
-            to: &package,
-            notebookID: notebookID,
-            snapshotWatermark: snapshot.journalWatermark,
-            isLegacyJournalCovered: isLegacyJournalCovered
-        )
-        if decodedSnapshot.isLegacy || hasLegacyEntries {
-            try save(package)
-        }
-        package.repairStrokeArchivesIfWrittenBeforeSelfInvalidation(
+        // Repair before writing, so a note rewritten here is not stamped at the
+        // current version while still holding ink from an older build. Writing
+        // it back is what stops the repair running again on every launch.
+        let wasRepaired = package.repairStrokeArchivesIfWrittenBeforeSelfInvalidation(
             storedVersion: decodedSnapshot.storedSchemaVersion
         )
+        if needsRewrite || wasRepaired {
+            try save(package)
+        }
         return package
     }
 

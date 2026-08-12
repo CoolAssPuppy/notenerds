@@ -4,9 +4,20 @@
 
 - [x] Run the release-tool tests and App Store Connect preflight.
 - [x] Commit the verified canvas audit changes on `canvas-performance`.
-- [ ] Archive, export, and upload TestFlight build 27.
-- [ ] Confirm Apple marks build 27 valid and internal testers can receive it.
-- [ ] Commit the build-number and release record without merging to `main`.
+- [x] Archive, export, and upload TestFlight build 27.
+- [x] Confirm Apple marks build 27 valid and internal testers can receive it.
+- [x] Commit the build-number and release record without merging to `main`.
+
+### Build 27 review
+
+- Release preflight authenticated with App Store Connect, and all 33 release-tool
+  tests passed.
+- Version 1.0.0 build 27 archived, exported, and uploaded without errors. Apple
+  marked it valid. Delivery UUID: `eb86b7c5-7ade-45e1-a086-cd820a51e83a`.
+- The `Internal Testers` group has access to every build, including build 27.
+- Tester notes ask for rapid Pencil writing, old-note rendering, and undo or redo
+  recovery after force quit.
+- The release remains on `canvas-performance`; nothing was merged to `main`.
 
 ## Adversarial canvas follow-up
 

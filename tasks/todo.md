@@ -2,11 +2,23 @@
 
 ## Release palm rejection to TestFlight
 
-- [ ] Commit the verified two-finger canvas navigation change.
-- [ ] Run release-tool tests and App Store Connect preflight.
-- [ ] Build, sign, export, and upload TestFlight build 32.
-- [ ] Confirm Apple marks build 32 valid and internal testers can receive it.
-- [ ] Commit the build number and release record, then push `main`.
+- [x] Commit the verified two-finger canvas navigation change.
+- [x] Run release-tool tests and App Store Connect preflight.
+- [x] Build, sign, export, and upload TestFlight build 32.
+- [x] Confirm Apple marks build 32 valid and internal testers can receive it.
+- [x] Commit the build number and release record, then push `main`.
+
+### Build 32 review
+
+- Commit `784afba` contains the verified palm-rejection change.
+- All 33 release-tool tests passed. Release preflight authenticated with App
+  Store Connect and confirmed XcodeGen 2.46.0, signing credentials, iOS 26.0,
+  and universal iPhone and iPad support.
+- Version 1.0.0 build 32 archived, exported, and uploaded without errors. Apple
+  marked it valid. Delivery UUID: `6506e34b-bf9e-4a1b-a4de-54ef3381741d`.
+- The signed archive uses bundle identifier `com.strategicnerds.notenerds`,
+  build 32, and team `955GSY56UT`.
+- The `Internal Testers` group is internal and has access to every valid build.
 
 ## Prevent palm movement while writing
 

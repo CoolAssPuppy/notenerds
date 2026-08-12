@@ -238,6 +238,7 @@
 		D9602510DF38F2BE6165C131 /* ApplicationBackgroundSaveCoordinatorBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A683C238F7A873A99ADC767 /* ApplicationBackgroundSaveCoordinatorBehaviorTests.swift */; };
 		D9695ABB2E20E06CFDB1A891 /* LocalLibraryRepositoryBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E58C88D6FE3BC739D6547F /* LocalLibraryRepositoryBehaviorTests.swift */; };
 		DC4527D0632D7AE10622D64F /* NotionAPIClient+Notebooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934DF4D1D763ECCBA574D817 /* NotionAPIClient+Notebooks.swift */; };
+		DD02C889AE54670A529AEF28 /* StoredNoteCompatibilityBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C40CF71BB5A037F57A3B52 /* StoredNoteCompatibilityBehaviorTests.swift */; };
 		DE3F598E2518E50D959D5C99 /* NotionSyncStateBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9986DA6A2385F59792927805 /* NotionSyncStateBehaviorTests.swift */; };
 		DF9181D40C47F7ABF7C23B62 /* CloudKitSyncProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B45FCE3E6D9FF50292F61257 /* CloudKitSyncProvider.swift */; };
 		DFF5D5ECD752C8E10F29B7A5 /* NativeDocumentSerializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABE58739DCC1D21AAE42CCBC /* NativeDocumentSerializer.swift */; };
@@ -485,6 +486,7 @@
 		B4B59E0354ED02D080CAC071 /* CanvasTextPlacementOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasTextPlacementOverlayView.swift; sourceTree = "<group>"; };
 		B5044FB714BF03EB244B667A /* NotionNotebookSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionNotebookSnapshot.swift; sourceTree = "<group>"; };
 		B5942E25DF0EC71E3C9D4D3E /* NotionRefreshingAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionRefreshingAPI.swift; sourceTree = "<group>"; };
+		B7C40CF71BB5A037F57A3B52 /* StoredNoteCompatibilityBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredNoteCompatibilityBehaviorTests.swift; sourceTree = "<group>"; };
 		B835107C42DFF1C4D92A4DCE /* CanvasBrowserBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasBrowserBehaviorTests.swift; sourceTree = "<group>"; };
 		B996C3B3A94B3B0366A2BE56 /* SyncBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncBehaviorTests.swift; sourceTree = "<group>"; };
 		BA98F93CBD2254E09CAA2F7A /* NotionManagedPageBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionManagedPageBehaviorTests.swift; sourceTree = "<group>"; };
@@ -673,6 +675,7 @@
 				D60D4D9C48BD56DBA2A636A1 /* LocalDocumentStoreBehaviorTests.swift */,
 				D8E58C88D6FE3BC739D6547F /* LocalLibraryRepositoryBehaviorTests.swift */,
 				5F05C57C9C7A5B5DABC92812 /* StartupBehaviorTests.swift */,
+				B7C40CF71BB5A037F57A3B52 /* StoredNoteCompatibilityBehaviorTests.swift */,
 				95ACF0611ADB91D29B510286 /* StrokeArchiveRepairBehaviorTests.swift */,
 				60ACBD6D93D49303CE2D2419 /* WritingLatencyBehaviorTests.swift */,
 			);
@@ -1490,6 +1493,7 @@
 				D5835AEA189903AD30B2C4B6 /* SerializationBehaviorTests.swift in Sources */,
 				BA7E8DEEEB293F81759F5E28 /* ShapePlacementBehaviorTests.swift in Sources */,
 				E87A8A330C7BAD77143B1CEF /* StartupBehaviorTests.swift in Sources */,
+				DD02C889AE54670A529AEF28 /* StoredNoteCompatibilityBehaviorTests.swift in Sources */,
 				D6763C69BB661C97397D01C7 /* StrokeArchiveRepairBehaviorTests.swift in Sources */,
 				A9D0E1390FFA68692370A669 /* SyncBehaviorTests.swift in Sources */,
 				5CC57863D13C878EF6615311 /* SyncDependencyRetryBehaviorTests.swift in Sources */,

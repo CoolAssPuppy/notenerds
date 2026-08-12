@@ -123,18 +123,20 @@ final class ApplicationBackgroundSaveCoordinator: ObservableObject {
 @MainActor
 final class UIApplicationBackgroundTaskManager: ApplicationBackgroundTaskManaging {
     private let application: UIApplication
+    private let taskName: String
     private var nextID = 0
     private var systemIDs: [ApplicationBackgroundTaskID: UIBackgroundTaskIdentifier] = [:]
 
-    init(application: UIApplication = .shared) {
+    init(application: UIApplication = .shared, taskName: String = "Save notes") {
         self.application = application
+        self.taskName = taskName
     }
 
     func beginBackgroundTask(
         expirationHandler: @escaping @MainActor () -> Void
     ) -> ApplicationBackgroundTaskID? {
         let systemID = application.beginBackgroundTask(
-            withName: "Save notes",
+            withName: taskName,
             expirationHandler: expirationHandler
         )
         guard systemID != .invalid else { return nil }

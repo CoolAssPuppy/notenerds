@@ -1,5 +1,36 @@
 # Current work
 
+## Fix the repeatable notebook rename freeze
+
+- [x] Measure the rename path and separate immediate work from delayed Notion work.
+- [x] Add a regression that fails on build 29 source.
+- [x] Remove Notion publishing from every rename, stroke, and other in-session edit.
+- [x] Sync once when the notebook closes or the app backgrounds.
+- [x] Keep Notion PDF and preview generation off the main thread.
+- [x] Run focused tests, complete tests, and strict lint.
+- [x] Record the result and commit the correction.
+
+### Rename freeze review
+
+- The connected iPad runs build 29, but Instruments reports the iPad as offline
+  and cannot attach a Time Profiler trace. CoreDevice can still list the app's
+  running process.
+- Source inspection found a Notion publish two seconds after every library
+  change, plus another publish when a notebook opened. Both paths prepared a
+  native archive, PDF, and canvas previews on the main thread.
+- The timing regression failed on build 29 source with a 355 ms main-thread
+  pause. Its simulator threshold remained sensitive to CPU contention, so the
+  final regression checks the executor directly and fails if rendering runs on
+  the main thread.
+- Product policy: in-session edits stay local. Closing a notebook or
+  backgrounding the app starts one coalesced Notion sync.
+- Opening the app or a notebook no longer publishes to Notion. Meeting-link
+  checks still run when a notebook opens, without starting a publish.
+- Background sync waits for pending Pencil snapshots and local document saves,
+  uses an iOS background task, and cancels when that task expires.
+- The final required run passed 572 tests with 0 failures and 0 skipped tests.
+  Strict SwiftLint and `git diff --check` passed.
+
 ## Release the picker dismissal fix in build 29
 
 - [x] Run release-tool tests and App Store Connect preflight.

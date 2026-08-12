@@ -8,7 +8,7 @@ extension NotionIntegrationModel {
         meetingLibrary = library
         meetingChoices = []
         dismissedMeetingIDs = []
-        startMeetingLinkTask(publishFirst: true)
+        startMeetingLinkTask(publishFirst: false)
     }
 
     func updateOpenNotebookLibrary(_ library: LibraryState) {

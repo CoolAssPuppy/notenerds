@@ -1,7 +1,6 @@
 import PDFKit
 import UIKit
 
-@MainActor
 struct NotebookPDFExporter {
     private let pageBounds = CGRect(x: 0, y: 0, width: 1024, height: 1366)
 

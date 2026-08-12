@@ -40,14 +40,16 @@ struct RootView: View {
             Text(model.presentedError ?? "")
         }
         .onReceive(model.$library.dropFirst()) { library in
-            notion.scheduleAutomaticSync(library)
             notion.updateOpenNotebookLibrary(library)
         }
-        .onChange(of: model.selectedNotebookID, initial: true) { _, notebookID in
+        .onChange(of: model.selectedNotebookID, initial: true) { previousID, notebookID in
             if let notebookID {
                 notion.openNotebook(notebookID, library: model.library)
             } else {
                 notion.closeNotebookMeetingLinks()
+                if previousID != nil {
+                    notion.scheduleEditingSessionSync(model.library)
+                }
             }
         }
         .task {

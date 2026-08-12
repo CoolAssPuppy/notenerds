@@ -111,7 +111,6 @@ final class NotionIntegrationModel: ObservableObject {
             try await applyConnection(stored)
             if let library {
                 try await resumeQueuedSync(library)
-                scheduleAutomaticSync(library)
             }
         } catch {
             showFailure("Your Notion connection could not be opened.")
@@ -173,7 +172,7 @@ final class NotionIntegrationModel: ObservableObject {
             showFailure("The Note Nerds database could not be created in Notion.")
             return
         }
-        scheduleAutomaticSync(library)
+        scheduleEditingSessionSync(library)
         resumeMeetingLinks()
     }
 
@@ -236,11 +235,24 @@ final class NotionIntegrationModel: ObservableObject {
         }
     }
 
-    func scheduleAutomaticSync(_ library: LibraryState) {
+    func scheduleEditingSessionSync(_ library: LibraryState) {
 #if DEBUG
         if isUITestStateLocked { return }
 #endif
         scheduleAutomaticSync(library, delay: automaticSyncDelay)
+    }
+
+    func syncAfterEditingSession(_ library: LibraryState) async {
+#if DEBUG
+        if isUITestStateLocked { return }
+#endif
+        guard !Task.isCancelled else { return }
+        pendingAutomaticSync = nil
+        await performSync(
+            library,
+            notebookID: nil,
+            shouldReconcileRemotePages: false
+        )
     }
 
     private func scheduleAutomaticSync(_ library: LibraryState, delay: Duration) {
@@ -266,7 +278,7 @@ final class NotionIntegrationModel: ObservableObject {
 
     func resumeAutomaticSync() {
         guard let pendingAutomaticSync else { return }
-        scheduleAutomaticSync(pendingAutomaticSync)
+        scheduleEditingSessionSync(pendingAutomaticSync)
     }
 
     func isSynced(_ notebookID: NotebookID) -> Bool {
@@ -470,26 +482,3 @@ final class NotionIntegrationModel: ObservableObject {
             + "\(report.deletedNotebookCount) \(deletedNoun) to Notion Trash."
     }
 }
-
-#if DEBUG
-private actor NotionDestinationSelectionUITestProvider: NotionDestinationProviding {
-    func searchPages(query: String?) -> [NotionPageSummary] { [] }
-
-    func createDatabase(parentPageID: String) async throws -> NotionDestination {
-        try await Task.sleep(for: .seconds(3))
-        return NotionDestination(
-            parentPageID: parentPageID,
-            databaseID: "11111111-1111-1111-1111-111111111111",
-            dataSourceID: "22222222-2222-2222-2222-222222222222",
-            databaseName: "Note Nerds"
-        )
-    }
-
-    func createLibraryManifestPage(parentPageID: String) -> NotionPageBinding {
-        NotionPageBinding(
-            pageID: "55555555-5555-5555-5555-555555555555",
-            url: nil
-        )
-    }
-}
-#endif

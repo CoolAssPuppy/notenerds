@@ -215,7 +215,7 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         await model.restore()
         let library = LibraryState(notebooks: [DomainFixtures.notebook()])
 
-        model.scheduleAutomaticSync(library)
+        model.scheduleEditingSessionSync(library)
         try await Task.sleep(for: .milliseconds(30))
         XCTAssertEqual(publisher.startedCount, 1)
         model.pauseAutomaticSync()
@@ -267,7 +267,7 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         XCTAssertTrue(snapshot.queue.isEmpty)
     }
 
-    func testRestoreReconcilesTheCurrentLibraryWhenDestinationHasNoQueue() async throws {
+    func testRestoreWaitsForAnEditingSessionBoundaryBeforePublishing() async throws {
         let connection = storedConnection()
         let notebook = DomainFixtures.notebook()
         let destination = StubDestinationProvider().destination
@@ -290,6 +290,10 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         let library = LibraryState(notebooks: [notebook])
 
         await model.restore(library: library)
+        try await Task.sleep(for: .milliseconds(30))
+
+        XCTAssertTrue(publisher.publishedLibraries.isEmpty)
+        model.scheduleEditingSessionSync(library)
         try await Task.sleep(for: .milliseconds(30))
 
         XCTAssertEqual(publisher.publishedLibraries, [library])
@@ -319,6 +323,7 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         let library = LibraryState(notebooks: [notebook])
 
         await model.restore(library: library)
+        model.scheduleEditingSessionSync(library)
         try await Task.sleep(for: .milliseconds(80))
 
         XCTAssertEqual(publisher.attemptCount, 2)

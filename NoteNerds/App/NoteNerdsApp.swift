@@ -6,6 +6,7 @@ struct NoteNerdsApp: App {
     @StateObject private var notion: NotionIntegrationModel
     @StateObject private var pencilCanvasSnapshotFlusher: PencilCanvasSnapshotFlusher
     @StateObject private var backgroundSaveCoordinator: ApplicationBackgroundSaveCoordinator
+    @StateObject private var backgroundSyncCoordinator: ApplicationBackgroundSyncCoordinator
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -27,18 +28,48 @@ struct NoteNerdsApp: App {
         _model = StateObject(wrappedValue: model)
         let pencilCanvasSnapshotFlusher = PencilCanvasSnapshotFlusher()
         _pencilCanvasSnapshotFlusher = StateObject(wrappedValue: pencilCanvasSnapshotFlusher)
-        _backgroundSaveCoordinator = StateObject(
-            wrappedValue: Self.makeBackgroundSaveCoordinator(
-                model: model,
-                snapshotFlusher: pencilCanvasSnapshotFlusher
-            )
+        let backgroundSaveCoordinator = Self.makeBackgroundSaveCoordinator(
+            model: model,
+            snapshotFlusher: pencilCanvasSnapshotFlusher
         )
+        _backgroundSaveCoordinator = StateObject(wrappedValue: backgroundSaveCoordinator)
         let notionConfiguration = Self.notionConfiguration(
             isUITesting: isUITesting,
             processInfo: processInfo
         )
         let notion = Self.makeNotionModel(configuration: notionConfiguration)
 #if DEBUG
+        Self.configureNotionForUITesting(notion, isUITesting: isUITesting, processInfo: processInfo)
+#endif
+        _notion = StateObject(wrappedValue: notion)
+        _backgroundSyncCoordinator = StateObject(
+            wrappedValue: Self.makeBackgroundSyncCoordinator(
+                model: model,
+                notion: notion,
+                backgroundSaveCoordinator: backgroundSaveCoordinator
+            )
+        )
+    }
+
+    private static func resetLibraryForUITesting() {
+        let supportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        try? FileManager.default.removeItem(at: supportURL.appending(path: "Library"))
+        try? FileManager.default.removeItem(at: supportURL.appending(path: "Documents"))
+        UserDefaults.standard.set(PaperType.blankWhite.rawValue, forKey: "defaultPaperType")
+        UserDefaults.standard.set(false, forKey: "isCanvasToolbarExpanded")
+        UserDefaults.standard.set(true, forKey: "isToolbarOnLeft")
+        UserDefaults.standard.set(
+            CanvasToolbarOrientation.vertical.rawValue,
+            forKey: "canvasToolbarOrientation"
+        )
+    }
+
+#if DEBUG
+    private static func configureNotionForUITesting(
+        _ notion: NotionIntegrationModel,
+        isUITesting: Bool,
+        processInfo: ProcessInfo
+    ) {
         if isUITesting && processInfo.arguments.contains("-force-notion-destination-selection") {
             notion.configureDestinationSelectionForUITesting()
         } else if isUITesting && processInfo.arguments.contains("-force-notion-connected") {
@@ -57,22 +88,8 @@ struct NoteNerdsApp: App {
                 failureMessage: "Notion rejected the update."
             )
         }
+    }
 #endif
-        _notion = StateObject(wrappedValue: notion)
-    }
-
-    private static func resetLibraryForUITesting() {
-        let supportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        try? FileManager.default.removeItem(at: supportURL.appending(path: "Library"))
-        try? FileManager.default.removeItem(at: supportURL.appending(path: "Documents"))
-        UserDefaults.standard.set(PaperType.blankWhite.rawValue, forKey: "defaultPaperType")
-        UserDefaults.standard.set(false, forKey: "isCanvasToolbarExpanded")
-        UserDefaults.standard.set(true, forKey: "isToolbarOnLeft")
-        UserDefaults.standard.set(
-            CanvasToolbarOrientation.vertical.rawValue,
-            forKey: "canvasToolbarOrientation"
-        )
-    }
 
     private static func makeBackgroundSaveCoordinator(
         model: AppModel,
@@ -85,6 +102,21 @@ struct NoteNerdsApp: App {
             },
             checkpointDocuments: {
                 await model.checkpointDocuments()
+            }
+        )
+    }
+
+    private static func makeBackgroundSyncCoordinator(
+        model: AppModel,
+        notion: NotionIntegrationModel,
+        backgroundSaveCoordinator: ApplicationBackgroundSaveCoordinator
+    ) -> ApplicationBackgroundSyncCoordinator {
+        ApplicationBackgroundSyncCoordinator(
+            backgroundTasks: UIApplicationBackgroundTaskManager(taskName: "Sync Notion"),
+            sync: {
+                await backgroundSaveCoordinator.waitForSaveToFinish()
+                guard !Task.isCancelled else { return }
+                await notion.syncAfterEditingSession(model.library)
             }
         )
     }
@@ -167,14 +199,17 @@ struct NoteNerdsApp: App {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 backgroundSaveCoordinator.transition(to: .active)
+                backgroundSyncCoordinator.transition(to: .active)
                 notion.resumeAutomaticSync()
                 notion.resumeMeetingLinks()
             } else {
                 notion.pauseAutomaticSync()
                 notion.pauseMeetingLinks()
-                backgroundSaveCoordinator.transition(
-                    to: phase == .background ? .background : .inactive
-                )
+                let lifecyclePhase: ApplicationLifecyclePhase = phase == .background
+                    ? .background
+                    : .inactive
+                backgroundSaveCoordinator.transition(to: lifecyclePhase)
+                backgroundSyncCoordinator.transition(to: lifecyclePhase)
             }
         }
     }

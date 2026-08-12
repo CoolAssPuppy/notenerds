@@ -3,14 +3,14 @@ import XCTest
 
 @MainActor
 final class MeetingLinkLifecycleBehaviorTests: XCTestCase {
-    func testOpeningNotebookPublishesItThenLinksTheActiveMeeting() async throws {
+    func testOpeningNotebookChecksTheActiveMeetingWithoutPublishing() async throws {
         let fixture = await makeFixture(results: [.linked(meetingTitle: "Weekly planning")])
 
         fixture.model.openNotebook(fixture.first.id, library: fixture.library)
         await fixture.meetingLinks.waitForCheckCount(1)
         let checkedIDs = await fixture.meetingLinks.checkedNotebookIDs
 
-        XCTAssertEqual(fixture.publisher.selectedNotebookIDs, [fixture.first.id])
+        XCTAssertTrue(fixture.publisher.selectedNotebookIDs.isEmpty)
         XCTAssertEqual(checkedIDs, [fixture.first.id.rawValue.uuidString.lowercased()])
         XCTAssertEqual(
             fixture.model.meetingLinkMessage,

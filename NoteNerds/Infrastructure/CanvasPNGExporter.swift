@@ -5,7 +5,6 @@ enum PNGExportError: Error, Equatable {
     case encodingFailed
 }
 
-@MainActor
 struct CanvasPNGExporter {
     func export(_ canvas: Canvas, region: CanvasRect, scale: Double = 1) throws -> Data {
         guard region.size.width > 0, region.size.height > 0, scale > 0 else {

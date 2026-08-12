@@ -1,5 +1,13 @@
 # Lessons
 
+- Treat closing a notebook or backgrounding the app as the Notion sync boundary.
+  Renames, strokes, tags, moves, and other local edits must stay local while the
+  user is working. Coalesce them into one background sync when the user signals
+  that the session is finished.
+- A connected integration turns ordinary library edits into integration tests.
+  Measure notebook rename, tag, move, and favorite changes with automatic Notion
+  sync enabled, and fail the release when PDF or preview generation blocks the
+  main thread.
 - A successful async selection is incomplete until its presented interface closes.
   Test the real navigation or presentation binding across every state change started
   by the selection, including background work scheduled immediately afterward.

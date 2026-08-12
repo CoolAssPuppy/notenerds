@@ -13,7 +13,6 @@ struct NotionNotebookPayloadPreparation: Sendable {
 }
 
 protocol NotionNotebookPayloadRendering: Sendable {
-    @MainActor
     func render(
         _ preparation: NotionNotebookPayloadPreparation,
         maximumPreviewDimension: Double
@@ -77,14 +76,17 @@ struct NotionNotebookPayloadBuilder: Sendable {
         )
     }
 
-    @MainActor
     func render(
         _ preparation: NotionNotebookPayloadPreparation
-    ) throws -> NotionNotebookPayload {
-        try renderer.render(
-            preparation,
-            maximumPreviewDimension: maximumPreviewDimension
-        )
+    ) async throws -> NotionNotebookPayload {
+        let renderer = renderer
+        let maximumPreviewDimension = maximumPreviewDimension
+        return try await Task.detached(priority: .utility) {
+            try renderer.render(
+                preparation,
+                maximumPreviewDimension: maximumPreviewDimension
+            )
+        }.value
     }
 
     private func referencedAssets(
@@ -117,7 +119,6 @@ struct NotionNotebookPayloadBuilder: Sendable {
 }
 
 struct NotionNotebookPayloadRenderer: NotionNotebookPayloadRendering {
-    @MainActor
     func render(
         _ preparation: NotionNotebookPayloadPreparation,
         maximumPreviewDimension: Double
@@ -137,7 +138,6 @@ struct NotionNotebookPayloadRenderer: NotionNotebookPayloadRendering {
         )
     }
 
-    @MainActor
     private func renderPreviews(
         notebook: Notebook,
         maximumPreviewDimension: Double

@@ -108,6 +108,27 @@ final class NotionPayloadBuilderTests: XCTestCase {
         XCTAssertEqual(requestCount, 0)
     }
 
+    func testBackgroundPayloadRenderingDoesNotRunOnTheMainThread() async throws {
+        let notebook = DomainFixtures.notebook()
+        let library = LibraryState(notebooks: [notebook])
+        let renderer = ThreadCheckingNotebookPayloadRenderer()
+        let builder = NotionNotebookPayloadBuilder(renderer: renderer)
+        let preparation = try await builder.prepare(
+            notebook: notebook,
+            library: library,
+            exportedAt: DomainFixtures.fixedDate
+        )
+
+        do {
+            _ = try await builder.render(preparation)
+            XCTFail("Expected the test renderer to stop rendering")
+        } catch {
+            XCTAssertEqual(error as? NotionAPIError, .invalidResponse)
+        }
+
+        XCTAssertFalse(renderer.didRenderOnMainThread)
+    }
+
     func testDuplicateCanvasIdentifiersStopSyncWithoutCrashingTheApp() async {
         var notebook = DomainFixtures.notebook()
         notebook.canvases.append(notebook.canvases[0])
@@ -218,15 +239,38 @@ final class NotionPayloadBuilderTests: XCTestCase {
     }
 }
 
-@MainActor
-private final class RejectingNotebookPayloadRenderer: NotionNotebookPayloadRendering {
-    private(set) var renderCount = 0
+private final class RejectingNotebookPayloadRenderer: NotionNotebookPayloadRendering, @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedRenderCount = 0
+
+    var renderCount: Int {
+        lock.withLock { storedRenderCount }
+    }
 
     func render(
         _ preparation: NotionNotebookPayloadPreparation,
         maximumPreviewDimension: Double
     ) throws -> NotionNotebookPayload {
-        renderCount += 1
+        lock.withLock { storedRenderCount += 1 }
+        throw NotionAPIError.invalidResponse
+    }
+}
+
+private final class ThreadCheckingNotebookPayloadRenderer:
+    NotionNotebookPayloadRendering,
+    @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedDidRenderOnMainThread = false
+
+    var didRenderOnMainThread: Bool {
+        lock.withLock { storedDidRenderOnMainThread }
+    }
+
+    func render(
+        _ preparation: NotionNotebookPayloadPreparation,
+        maximumPreviewDimension: Double
+    ) throws -> NotionNotebookPayload {
+        lock.withLock { storedDidRenderOnMainThread = Thread.isMainThread }
         throw NotionAPIError.invalidResponse
     }
 }

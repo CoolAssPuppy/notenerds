@@ -161,7 +161,7 @@ final class NotionLibraryPublisher: NotionLibraryPublishing {
                 counts.skipped += 1
                 continue
             }
-            let payload = try payloadBuilder.render(preparation)
+            let payload = try await payloadBuilder.render(preparation)
             switch try await notebookCoordinator.sync(
                 payload,
                 to: destination,

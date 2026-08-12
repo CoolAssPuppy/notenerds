@@ -1,9 +1,15 @@
 import SwiftUI
 
+enum CanvasToolbarPreferences {
+    static let isExpandedKey = "isCanvasToolbarExpanded"
+    static let isExpandedByDefault = false
+}
+
 struct CanvasToolbarView: View {
     let editor: NotebookEditorView
     @State private var presentedInspector: CanvasToolbarInspector?
-    @AppStorage("isCanvasToolbarExpanded") private var isExpanded = false
+    @AppStorage(CanvasToolbarPreferences.isExpandedKey)
+    private var isExpanded = CanvasToolbarPreferences.isExpandedByDefault
     @Environment(\.accessibilityReduceMotion) private var isReduceMotionEnabled
     @Environment(\.accessibilityReduceTransparency) private var isReduceTransparencyEnabled
 

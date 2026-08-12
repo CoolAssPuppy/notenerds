@@ -4,6 +4,21 @@ import XCTest
 @testable import NoteNerds
 
 final class CanvasToolbarBehaviorTests: XCTestCase {
+    func testToolbarStartsMinimizedAndKeepsTheUsersSavedState() throws {
+        let suiteName = "CanvasToolbarBehaviorTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.register(defaults: [
+            CanvasToolbarPreferences.isExpandedKey: CanvasToolbarPreferences.isExpandedByDefault
+        ])
+
+        XCTAssertFalse(defaults.bool(forKey: CanvasToolbarPreferences.isExpandedKey))
+
+        defaults.set(true, forKey: CanvasToolbarPreferences.isExpandedKey)
+
+        XCTAssertTrue(defaults.bool(forKey: CanvasToolbarPreferences.isExpandedKey))
+    }
+
     func testCompactToolbarKeepsEveryCoreDrawingControlVisible() {
         XCTAssertEqual(
             CanvasToolbarPresentation.actions(isExpanded: false),

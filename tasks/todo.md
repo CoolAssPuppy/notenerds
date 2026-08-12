@@ -23,9 +23,18 @@
 
 ## Minimize the floating toolbar by default
 
-- [ ] Add a failing behavior test for the first-launch minimized state.
-- [ ] Keep using the saved expanded or minimized state after the user changes it.
-- [ ] Run focused tests and commit the preference change separately.
+- [x] Add a failing behavior test for the first-launch minimized state.
+- [x] Keep using the saved expanded or minimized state after the user changes it.
+- [x] Run focused tests and commit the preference change separately.
+
+### Toolbar preference review
+
+- New installations start with the floating canvas toolbar minimized.
+- The expansion value remains in `AppStorage`, so reopening the app restores the
+  user's last expanded or minimized choice.
+- The preference test failed before the named policy existed and passed after the
+  toolbar adopted it. The focused toolbar suite and the complete 569-test suite
+  passed.
 
 ## Release canvas audit build 27
 

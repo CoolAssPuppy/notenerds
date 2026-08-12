@@ -23,28 +23,34 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         XCTAssertEqual(connectionManager.connectCount, 1)
     }
 
-    func testSelectingParentCreatesDestinationPersistsItAndPublishesCurrentLibrary() async throws {
+    func testSelectingParentCreatesDestinationPersistsItAndSchedulesTheCurrentLibrary() async throws {
         let connection = storedConnection()
         let connectionManager = StubConnectionManager(current: connection, connected: connection)
         let provider = StubDestinationProvider()
         let registry = NotionSyncRegistry(store: IntegrationStateStore())
-        let publisher = StubLibraryPublisher(report: NotionPublishReport(
-            uploadedNotebookCount: 1,
-            skippedNotebookCount: 0,
-            didUploadManifest: true
-        ))
+        let initialPublishFinished = expectation(description: "Initial library publish")
+        let publisher = StubLibraryPublisher(
+            report: NotionPublishReport(
+                uploadedNotebookCount: 1,
+                skippedNotebookCount: 0,
+                didUploadManifest: true
+            ),
+            onPublish: initialPublishFinished.fulfill
+        )
         let model = NotionIntegrationModel(
             isConfigured: true,
             connectionManager: connectionManager,
             destinationProviderFactory: { _ in provider },
             registry: registry,
-            publisher: publisher
+            publisher: publisher,
+            automaticSyncDelay: .milliseconds(1)
         )
         await model.restore()
         let page = try XCTUnwrap(model.pages.first)
         let library = LibraryState(notebooks: [DomainFixtures.notebook()])
 
         await model.selectDestination(parentPage: page, library: library)
+        await fulfillment(of: [initialPublishFinished], timeout: 1)
         let state = try await registry.snapshot()
         let expectedDestination = provider.destination
         let createdParentIDs = await provider.createdParentIDs
@@ -55,8 +61,41 @@ final class NotionIntegrationModelBehaviorTests: XCTestCase {
         XCTAssertEqual(state.destination, expectedDestination)
         XCTAssertEqual(state.manifestPageID, provider.manifestPage.pageID)
         XCTAssertEqual(createdParentIDs, [page.id, page.id])
-        XCTAssertEqual(publisher.reconciledLibraries, [library])
+        XCTAssertEqual(publisher.publishedLibraries, [library])
         XCTAssertEqual(model.lastSyncSummary, "Sent 1 notebook to Notion.")
+    }
+
+    func testSelectingParentFinishesBeforeTheInitialLibraryUpload() async throws {
+        let connection = storedConnection()
+        let provider = StubDestinationProvider()
+        let publisher = CancellableLibraryPublisher()
+        let model = NotionIntegrationModel(
+            isConfigured: true,
+            connectionManager: StubConnectionManager(current: connection, connected: connection),
+            destinationProviderFactory: { _ in provider },
+            registry: NotionSyncRegistry(store: IntegrationStateStore()),
+            publisher: publisher,
+            automaticSyncDelay: .milliseconds(1)
+        )
+        await model.restore()
+        let page = try XCTUnwrap(model.pages.first)
+        let selectionFinished = expectation(description: "Destination picker can dismiss")
+
+        let selectionTask = Task {
+            await model.selectDestination(
+                parentPage: page,
+                library: LibraryState(notebooks: [DomainFixtures.notebook()])
+            )
+            selectionFinished.fulfill()
+        }
+        defer {
+            selectionTask.cancel()
+            model.pauseAutomaticSync()
+        }
+
+        await fulfillment(of: [selectionFinished], timeout: 0.2)
+
+        XCTAssertEqual(model.destination, provider.destination)
     }
 
     func testDisconnectRevokesConnectionAndClearsVisibleWorkspaceData() async {
@@ -309,10 +348,16 @@ private final class StubLibraryPublisher: NotionLibraryPublishing {
     private var remainingFailureCount: Int
     private(set) var publishedLibraries: [LibraryState] = []
     private(set) var reconciledLibraries: [LibraryState] = []
+    private let onPublish: () -> Void
 
-    init(report: NotionPublishReport, failureCount: Int = 0) {
+    init(
+        report: NotionPublishReport,
+        failureCount: Int = 0,
+        onPublish: @escaping () -> Void = {}
+    ) {
         self.report = report
         remainingFailureCount = failureCount
+        self.onPublish = onPublish
     }
 
     func publish(
@@ -320,6 +365,7 @@ private final class StubLibraryPublisher: NotionLibraryPublishing {
         notebookID: NotebookID?
     ) async throws -> NotionPublishReport {
         publishedLibraries.append(library)
+        onPublish()
         return try result()
     }
 
@@ -436,51 +482,4 @@ private final class SuccessfulRegistryLibraryPublisher: NotionLibraryPublishing 
             didUploadManifest: false
         )
     }
-}
-
-private actor StubDestinationProvider: NotionDestinationProviding {
-    let destination = NotionDestination(
-        databaseID: "11111111-1111-1111-1111-111111111111",
-        dataSourceID: "22222222-2222-2222-2222-222222222222"
-    )
-    private(set) var createdParentIDs: [String] = []
-    let manifestPage = NotionPageBinding(
-        pageID: "55555555-5555-5555-5555-555555555555",
-        url: nil
-    )
-
-    func searchPages(query: String?) -> [NotionPageSummary] {
-        [
-            NotionPageSummary(
-                id: "33333333-3333-3333-3333-333333333333",
-                title: "Product",
-                url: nil
-            ),
-            NotionPageSummary(
-                id: "44444444-4444-4444-4444-444444444444",
-                title: "Personal",
-                url: nil
-            )
-        ]
-    }
-
-    func createDatabase(parentPageID: String) -> NotionDestination {
-        createdParentIDs.append(parentPageID)
-        return destination
-    }
-
-    func createLibraryManifestPage(parentPageID: String) -> NotionPageBinding {
-        createdParentIDs.append(parentPageID)
-        return manifestPage
-    }
-}
-
-private actor IntegrationStateStore: NotionSyncStateStoring {
-    private var state: NotionSyncState?
-    init(state: NotionSyncState? = nil) {
-        self.state = state
-    }
-
-    func load() -> NotionSyncState? { state }
-    func save(_ state: NotionSyncState) { self.state = state }
 }

@@ -275,6 +275,7 @@
 		FB9FF202844A205E7C4A0689 /* PencilCanvasView+StrokeSamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC031AC7A01AB651D91E6C85 /* PencilCanvasView+StrokeSamples.swift */; };
 		FC3931712AC3423AD5FA9049 /* CanvasHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABC2264268EECE066E88E68 /* CanvasHeaderView.swift */; };
 		FC47A5C620CF1BD9DB3CCFDA /* VectorEraser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEB13920DA24632E0120DF87 /* VectorEraser.swift */; };
+		FCE146734E55D79F4E110061 /* NotionIntegrationTestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8835D0463CBA384C0B29CAE /* NotionIntegrationTestFixtures.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -562,6 +563,7 @@
 		F5E16C35BC6348493A49B8E9 /* DocumentHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentHistory.swift; sourceTree = "<group>"; };
 		F79D8597DB1B9F7BE6ADB5DA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		F7F00FED5868763C3F9E3D88 /* FolderEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderEditorView.swift; sourceTree = "<group>"; };
+		F8835D0463CBA384C0B29CAE /* NotionIntegrationTestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionIntegrationTestFixtures.swift; sourceTree = "<group>"; };
 		F928A3CAA386FE4447917114 /* LibrarySearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySearchBar.swift; sourceTree = "<group>"; };
 		F962DD1770D5E6A3E4B9E370 /* CanvasShapeInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasShapeInspector.swift; sourceTree = "<group>"; };
 		FB5F7F02BAD71FA8FFEC737F /* CanvasSearchHighlightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSearchHighlightView.swift; sourceTree = "<group>"; };
@@ -1026,6 +1028,7 @@
 				564EB000BAC305B973FC8E18 /* NotionEndToEndIntegrationTests.swift */,
 				D6CA986D5D18418792683148 /* NotionFileUploadBehaviorTests.swift */,
 				327AB49929B7FEDF1A72CBB5 /* NotionIntegrationModelBehaviorTests.swift */,
+				F8835D0463CBA384C0B29CAE /* NotionIntegrationTestFixtures.swift */,
 				E5DEFD4B3C73F3B711A59BDF /* NotionLibraryManifestPageBehaviorTests.swift */,
 				38429F50E1C61F32F0271DC4 /* NotionLibraryRestoreServiceBehaviorTests.swift */,
 				BA98F93CBD2254E09CAA2F7A /* NotionManagedPageBehaviorTests.swift */,
@@ -1460,6 +1463,7 @@
 				E399C438C01F71BF51543E9E /* NotionEndToEndIntegrationTests.swift in Sources */,
 				C6AE6CB7B7A08995A39599E5 /* NotionFileUploadBehaviorTests.swift in Sources */,
 				24D4E1432E5D1659F936F548 /* NotionIntegrationModelBehaviorTests.swift in Sources */,
+				FCE146734E55D79F4E110061 /* NotionIntegrationTestFixtures.swift in Sources */,
 				4CEB48BD6C8C1904763AFB6E /* NotionLibraryManifestPageBehaviorTests.swift in Sources */,
 				42ADBB5E8A092E9AD37265DC /* NotionLibraryRestoreServiceBehaviorTests.swift in Sources */,
 				14EC4D11BDA20FFB876E94CF /* NotionManagedPageBehaviorTests.swift in Sources */,

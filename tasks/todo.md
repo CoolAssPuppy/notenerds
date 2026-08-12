@@ -1,5 +1,32 @@
 # Current work
 
+## Fix Notion destination selection freeze
+
+- [x] Trace destination selection from Settings through database setup.
+- [x] Add a failing behavior test for choosing an available Notion document.
+- [x] Fix the freeze without changing the verified canvas work.
+- [x] Run focused tests, the complete app and performance suites, and strict lint.
+- [x] Record the result and commit it separately on `canvas-performance`.
+
+### Notion destination review
+
+- The picker waited for the initial full-library upload before dismissing. That
+  upload prepares native files, PDFs, previews, notebook pages, and the manifest.
+- Destination creation and manifest-page creation still finish before dismissal,
+  and their identifiers are saved first. The initial library upload begins after
+  the normal two-second automatic-sync delay.
+- The regression test failed before the change because selection remained blocked
+  behind a suspended publisher. It passes after the change.
+- The complete suite passed 569 tests with 0 failures and 0 skipped tests,
+  including 6 performance measurements. Strict SwiftLint and `git diff --check`
+  passed.
+
+## Minimize the floating toolbar by default
+
+- [ ] Add a failing behavior test for the first-launch minimized state.
+- [ ] Keep using the saved expanded or minimized state after the user changes it.
+- [ ] Run focused tests and commit the preference change separately.
+
 ## Release canvas audit build 27
 
 - [x] Run the release-tool tests and App Store Connect preflight.

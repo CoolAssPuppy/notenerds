@@ -173,7 +173,7 @@ final class NotionIntegrationModel: ObservableObject {
             showFailure("The Note Nerds database could not be created in Notion.")
             return
         }
-        await sync(library)
+        scheduleAutomaticSync(library)
         resumeMeetingLinks()
     }
 

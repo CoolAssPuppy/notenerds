@@ -1,5 +1,30 @@
 # Current work
 
+## Release palm rejection to TestFlight
+
+- [ ] Commit the verified two-finger canvas navigation change.
+- [ ] Run release-tool tests and App Store Connect preflight.
+- [ ] Build, sign, export, and upload TestFlight build 32.
+- [ ] Confirm Apple marks build 32 valid and internal testers can receive it.
+- [ ] Commit the build number and release record, then push `main`.
+
+## Prevent palm movement while writing
+
+- [x] Reproduce one-finger canvas movement in Pencil mode with a failing test.
+- [x] Require two fingers for canvas panning while preserving Pencil drawing and pinch zoom.
+- [x] Verify Pencil input, planner paging, navigation, and strict lint.
+- [x] Record the result.
+
+### Palm movement review
+
+- Pencil mode now ignores one-finger navigation, and the PencilKit scroll view
+  requires two touches to pan. Pencil drawing remains unchanged, and two-finger
+  pan and pinch remain available.
+- Both regressions failed before the fix. The focused Pencil and planner checks
+  passed afterward.
+- The full serial gate passed 561 behavior tests and 13 performance tests. Strict
+  lint passed with 0 violations across 268 Swift files.
+
 ## Release responsive Notion sync to TestFlight
 
 - [x] Commit the verified Notion sync, Settings, and invalid URL fixes.

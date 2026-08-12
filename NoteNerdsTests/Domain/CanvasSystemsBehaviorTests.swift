@@ -32,7 +32,7 @@ final class CanvasSystemsBehaviorTests: XCTestCase {
 
     func testInputRoutingChangesWhenFingerDrawingIsEnabled() {
         XCTAssertEqual(InputRouter(mode: .pencilAndNavigation).action(for: .pencil), .draw)
-        XCTAssertEqual(InputRouter(mode: .pencilAndNavigation).action(for: .oneFinger), .navigate)
+        XCTAssertNil(InputRouter(mode: .pencilAndNavigation).action(for: .oneFinger))
         XCTAssertEqual(InputRouter(mode: .fingerDrawing).action(for: .oneFinger), .draw)
         XCTAssertEqual(InputRouter(mode: .fingerDrawing).action(for: .twoFingers), .navigate)
     }

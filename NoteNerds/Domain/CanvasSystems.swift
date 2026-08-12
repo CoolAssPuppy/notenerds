@@ -135,10 +135,11 @@ struct CanvasEditingCommand: Identifiable, Sendable {
 struct InputRouter: Sendable {
     let mode: CanvasInputMode
 
-    func action(for input: CanvasInput) -> CanvasInputAction {
+    func action(for input: CanvasInput) -> CanvasInputAction? {
         switch (mode, input) {
         case (_, .pencil), (.fingerDrawing, .oneFinger): .draw
-        case (_, .twoFingers), (.pencilAndNavigation, .oneFinger): .navigate
+        case (_, .twoFingers): .navigate
+        case (.pencilAndNavigation, .oneFinger): nil
         }
     }
 }

@@ -61,7 +61,7 @@ struct PencilCanvasView: UIViewRepresentable {
         let coordinator = context.coordinator
         coordinator.attachSnapshotFlusher(snapshotFlusher, canvasView: canvasView)
         PencilCanvasInputAccessories.install(on: canvasView, coordinator: coordinator)
-        configureViewport(canvasView)
+        Self.configureViewport(canvasView)
         updatePlannerContext(context.coordinator)
         applyPaper(to: canvasView, coordinator: context.coordinator)
         canvasView.isOpaque = true

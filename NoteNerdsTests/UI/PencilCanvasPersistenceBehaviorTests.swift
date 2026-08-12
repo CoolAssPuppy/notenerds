@@ -5,6 +5,14 @@ import XCTest
 
 @MainActor
 extension PencilCanvasInputBehaviorTests {
+    func testCanvasPanRequiresTwoFingersToRejectPalmMovement() {
+        let canvasView = PKCanvasView()
+
+        PencilCanvasView.configureViewport(canvasView)
+
+        XCTAssertEqual(canvasView.panGestureRecognizer.minimumNumberOfTouches, 2)
+    }
+
     func testEraserPublishesWhenNoDrawingChangeFollowsToolUseEnd() async {
         let pencilStroke = PencilStrokeTestFixture.pencilStroke(
             color: .black,

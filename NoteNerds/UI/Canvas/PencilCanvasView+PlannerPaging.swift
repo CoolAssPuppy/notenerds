@@ -2,9 +2,12 @@ import PencilKit
 import UIKit
 
 extension PencilCanvasView {
-    func configureViewport(_ canvasView: PKCanvasView) {
+    static func configureViewport(_ canvasView: PKCanvasView) {
         canvasView.minimumZoomScale = CanvasViewport.minimumZoom
         canvasView.maximumZoomScale = CanvasViewport.maximumZoom
+        // A single resting finger or palm must not move the page while the
+        // Pencil is writing. Two fingers still pan and pinch as expected.
+        canvasView.panGestureRecognizer.minimumNumberOfTouches = 2
         canvasView.contentSize = CGSize(width: 20_000, height: 20_000)
         canvasView.contentOffset = CGPoint(x: 9_500, y: 9_500)
     }

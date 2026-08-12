@@ -1,5 +1,41 @@
 # Current work
 
+## Release responsive Notion sync to TestFlight
+
+- [ ] Commit the verified Notion sync, Settings, and invalid URL fixes.
+- [ ] Run release-tool tests and App Store Connect preflight.
+- [ ] Build, sign, export, and upload the next TestFlight build.
+- [ ] Confirm Apple marks the build valid and internal testers can receive it.
+- [ ] Commit the build number and release record.
+
+## Keep Settings responsive during Notion sync
+
+- [x] Reproduce Settings dismissal blocking while Notion sync is active.
+- [x] Move every Notion publish preparation step away from the main actor.
+- [x] Add a temporary Notion syncing row above Settings in the library sidebar.
+- [x] Verify the status row appears only while syncing and remains accessible.
+- [x] Reduce the Settings Notion section to workspace, database, sync, and disconnect rows.
+- [x] Reproduce and fix the Notion content-creation invalid URL error.
+- [x] Fix the SVG folder icon WebKit timeout exposed by the full parallel test run.
+- [x] Run focused tests, the full required suites, and strict lint.
+- [x] Record the result.
+
+### Notion background sync review
+
+- `NotionLibraryPublisher` is now an actor. Manifest preparation, reconciliation,
+  hashing, archive work, and request planning run away from the main actor.
+- The sidebar shows a temporary Notion status row above Settings. Settings stays
+  dismissible during sync, and its Notion section contains Workspace, Notebook
+  database, Sync now or Syncing…, and Disconnect.
+- Generated Notion blocks no longer include the rejected `notenerds://` rich-text
+  link. This fixes Notion's content-creation invalid URL response.
+- The publisher, invalid URL, Settings layout, and dismissal regression tests were
+  confirmed failing before their fixes. The checkpoint test exposed during the
+  full run now uses explicit snapshot and journal write gates instead of fixed
+  `Task.yield()` counts.
+- The serial verification passed 573 tests with 0 failures. Strict lint passed
+  with 0 violations across 268 Swift files.
+
 ## Release the Notion session-sync fix in build 30
 
 - [x] Push the verified fix on `main`.

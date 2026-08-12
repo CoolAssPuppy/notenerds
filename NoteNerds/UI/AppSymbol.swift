@@ -16,4 +16,5 @@ enum AppSymbol {
     static let select = "checkmark.circle"
     static let sort = "arrow.up.arrow.down"
     static let settings = "gearshape"
+    static let notionSync = "n.square.fill"
 }

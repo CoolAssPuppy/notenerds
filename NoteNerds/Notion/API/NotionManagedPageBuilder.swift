@@ -23,11 +23,7 @@ enum NotionManagedPageBuilder {
         var children = [
             code(marker),
             paragraph("Notebook ID: \(snapshot.row.notebookID)"),
-            callout(metadata(snapshot: snapshot, syncedAt: syncedAt)),
-            linkedParagraph(
-                "Open in Note Nerds",
-                url: "notenerds://notebook/\(snapshot.row.notebookID.lowercased())"
-            )
+            callout(metadata(snapshot: snapshot, syncedAt: syncedAt))
         ]
         for canvas in snapshot.canvases {
             guard let previewID = previewUploadIDs[canvas.canvasID] else {
@@ -100,23 +96,6 @@ enum NotionManagedPageBuilder {
         .object([
             "type": .string("paragraph"),
             "paragraph": .object(["rich_text": .array([richText(text)])])
-        ])
-    }
-
-    private static func linkedParagraph(_ text: String, url: String) -> NotionJSONValue {
-        .object([
-            "type": .string("paragraph"),
-            "paragraph": .object([
-                "rich_text": .array([
-                    .object([
-                        "type": .string("text"),
-                        "text": .object([
-                            "content": .string(text),
-                            "link": .object(["url": .string(url)])
-                        ])
-                    ])
-                ])
-            ])
         ])
     }
 

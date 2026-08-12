@@ -129,6 +129,35 @@ final class NotionPayloadBuilderTests: XCTestCase {
         XCTAssertFalse(renderer.didRenderOnMainThread)
     }
 
+    func testNotionPublishPipelineStartsAwayFromTheMainThread() async throws {
+        let destination = NotionDestination(
+            databaseID: "11111111-1111-1111-1111-111111111111",
+            dataSourceID: "22222222-2222-2222-2222-222222222222"
+        )
+        let registry = NotionSyncRegistry(store: PayloadPublisherStateStore(state: NotionSyncState(
+            workspaceID: "workspace",
+            destination: destination
+        )))
+        let threadRecorder = ThreadRecorder()
+        let publisher = NotionLibraryPublisher(
+            api: RequestCountingNotionAPI(),
+            registry: registry,
+            now: {
+                threadRecorder.recordCurrentThread()
+                return DomainFixtures.fixedDate
+            }
+        )
+
+        do {
+            _ = try await publisher.publish(LibraryState())
+            XCTFail("Expected the missing manifest page to stop publishing")
+        } catch {
+            XCTAssertEqual(error as? NotionOAuthError, .noConnection)
+        }
+
+        XCTAssertFalse(threadRecorder.didRunOnMainThread)
+    }
+
     func testDuplicateCanvasIdentifiersStopSyncWithoutCrashingTheApp() async {
         var notebook = DomainFixtures.notebook()
         notebook.canvases.append(notebook.canvases[0])
@@ -272,6 +301,19 @@ private final class ThreadCheckingNotebookPayloadRenderer:
     ) throws -> NotionNotebookPayload {
         lock.withLock { storedDidRenderOnMainThread = Thread.isMainThread }
         throw NotionAPIError.invalidResponse
+    }
+}
+
+private final class ThreadRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedDidRunOnMainThread = false
+
+    var didRunOnMainThread: Bool {
+        lock.withLock { storedDidRunOnMainThread }
+    }
+
+    func recordCurrentThread() {
+        lock.withLock { storedDidRunOnMainThread = Thread.isMainThread }
     }
 }
 

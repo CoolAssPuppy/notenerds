@@ -1,5 +1,10 @@
 # Lessons
 
+- A background integration must keep its complete publish pipeline away from the
+  main actor. Moving only PDF and preview rendering is insufficient when archive
+  preparation, manifest encoding, hashing, reconciliation, or request planning
+  can still delay navigation and sheet dismissal. Show sync state in the sidebar
+  without tying user input to the sync task.
 - Treat closing a notebook or backgrounding the app as the Notion sync boundary.
   Renames, strokes, tags, moves, and other local edits must stay local while the
   user is working. Coalesce them into one background sync when the user signals
@@ -140,3 +145,4 @@
 - Confirm a regression test fails without its fix. A test written after the change can pass for the wrong reason and prove nothing.
 - Before optimising a comparison, delete it and run the suite. The per-point walk of already-committed PencilKit strokes looked redundant next to the cheap field checks that run first, and removing it failed the test written for late pressure revisions.
 - Two representations of the same data are not automatically waste. Stroke samples serve hit testing, erasing, recognition, export and sync; the PencilKit archive reproduces marker and highlighter rendering. Collapsing them would reintroduce a decode on every hit test or lose fidelity that has already regressed once.
+- System web views can take more than three seconds to start during a parallel test run. A production timeout for WebKit rendering must allow for simulator and device startup contention, or valid local SVG imports fail at random under load.

@@ -18,6 +18,7 @@ final class AppleInterfaceBehaviorTests: XCTestCase {
         XCTAssertEqual(AppSymbol.search, "magnifyingglass")
         XCTAssertEqual(AppSymbol.share, "square.and.arrow.up")
         XCTAssertEqual(AppSymbol.settings, "gearshape")
+        XCTAssertEqual(AppSymbol.notionSync, "n.square.fill")
         XCTAssertEqual(AppSymbol.more, "ellipsis.circle")
         XCTAssertEqual(AppSymbol.back, "chevron.backward")
         XCTAssertEqual(AppSymbol.add, "plus")

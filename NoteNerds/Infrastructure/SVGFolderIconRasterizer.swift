@@ -140,6 +140,8 @@ private final class SVGXMLValidationDelegate: NSObject, XMLParserDelegate {
 
 @MainActor
 final class SVGFolderIconRasterizer: NSObject, WKNavigationDelegate {
+    private static let operationTimeout = Duration.seconds(10)
+
     private let pixelSize: Int
     private let webView: WKWebView
     private var continuation: CheckedContinuation<Void, any Error>?
@@ -172,7 +174,7 @@ final class SVGFolderIconRasterizer: NSObject, WKNavigationDelegate {
                 self.continuation = continuation
                 webView.loadHTMLString(html(source: source), baseURL: nil)
                 timeoutTask = Task { @MainActor [weak self] in
-                    try? await Task.sleep(for: .seconds(3))
+                    try? await Task.sleep(for: Self.operationTimeout)
                     self?.finish(.failure(FolderIconImportError.invalidImage))
                 }
             }
@@ -253,7 +255,7 @@ final class SVGFolderIconRasterizer: NSObject, WKNavigationDelegate {
                 snapshotContinuation = continuation
                 snapshotTimeoutTask = Task { @MainActor [weak self] in
                     do {
-                        try await Task.sleep(for: .seconds(3))
+                        try await Task.sleep(for: Self.operationTimeout)
                         self?.finishSnapshot(.failure(FolderIconImportError.invalidImage))
                     } catch {}
                 }

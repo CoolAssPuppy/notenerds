@@ -68,16 +68,19 @@ actor LocalDocumentStore {
     private let fileManager = FileManager.default
     private let readData: @Sendable (URL) throws -> Data
     private let afterSnapshotWrite: @Sendable () throws -> Void
+    private let afterJournalWrite: @Sendable () throws -> Void
     private var journalSequences: [NotebookID: UInt64] = [:]
 
     init(
         rootURL: URL,
         readData: @escaping @Sendable (URL) throws -> Data = { try Data(contentsOf: $0) },
-        afterSnapshotWrite: @escaping @Sendable () throws -> Void = {}
+        afterSnapshotWrite: @escaping @Sendable () throws -> Void = {},
+        afterJournalWrite: @escaping @Sendable () throws -> Void = {}
     ) {
         self.rootURL = rootURL
         self.readData = readData
         self.afterSnapshotWrite = afterSnapshotWrite
+        self.afterJournalWrite = afterJournalWrite
     }
 
     func save(_ package: NativeNotebookPackage) throws {
@@ -153,6 +156,7 @@ actor LocalDocumentStore {
         } else {
             try encoded.write(to: url, options: [.atomic, .completeFileProtection])
         }
+        try afterJournalWrite()
         journalSequences[notebookID] = sequence
     }
 

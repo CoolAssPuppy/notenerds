@@ -133,33 +133,19 @@ struct AppSettingsView: View {
             )
         }
         if notion.destination != nil {
-            LabeledContent("AI Meeting Notes links") {
-                Text(notion.isMeetingLinkPermissionRequired ? "Share meeting notes" : "Automatic")
-                    .foregroundStyle(
-                        notion.isMeetingLinkPermissionRequired ? Color.orange : Color.secondary
-                    )
-            }
-            if notion.isMeetingLinkPermissionRequired {
-                Text("Share the AI Meeting Notes page or its parent with Note Nerds in Notion.")
-                    .foregroundStyle(.secondary)
-            }
             if isSyncing {
-                progressRow("Sending notebooks to Notion")
-            }
-            Button("Sync now", systemImage: "arrow.triangle.2.circlepath") {
-                Task { await notion.sync(model.library) }
-            }
-            .disabled(isSyncing)
-            if let summary = notion.lastSyncSummary {
-                Text(summary)
-                    .foregroundStyle(.secondary)
+                progressRow("Syncing…")
+            } else {
+                Button("Sync now", systemImage: "arrow.triangle.2.circlepath") {
+                    Task { await notion.sync(model.library) }
+                }
             }
         }
-        disconnectNotionButton.disabled(isSyncing)
+        disconnectNotionButton
     }
 
     private var disconnectNotionButton: some View {
-        Button("Disconnect Notion", systemImage: "link.badge.minus", role: .destructive) {
+        Button("Disconnect", systemImage: "link.badge.minus", role: .destructive) {
             isConfirmingDisconnect = true
         }
     }

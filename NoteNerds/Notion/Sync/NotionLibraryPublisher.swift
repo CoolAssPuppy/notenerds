@@ -23,8 +23,7 @@ enum NotionPublishError: Error, Equatable, Sendable {
     case notebookNotFound
 }
 
-@MainActor
-protocol NotionLibraryPublishing: AnyObject {
+protocol NotionLibraryPublishing: Sendable {
     func publish(
         _ library: LibraryState,
         notebookID: NotebookID?
@@ -48,8 +47,7 @@ extension NotionLibraryPublishing {
     }
 }
 
-@MainActor
-final class NotionLibraryPublisher: NotionLibraryPublishing {
+actor NotionLibraryPublisher: NotionLibraryPublishing {
     private let registry: NotionSyncRegistry
     private let notebookCoordinator: NotionSyncCoordinator
     private let manifestCoordinator: NotionManifestSyncCoordinator

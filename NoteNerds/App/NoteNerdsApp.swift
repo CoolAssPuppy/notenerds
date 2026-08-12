@@ -81,6 +81,15 @@ struct NoteNerdsApp: App {
                     databaseName: "Personal Notes"
                 )
             )
+        } else if isUITesting && processInfo.arguments.contains("-force-notion-syncing") {
+            notion.configureForUITesting(
+                state: .syncing,
+                destination: NotionDestination(
+                    databaseID: "11111111-1111-1111-1111-111111111111",
+                    dataSourceID: "22222222-2222-2222-2222-222222222222",
+                    databaseName: "Personal Notes"
+                )
+            )
         } else if isUITesting && processInfo.arguments.contains("-force-notion-failure") {
             notion.configureForUITesting(
                 state: .actionNeeded,

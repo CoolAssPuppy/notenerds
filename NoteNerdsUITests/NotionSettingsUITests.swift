@@ -53,12 +53,34 @@ final class NotionSettingsUITests: XCTestCase {
         let databaseRow = application.buttons["Notebook database, Personal Notes"]
         XCTAssertTrue(databaseRow.waitForExistence(timeout: 2))
         XCTAssertTrue(application.buttons["Sync now"].waitForExistence(timeout: 2))
-        XCTAssertTrue(application.buttons["Disconnect Notion"].exists)
+        XCTAssertTrue(application.buttons["Disconnect"].exists)
+        XCTAssertFalse(application.staticTexts["AI Meeting Notes links"].exists)
         XCTAssertFalse(application.buttons["Restore from Notion"].exists)
         XCTAssertFalse(application.buttons["Try again"].exists)
 
         databaseRow.tap()
         XCTAssertTrue(application.navigationBars["Choose Notion location"].waitForExistence(timeout: 2))
+    }
+
+    func testSyncStatusAppearsAboveSettingsAndSettingsCanDismiss() {
+        let application = XCUIApplication()
+        application.launchArguments = ["-ui-testing", "-reset-library", "-force-notion-syncing"]
+        application.launch()
+
+        let status = application.otherElements["Notion syncing"]
+        let settings = application.buttons["Settings"]
+        XCTAssertTrue(status.waitForExistence(timeout: 2))
+        XCTAssertTrue(settings.exists)
+        XCTAssertLessThan(status.frame.minY, settings.frame.minY)
+
+        settings.tap()
+        XCTAssertTrue(application.navigationBars["Settings"].waitForExistence(timeout: 2))
+        XCTAssertTrue(application.staticTexts["Syncing…"].waitForExistence(timeout: 2))
+        XCTAssertFalse(application.buttons["Sync now"].exists)
+        application.navigationBars["Settings"].buttons["Done"].tap()
+
+        XCTAssertTrue(settings.waitForExistence(timeout: 0.5))
+        XCTAssertFalse(application.navigationBars["Settings"].exists)
     }
 
     func testSuccessfulDestinationSelectionReturnsToSettings() {
@@ -89,7 +111,7 @@ final class NotionSettingsUITests: XCTestCase {
         openSettings(in: application)
 
         XCTAssertTrue(application.buttons["Try again"].waitForExistence(timeout: 2))
-        XCTAssertTrue(application.buttons["Disconnect Notion"].exists)
+        XCTAssertTrue(application.buttons["Disconnect"].exists)
         XCTAssertFalse(application.buttons["Restore from Notion"].exists)
         XCTAssertFalse(application.buttons["Sync now"].exists)
     }

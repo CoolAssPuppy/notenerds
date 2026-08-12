@@ -127,6 +127,10 @@ struct LibrarySidebarView: View {
                 .buttonStyle(.plain)
                 Divider()
             }
+            if notion.state == .syncing {
+                notionSyncStatus
+                Divider()
+            }
             Button {
                 isAppSettingsPresented = true
             } label: {
@@ -136,6 +140,22 @@ struct LibrarySidebarView: View {
         }
         .padding(.vertical, 6)
         .background(.bar)
+    }
+
+    private var notionSyncStatus: some View {
+        HStack(spacing: 10) {
+            Image(systemName: AppSymbol.notionSync)
+                .foregroundStyle(.tint)
+            Text("Syncing")
+            Spacer()
+            ProgressView()
+                .controlSize(.small)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Notion syncing")
     }
 
     @ViewBuilder

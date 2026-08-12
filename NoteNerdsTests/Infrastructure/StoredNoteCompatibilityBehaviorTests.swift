@@ -86,6 +86,32 @@ final class StoredNoteCompatibilityBehaviorTests: XCTestCase {
         XCTAssertNil(firstStroke(in: reopened)?.pencilKitArchive)
     }
 
+    func testLoadingALegacyFileRepairsAndRewritesItOnlyOnce() async throws {
+        let context = try makeStore()
+        defer { context.remove() }
+        let package = package(
+            with: staleArchivedStroke(),
+            schemaVersion: olderVersion,
+            notebookID: context.notebookID
+        )
+        let snapshotsURL = context.directoryURL.appending(path: "Snapshots", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: snapshotsURL, withIntermediateDirectories: true)
+        let snapshotURL = snapshotsURL.appending(
+            path: "\(context.notebookID.rawValue.uuidString).notenerds.json"
+        )
+        try NativeDocumentSerializer().encode(package).write(to: snapshotURL, options: .atomic)
+        let writes = SnapshotWriteCounter()
+        let store = LocalDocumentStore(rootURL: context.directoryURL, afterSnapshotWrite: { writes.record() })
+
+        let firstLoad = try await store.load(notebookID: context.notebookID)
+        let secondLoad = try await store.load(notebookID: context.notebookID)
+
+        XCTAssertNil(firstStroke(in: firstLoad)?.pencilKitArchive)
+        XCTAssertNil(firstStroke(in: secondLoad)?.pencilKitArchive)
+        XCTAssertEqual(firstLoad.schemaVersion, .current)
+        XCTAssertEqual(writes.count, 1, "A legacy note must be rewritten once after repair")
+    }
+
     func testAnOlderNoteWithManyStrokesStillReadsEveryOne() async throws {
         let context = try makeStore()
         defer { context.remove() }

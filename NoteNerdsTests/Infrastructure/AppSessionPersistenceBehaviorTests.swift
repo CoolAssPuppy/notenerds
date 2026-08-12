@@ -123,7 +123,7 @@ final class AppSessionPersistenceBehaviorTests: XCTestCase {
         var stroke = DomainFixtures.stroke(id: StrokeID(), layerID: layer.id)
         stroke.samples[0].point = CanvasPoint(x: 10, y: 20)
         stroke.samples[1].point = CanvasPoint(x: 30, y: 40)
-        firstSession.addStroke(stroke, to: notebookID, canvasID: canvas.id, layerID: layer.id)
+        _ = firstSession.addStrokes([stroke], to: notebookID, canvasID: canvas.id, layerID: layer.id)
 
         await firstSession.checkpointDocuments()
 
@@ -424,7 +424,7 @@ final class AppSessionPersistenceBehaviorTests: XCTestCase {
             y: today.frame.minY + today.frame.size.height / 2
         )
         plannerStroke.samples = [plannerStroke.samples[0]]
-        session.addStroke(plannerStroke, to: notebookID, canvasID: canvas.id, layerID: layerID)
+        _ = session.addStrokes([plannerStroke], to: notebookID, canvasID: canvas.id, layerID: layerID)
         return today
     }
 

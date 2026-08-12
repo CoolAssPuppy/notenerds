@@ -5,6 +5,20 @@ import XCTest
 
 @MainActor
 final class PencilCanvasToolApplicationBehaviorTests: XCTestCase {
+    func testPencilContactChangesAreReportedToPersistence() {
+        let canvasView = PKCanvasView()
+        var states: [Bool] = []
+        let coordinator = PencilStrokeTestFixture.coordinator(
+            onStrokesCompleted: { _ in },
+            onPencilContactChanged: { states.append($0) }
+        )
+
+        coordinator.canvasViewDidBeginUsingTool(canvasView)
+        coordinator.canvasViewDidEndUsingTool(canvasView)
+
+        XCTAssertEqual(states, [true, false])
+    }
+
     func testTheSelectedToolIsInstalledOnce() {
         let canvasView = PKCanvasView()
         let coordinator = makeCoordinator()

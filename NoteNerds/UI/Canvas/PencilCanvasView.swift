@@ -40,6 +40,7 @@ struct PencilCanvasView: UIViewRepresentable {
     let onPencilSqueeze: @MainActor (PencilSqueezeResponse, CGPoint?) -> Void
     let onPencilDoubleTap: @MainActor () -> Void
     let onPlannerRegionPageRequested: @MainActor (Int) -> Void
+    let onPencilContactChanged: @MainActor (Bool) -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(
@@ -50,7 +51,8 @@ struct PencilCanvasView: UIViewRepresentable {
             onViewportChanged: onViewportChanged,
             onPencilSqueeze: onPencilSqueeze,
             onPencilDoubleTap: onPencilDoubleTap,
-            onPlannerRegionPageRequested: onPlannerRegionPageRequested
+            onPlannerRegionPageRequested: onPlannerRegionPageRequested,
+            onPencilContactChanged: onPencilContactChanged
         )
     }
 

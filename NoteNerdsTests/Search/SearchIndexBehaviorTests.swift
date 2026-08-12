@@ -289,8 +289,8 @@ final class SearchIndexBehaviorTests: XCTestCase {
         model.library = LibraryState(notebooks: [notebook])
         model.searchQuery = "layer order"
 
-        model.addStroke(
-            addedStroke,
+        _ = model.addStrokes(
+            [addedStroke],
             to: notebook.id,
             canvasID: canvas.id,
             layerID: secondLayer.id

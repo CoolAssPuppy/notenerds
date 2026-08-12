@@ -23,7 +23,8 @@ enum PencilStrokeTestFixture {
     static func coordinator(
         activeLayerID: LayerID = LayerID(),
         onStrokesCompleted: @escaping @MainActor ([Stroke]) -> Void,
-        onDrawingChanged: @escaping @MainActor ([Stroke]) -> Void = { _ in }
+        onDrawingChanged: @escaping @MainActor ([Stroke]) -> Void = { _ in },
+        onPencilContactChanged: @escaping @MainActor (Bool) -> Void = { _ in }
     ) -> PencilCanvasView.Coordinator {
         PencilCanvasView.Coordinator(
             activeLayerID: activeLayerID,
@@ -33,7 +34,8 @@ enum PencilStrokeTestFixture {
             onViewportChanged: { _ in },
             onPencilSqueeze: { _, _ in },
             onPencilDoubleTap: {},
-            onPlannerRegionPageRequested: { _ in }
+            onPlannerRegionPageRequested: { _ in },
+            onPencilContactChanged: onPencilContactChanged
         )
     }
 

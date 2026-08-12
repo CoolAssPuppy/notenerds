@@ -40,6 +40,9 @@ extension AppModel {
 
     func open(_ notebookID: NotebookID) {
         guard var notebook = library.notebook(id: notebookID) else { return }
+        if let selectedNotebookID, selectedNotebookID != notebookID {
+            PencilStrokeArchiveCache.shared.removeAll()
+        }
         notebook.lastOpenedAt = Date()
         library.updateNotebook(notebook)
         searchIndex.update(notebook)
@@ -52,6 +55,7 @@ extension AppModel {
         if let selectedNotebookID, let notebook = library.notebook(id: selectedNotebookID) {
             persistCheckpoint(notebook)
         }
+        PencilStrokeArchiveCache.shared.removeAll()
         selectedNotebookID = nil
     }
     func openFolder(_ folderID: FolderID) { currentFolderID = folderID }

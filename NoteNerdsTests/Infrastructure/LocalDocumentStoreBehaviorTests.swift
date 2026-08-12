@@ -47,6 +47,35 @@ final class LocalDocumentStoreBehaviorTests: XCTestCase {
         XCTAssertEqual(recovered.notebook.canvases[0].layers[0].objects, [.stroke(stroke)])
     }
 
+    func testVersionOneJournalEntryStillReplaysAfterDirectionWasAdded() async throws {
+        let rootURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+        let canvas = Canvas(title: "Canvas 1")
+        let layer = canvas.layers[0]
+        let package = NativeNotebookPackage(
+            schemaVersion: .current,
+            notebook: Notebook(title: "Old journal", canvases: [canvas])
+        )
+        let stroke = DomainFixtures.stroke(layerID: layer.id)
+        let operation = DocumentOperation.addStroke(canvasID: canvas.id, layerID: layer.id, stroke: stroke)
+        let store = LocalDocumentStore(rootURL: rootURL)
+        try await store.save(package)
+        let journalsURL = rootURL.appending(path: "Journals", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: journalsURL, withIntermediateDirectories: true)
+        let operationObject = try JSONSerialization.jsonObject(with: encoded(operation))
+        let entry = try JSONSerialization.data(
+            withJSONObject: ["storageVersion": 1, "sequence": 1, "operation": operationObject],
+            options: .sortedKeys
+        ) + Data([0x0A])
+        try entry.write(to: journalURL(for: package.notebook.id, rootURL: rootURL), options: .atomic)
+
+        let recovered = try await LocalDocumentStore(rootURL: rootURL).recover(
+            notebookID: package.notebook.id
+        )
+
+        XCTAssertEqual(recovered.notebook.canvases[0].layers[0].objects, [.stroke(stroke)])
+    }
+
     func testLegacyJournalDoesNotRepeatAStrokeAlreadySavedInTheSnapshot() async throws {
         let rootURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         let canvas = Canvas(title: "Canvas 1")
@@ -379,5 +408,12 @@ final class LocalDocumentStoreBehaviorTests: XCTestCase {
         rootURL
             .appending(path: "Journals", directoryHint: .isDirectory)
             .appending(path: "\(notebookID.rawValue.uuidString).journal")
+    }
+
+    private func encoded<T: Encodable>(_ value: T) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .millisecondsSince1970
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        return try encoder.encode(value)
     }
 }

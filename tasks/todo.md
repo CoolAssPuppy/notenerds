@@ -1,5 +1,55 @@
 # Current work
 
+## Release canvas audit build 27
+
+- [x] Run the release-tool tests and App Store Connect preflight.
+- [x] Commit the verified canvas audit changes on `canvas-performance`.
+- [ ] Archive, export, and upload TestFlight build 27.
+- [ ] Confirm Apple marks build 27 valid and internal testers can receive it.
+- [ ] Commit the build-number and release record without merging to `main`.
+
+## Adversarial canvas follow-up
+
+- [x] Prove no full notebook snapshot can start during a live Pencil contact.
+- [x] Keep undo and redo recoverable after a force-quit without an immediate snapshot.
+- [x] Cover one-time schema 7 repair through both envelope and legacy document reads.
+- [x] Guard `Stroke` stored-field equality, hashing, and coding against silent drift.
+- [x] Clear decoded PencilKit paths when a notebook closes.
+- [x] Remove the divergent, test-only `AppModel.addStroke` path.
+- [x] Review sync, journal recovery, and Notion tests for specific missing behavior.
+- [x] Run the app and performance behavior suites plus strict SwiftLint.
+
+### Review
+
+- Pencil contact begin and end now reach `AppModel`. Deferred, direct, background,
+  and incoming-sync snapshots all wait while a contact is active.
+- Undo and redo now use version 2 journal records that store apply or undo. Version
+  1 journal records still decode as apply operations. Force-quit recovery tests
+  cover both directions.
+- `LocalDocumentStore.load` now rewrites a repaired legacy file into an envelope.
+  The next load trusts schema 7 and does not repeat the repair.
+- Tests list every `Stroke` field, every stored coding key, and mutations of every
+  stored field used by equality. Adding a field without updating the manual
+  conformances now fails the suite.
+- The PencilKit archive cache is cleared when a notebook closes or another notebook
+  opens. The cache key remains the per-value UUID and cannot alias distinct edited
+  values through any `Stroke` mutation API.
+- `execute`, undo, and redo now share one mutation completion function. The unused
+  singular `addStroke` method and two dead persistence wrappers were removed.
+- Coverage from the full behavior run was 93.19% for `AppModel+Sync.swift`, 96.99%
+  for `LocalDocumentStore.swift`, 94.78% for `SyncEngine.swift`, 96.85% for the
+  Notion publisher, and 94.23% for the Notion sync coordinator. The existing sync,
+  interrupted-journal, and Notion suites are substantial. New tests were limited
+  to failures reproduced in this pass and compatibility for the new journal format.
+- A repeated full run exposed concurrent synchronization returning before the
+  active pull completed. `SyncEngine` now makes every concurrent caller await the
+  same task. The failing check passed 10 consecutive iterations after the fix.
+- Final verification passed 567 tests with 0 failures and 0 skipped tests,
+  including 6 performance measurements. Strict SwiftLint passed across 264 Swift
+  files, and `git diff --check` passed.
+- The physical iPad was listed as unavailable, so no build 26 launch or writing
+  trace was captured.
+
 ## Remove canvas input lag
 
 Device trace evidence: `tasks/canvas-audit.md`.

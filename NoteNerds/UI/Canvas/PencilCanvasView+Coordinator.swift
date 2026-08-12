@@ -60,6 +60,7 @@ extension PencilCanvasView {
         private var onPencilSqueeze: @MainActor (PencilSqueezeResponse, CGPoint?) -> Void
         private var onPencilDoubleTap: @MainActor () -> Void
         var onPlannerRegionPageRequested: @MainActor (Int) -> Void
+        private var onPencilContactChanged: @MainActor (Bool) -> Void
 
         init(
             activeLayerID: LayerID,
@@ -69,7 +70,8 @@ extension PencilCanvasView {
             onViewportChanged: @escaping @MainActor (CanvasRect) -> Void,
             onPencilSqueeze: @escaping @MainActor (PencilSqueezeResponse, CGPoint?) -> Void,
             onPencilDoubleTap: @escaping @MainActor () -> Void,
-            onPlannerRegionPageRequested: @escaping @MainActor (Int) -> Void
+            onPlannerRegionPageRequested: @escaping @MainActor (Int) -> Void,
+            onPencilContactChanged: @escaping @MainActor (Bool) -> Void = { _ in }
         ) {
             self.activeLayerID = activeLayerID
             self.onStrokesCompleted = onStrokesCompleted
@@ -79,6 +81,7 @@ extension PencilCanvasView {
             self.onPencilSqueeze = onPencilSqueeze
             self.onPencilDoubleTap = onPencilDoubleTap
             self.onPlannerRegionPageRequested = onPlannerRegionPageRequested
+            self.onPencilContactChanged = onPencilContactChanged
         }
 
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
@@ -100,7 +103,7 @@ extension PencilCanvasView {
                 committedNativeDrawing = canvasView.drawing
                 latestNativeDrawing = canvasView.drawing
             }
-            isUsingTool = true
+            setPencilContactActive(true)
             isDrawingCommitPending = true
             activeContactStartStrokeCount = canvasView.drawing.strokes.count
             activeDrawingInput = PencilStrokeInput(
@@ -113,7 +116,7 @@ extension PencilCanvasView {
 
         func canvasViewDidEndUsingTool(_ canvasView: PKCanvasView) {
             CanvasDiagnostics.mark("contact ended strokes=\(canvasView.drawing.strokes.count)")
-            isUsingTool = false
+            setPencilContactActive(false)
             completeActiveContact(with: canvasView.drawing)
             applyToolIfNeeded(to: canvasView)
             captureNativeDrawing(from: canvasView)
@@ -159,6 +162,7 @@ extension PencilCanvasView {
             onPencilSqueeze = view.onPencilSqueeze
             onPencilDoubleTap = view.onPencilDoubleTap
             onPlannerRegionPageRequested = view.onPlannerRegionPageRequested
+            onPencilContactChanged = view.onPencilContactChanged
         }
 
         func attachSnapshotFlusher(
@@ -281,7 +285,7 @@ extension PencilCanvasView {
         }
 
         func prepareForDismantle(_ canvasView: PKCanvasView) {
-            isUsingTool = false
+            setPencilContactActive(false)
             completeActiveContact(with: canvasView.drawing)
             latestNativeDrawing = canvasView.drawing
             isDrawingCommitPending = true
@@ -327,7 +331,7 @@ extension PencilCanvasView {
             drawingCommitTask = nil
             if let canvasView = activeCanvasView {
                 if isUsingTool {
-                    isUsingTool = false
+                    setPencilContactActive(false)
                     completeActiveContact(with: canvasView.drawing)
                 }
                 latestNativeDrawing = canvasView.drawing
@@ -356,6 +360,12 @@ extension PencilCanvasView {
                 guard revision == drawingRevision else { continue }
                 finishDrawingCommit(result, drawing: drawing, in: activeCanvasView)
             }
+        }
+
+        private func setPencilContactActive(_ isActive: Bool) {
+            guard isUsingTool != isActive else { return }
+            isUsingTool = isActive
+            onPencilContactChanged(isActive)
         }
 
         func pencilInteraction(

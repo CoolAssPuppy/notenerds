@@ -16,6 +16,7 @@ actor SyncEngine {
     private var receivedChangeIDs: Set<ChangeID> = []
     private(set) var state = SyncState.idle
     private(set) var lastFailure: SyncProviderFailure?
+    private var synchronizationTask: Task<Void, Never>?
     private var cursor: SyncCursor?
     private var didRestoreState = false
     private var shouldSynchronizeAgain = false
@@ -48,10 +49,22 @@ actor SyncEngine {
 
     func synchronize() async {
         await restoreStateIfNeeded()
-        guard state != .synchronizing else {
+        if let synchronizationTask {
             shouldSynchronizeAgain = true
+            await synchronizationTask.value
             return
         }
+        let task = Task { await runSynchronizationTask() }
+        synchronizationTask = task
+        await task.value
+    }
+
+    private func runSynchronizationTask() async {
+        await performSynchronization()
+        synchronizationTask = nil
+    }
+
+    private func performSynchronization() async {
         state = .synchronizing
         do {
             try await provider.start()

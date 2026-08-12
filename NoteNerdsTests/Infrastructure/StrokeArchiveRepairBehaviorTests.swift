@@ -61,6 +61,73 @@ final class StrokeArchiveRepairBehaviorTests: XCTestCase {
         XCTAssertNil(stroke.pencilKitArchive)
     }
 
+    func testStrokeStoredFieldsCannotDriftFromItsManualConformances() throws {
+        let stroke = archivedStroke()
+        let storedFieldNames = Set(Mirror(reflecting: stroke).children.compactMap(\.label))
+        XCTAssertEqual(
+            storedFieldNames,
+            ["id", "layerID", "samples", "style", "createdAt", "pencilKitArchive", "renderedContentID"]
+        )
+
+        let encoded = try JSONEncoder().encode(stroke)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertEqual(
+            Set(object.keys),
+            ["id", "layerID", "samples", "style", "createdAt", "pencilKitArchive"]
+        )
+        XCTAssertEqual(try JSONDecoder().decode(Stroke.self, from: encoded), stroke)
+    }
+
+    func testEveryStoredStrokeFieldParticipatesInEquality() {
+        let original = archivedStroke()
+        var changedLayer = original
+        changedLayer.layerID = LayerID()
+        var changedSamples = original
+        changedSamples.samples[0].point.x += 1
+        var changedStyle = original
+        changedStyle.style.width += 1
+        var changedArchive = original
+        changedArchive.pencilKitArchive = nil
+        let changedID = Stroke(
+            id: StrokeID(),
+            layerID: original.layerID,
+            samples: original.samples,
+            style: original.style,
+            createdAt: original.createdAt,
+            pencilKitArchive: original.pencilKitArchive
+        )
+        let changedDate = Stroke(
+            id: original.id,
+            layerID: original.layerID,
+            samples: original.samples,
+            style: original.style,
+            createdAt: original.createdAt.addingTimeInterval(1),
+            pencilKitArchive: original.pencilKitArchive
+        )
+
+        for changed in [changedID, changedLayer, changedSamples, changedStyle, changedDate, changedArchive] {
+            XCTAssertNotEqual(changed, original)
+            XCTAssertEqual(Set([original, changed]).count, 2)
+        }
+    }
+
+    func testClosingANotebookReleasesItsDecodedPencilPaths() {
+        let cache = PencilStrokeArchiveCache.shared
+        cache.removeAll()
+        let stroke = archivedStroke()
+        _ = cache.stroke(for: stroke)
+        XCTAssertTrue(cache.contains(stroke))
+        var notebook = DomainFixtures.notebook(title: "Cached notebook")
+        notebook.canvases[0].layers[0].objects = [.stroke(stroke)]
+        let model = AppModel(automaticallyRestore: false)
+        model.library = LibraryState(notebooks: [notebook])
+        model.selectedNotebookID = notebook.id
+
+        model.closeNotebook()
+
+        XCTAssertFalse(cache.contains(stroke))
+    }
+
     private func makePackage(schemaVersion: DocumentSchemaVersion) -> NativeNotebookPackage {
         NativeNotebookPackage(
             schemaVersion: schemaVersion,

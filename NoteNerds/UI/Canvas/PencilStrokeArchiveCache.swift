@@ -43,4 +43,12 @@ final class PencilStrokeArchiveCache: @unchecked Sendable {
         entries.setObject(Entry(drawing.strokes[0]), forKey: key)
         return drawing.strokes[0]
     }
+
+    func contains(_ stroke: Stroke) -> Bool {
+        entries.object(forKey: stroke.renderedContentID as NSUUID) != nil
+    }
+
+    func removeAll() {
+        entries.removeAllObjects()
+    }
 }

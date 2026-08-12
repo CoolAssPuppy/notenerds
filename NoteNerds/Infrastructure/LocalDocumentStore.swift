@@ -6,6 +6,13 @@ enum LocalDocumentStoreError: Error, Equatable {
 }
 
 actor LocalDocumentStore {
+    private enum JournalEntryCodingKeys: String, CodingKey {
+        case storageVersion
+        case sequence
+        case action
+        case operation
+    }
+
     private struct SnapshotEnvelope: Codable {
         static let currentStorageVersion = 1
 
@@ -15,11 +22,38 @@ actor LocalDocumentStore {
     }
 
     private struct JournalEntry: Codable {
-        static let currentStorageVersion = 1
+        static let currentStorageVersion = 2
 
         let storageVersion: Int
         let sequence: UInt64
-        let operation: DocumentOperation
+        let action: SyncedDocumentAction
+
+        init(storageVersion: Int, sequence: UInt64, action: SyncedDocumentAction) {
+            self.storageVersion = storageVersion
+            self.sequence = sequence
+            self.action = action
+        }
+
+        init(from decoder: any Decoder) throws {
+            let values = try decoder.container(keyedBy: JournalEntryCodingKeys.self)
+            storageVersion = try values.decode(Int.self, forKey: .storageVersion)
+            sequence = try values.decode(UInt64.self, forKey: .sequence)
+            if let action = try values.decodeIfPresent(SyncedDocumentAction.self, forKey: .action) {
+                self.action = action
+            } else {
+                action = SyncedDocumentAction(
+                    operation: try values.decode(DocumentOperation.self, forKey: .operation),
+                    direction: .apply
+                )
+            }
+        }
+
+        func encode(to encoder: any Encoder) throws {
+            var values = encoder.container(keyedBy: JournalEntryCodingKeys.self)
+            try values.encode(storageVersion, forKey: .storageVersion)
+            try values.encode(sequence, forKey: .sequence)
+            try values.encode(action, forKey: .action)
+        }
     }
 
     private struct DecodedSnapshot {
@@ -80,9 +114,10 @@ actor LocalDocumentStore {
                 snapshot.journalWatermark
             )
             var package = snapshot.package
-            if package.repairStrokeArchivesIfWrittenBeforeSelfInvalidation(
+            let wasRepaired = package.repairStrokeArchivesIfWrittenBeforeSelfInvalidation(
                 storedVersion: decodedSnapshot.storedSchemaVersion
-            ) {
+            )
+            if decodedSnapshot.isLegacy || wasRepaired {
                 try save(package)
             }
             return package
@@ -92,6 +127,13 @@ actor LocalDocumentStore {
     }
 
     func append(_ operation: DocumentOperation, notebookID: NotebookID) throws {
+        try append(
+            SyncedDocumentAction(operation: operation, direction: .apply),
+            notebookID: notebookID
+        )
+    }
+
+    func append(_ action: SyncedDocumentAction, notebookID: NotebookID) throws {
         try createDirectories()
         let url = journalURL(for: notebookID)
         try removeInterruptedFinalRecord(at: url)
@@ -99,7 +141,7 @@ actor LocalDocumentStore {
         var encoded = try encode(JournalEntry(
             storageVersion: JournalEntry.currentStorageVersion,
             sequence: sequence,
-            operation: operation
+            action: action
         ))
         encoded.append(0x0A)
         if fileManager.fileExists(atPath: url.path()) {
@@ -194,10 +236,10 @@ actor LocalDocumentStore {
         notebookID: NotebookID,
         watermark: UInt64
     ) throws {
-        try validateStorageVersion(entry.storageVersion)
+        try validateStorageVersion(entry.storageVersion, maximum: JournalEntry.currentStorageVersion)
         recordSequence(entry.sequence, notebookID: notebookID, watermark: watermark)
         if entry.sequence > watermark {
-            try entry.operation.apply(to: &package.notebook)
+            try entry.action.perform(on: &package.notebook)
         }
     }
 
@@ -224,7 +266,7 @@ actor LocalDocumentStore {
     private func decodeSnapshot(_ data: Data) throws -> DecodedSnapshot {
         let decoder = makeDecoder()
         if let envelope = try? decoder.decode(SnapshotEnvelope.self, from: data) {
-            try validateStorageVersion(envelope.storageVersion)
+            try validateStorageVersion(envelope.storageVersion, maximum: SnapshotEnvelope.currentStorageVersion)
             return DecodedSnapshot(
                 envelope: SnapshotEnvelope(
                     storageVersion: envelope.storageVersion,
@@ -246,8 +288,8 @@ actor LocalDocumentStore {
         )
     }
 
-    private func validateStorageVersion(_ version: Int) throws {
-        guard version <= SnapshotEnvelope.currentStorageVersion else {
+    private func validateStorageVersion(_ version: Int, maximum: Int) throws {
+        guard version <= maximum else {
             throw LocalDocumentStoreError.unsupportedStorageVersion(version)
         }
     }

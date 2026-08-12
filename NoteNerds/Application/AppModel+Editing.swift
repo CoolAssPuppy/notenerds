@@ -26,22 +26,21 @@ struct CanvasObjectTransformRequest {
 }
 
 extension AppModel {
-    func addStroke(_ stroke: Stroke, to notebookID: NotebookID, canvasID: CanvasID, layerID: LayerID) {
-        guard var notebook = library.notebook(id: notebookID) else { return }
-        var history = histories[notebookID, default: DocumentHistory()]
-        let operation = DocumentOperation.addStroke(canvasID: canvasID, layerID: layerID, stroke: stroke)
-        do {
-            try history.execute(operation, on: &notebook)
-            let handwritingCanvasID = cancelHandwritingRecognition(after: operation)
-            notebook.modifiedAt = Date()
-            histories[notebookID] = history
-            library.updateNotebook(notebook)
-            if let handwritingCanvasID {
-                finishHandwritingChange(after: operation, canvasID: handwritingCanvasID, in: notebook)
-            }
-            persistCheckpoint(notebook)
-        } catch {
-            presentedError = error.localizedDescription
+    func pencilContactBegan(on canvasID: CanvasID) {
+        activePencilCanvasIDs.insert(canvasID)
+        deferredCheckpointTask?.cancel()
+        deferredCheckpointTask = nil
+    }
+
+    func pencilContactEnded(on canvasID: CanvasID) {
+        activePencilCanvasIDs.remove(canvasID)
+        guard activePencilCanvasIDs.isEmpty else { return }
+        if !notebookIDsAwaitingCheckpoint.isEmpty {
+            restartDeferredCheckpointTimer()
+        }
+        if isSyncDeferredForPencilContact {
+            isSyncDeferredForPencilContact = false
+            Task { [weak self] in await self?.synchronize() }
         }
     }
 
@@ -304,18 +303,11 @@ extension AppModel {
         guard var notebook = library.notebook(id: notebookID), var history = histories[notebookID] else { return }
         do {
             let operation = try history.undo(on: &notebook)
-            let handwritingCanvasID = cancelHandwritingRecognition(after: operation)
-            notebook.modifiedAt = Date()
-            histories[notebookID] = history
-            library.updateNotebook(notebook)
-            if let handwritingCanvasID {
-                finishHandwritingChange(after: operation, canvasID: handwritingCanvasID, in: notebook)
-            } else {
-                updateSearchIndex(after: operation, in: notebook)
-            }
-            delayPendingCheckpoints()
-            scheduleDeferredCheckpoint(for: notebookID)
-            enqueueForSync(SyncedDocumentAction(operation: operation, direction: .undo), notebookID: notebookID)
+            finishDocumentMutation(
+                SyncedDocumentAction(operation: operation, direction: .undo),
+                notebook: notebook,
+                history: history
+            )
         } catch DocumentHistoryError.nothingToUndo {
             return
         } catch {
@@ -327,18 +319,11 @@ extension AppModel {
         guard var notebook = library.notebook(id: notebookID), var history = histories[notebookID] else { return }
         do {
             let operation = try history.redo(on: &notebook)
-            let handwritingCanvasID = cancelHandwritingRecognition(after: operation)
-            notebook.modifiedAt = Date()
-            histories[notebookID] = history
-            library.updateNotebook(notebook)
-            if let handwritingCanvasID {
-                finishHandwritingChange(after: operation, canvasID: handwritingCanvasID, in: notebook)
-            } else {
-                updateSearchIndex(after: operation, in: notebook)
-            }
-            delayPendingCheckpoints()
-            scheduleDeferredCheckpoint(for: notebookID)
-            enqueueForSync(SyncedDocumentAction(operation: operation, direction: .apply), notebookID: notebookID)
+            finishDocumentMutation(
+                SyncedDocumentAction(operation: operation, direction: .apply),
+                notebook: notebook,
+                history: history
+            )
         } catch DocumentHistoryError.nothingToRedo {
             return
         } catch {

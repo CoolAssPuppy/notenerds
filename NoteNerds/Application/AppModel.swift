@@ -35,6 +35,7 @@ final class AppModel: ObservableObject {
     let deferredCheckpointDelay: Duration
     var notebookIDsAwaitingCheckpoint: Set<NotebookID> = []
     var deferredCheckpointTask: Task<Void, Never>?
+    var activePencilCanvasIDs: Set<CanvasID> = []
     var searchIndex = LibrarySearchIndex()
     let syncEngine: SyncEngine?
     let syncChangeEncoder: SyncChangeEncoder
@@ -49,6 +50,7 @@ final class AppModel: ObservableObject {
     var documentPersistenceRevision: UInt64 = 0
     var didPersistDocuments = true
     var syncSubmissionTask: Task<Void, Never>?
+    var isSyncDeferredForPencilContact = false
     var remoteChangeIDsAwaitingPersistence: Set<ChangeID> = []
     var remoteNotebookIDsAwaitingPersistence: [ChangeID: Set<NotebookID>] = [:]
     var appliedRemoteChangeIDsByNotebook: [NotebookID: Set<ChangeID>] = [:]
@@ -222,21 +224,35 @@ final class AppModel: ObservableObject {
         var history = histories[notebookID, default: DocumentHistory()]
         do {
             try history.execute(operation, on: &notebook)
-            let handwritingCanvasID = cancelHandwritingRecognition(after: operation)
-            notebook.modifiedAt = Date()
-            histories[notebookID] = history
-            library.updateNotebook(notebook)
-            if let handwritingCanvasID {
-                finishHandwritingChange(after: operation, canvasID: handwritingCanvasID, in: notebook)
-            } else {
-                updateSearchIndex(after: operation, in: notebook)
-            }
-            delayPendingCheckpoints()
-            persist(operation, notebook: notebook)
-            enqueueForSync(operation, notebookID: notebookID)
+            finishDocumentMutation(
+                SyncedDocumentAction(operation: operation, direction: .apply),
+                notebook: notebook,
+                history: history
+            )
         } catch {
             presentedError = error.localizedDescription
         }
+    }
+
+    func finishDocumentMutation(
+        _ action: SyncedDocumentAction,
+        notebook: Notebook,
+        history: DocumentHistory
+    ) {
+        var notebook = notebook
+        let operation = action.operation
+        let handwritingCanvasID = cancelHandwritingRecognition(after: operation)
+        notebook.modifiedAt = Date()
+        histories[notebook.id] = history
+        library.updateNotebook(notebook)
+        if let handwritingCanvasID {
+            finishHandwritingChange(after: operation, canvasID: handwritingCanvasID, in: notebook)
+        } else {
+            updateSearchIndex(after: operation, in: notebook)
+        }
+        delayPendingCheckpoints()
+        persist(action, notebook: notebook)
+        enqueueForSync(action, notebookID: notebook.id)
     }
 
     func updateSearchIndex(after operation: DocumentOperation, in notebook: Notebook) {
@@ -248,7 +264,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func persist(_ operation: DocumentOperation, notebook: Notebook) {
+    func persist(_ action: SyncedDocumentAction, notebook: Notebook) {
         guard let documentStore else {
             persistLibrary()
             return
@@ -266,7 +282,7 @@ final class AppModel: ObservableObject {
         let outcomeTask = Task { () -> Bool in
             await precedingTask?.value
             do {
-                try await documentStore.append(operation, notebookID: notebookID)
+                try await documentStore.append(action, notebookID: notebookID)
                 didPersistDocuments = true
                 return true
             } catch {
@@ -288,6 +304,7 @@ final class AppModel: ObservableObject {
     /// until editing has been quiet, and flushed when the app backgrounds.
     func scheduleDeferredCheckpoint(for notebookID: NotebookID) {
         notebookIDsAwaitingCheckpoint.insert(notebookID)
+        guard activePencilCanvasIDs.isEmpty else { return }
         restartDeferredCheckpointTimer()
     }
 
@@ -297,10 +314,11 @@ final class AppModel: ObservableObject {
     /// strokes.
     func delayPendingCheckpoints() {
         guard !notebookIDsAwaitingCheckpoint.isEmpty else { return }
+        guard activePencilCanvasIDs.isEmpty else { return }
         restartDeferredCheckpointTimer()
     }
 
-    private func restartDeferredCheckpointTimer() {
+    func restartDeferredCheckpointTimer() {
         deferredCheckpointTask?.cancel()
         deferredCheckpointTask = Task { [weak self] in
             guard let self else { return }
@@ -315,6 +333,7 @@ final class AppModel: ObservableObject {
 
     /// Writes every notebook that a deferred checkpoint is waiting on.
     func flushDeferredCheckpoints() {
+        guard activePencilCanvasIDs.isEmpty else { return }
         for notebookID in cancelDeferredCheckpoints() {
             guard let notebook = library.notebook(id: notebookID) else { continue }
             persistCheckpoint(notebook)
@@ -332,6 +351,10 @@ final class AppModel: ObservableObject {
     }
 
     func persistCheckpoint(_ notebook: Notebook) {
+        guard activePencilCanvasIDs.isEmpty else {
+            scheduleDeferredCheckpoint(for: notebook.id)
+            return
+        }
         guard let documentStore else {
             persistLibrary()
             return
@@ -357,6 +380,10 @@ final class AppModel: ObservableObject {
     }
 
     func checkpointDocuments() async {
+        guard activePencilCanvasIDs.isEmpty else {
+            notebookIDsAwaitingCheckpoint.formUnion(library.notebooks.map(\.id))
+            return
+        }
         guard let documentStore else {
             flushDeferredCheckpoints()
             await libraryPersistenceTask?.value

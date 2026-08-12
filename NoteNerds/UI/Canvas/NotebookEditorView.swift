@@ -136,7 +136,14 @@ struct NotebookEditorView: View {
                     handlePencilSqueeze(response, location: location)
                 },
                 onPencilDoubleTap: switchDrawingToolAndEraser,
-                onPlannerRegionPageRequested: selectPlannerRegion
+                onPlannerRegionPageRequested: selectPlannerRegion,
+                onPencilContactChanged: { isActive in
+                    if isActive {
+                        model.pencilContactBegan(on: currentCanvas.id)
+                    } else {
+                        model.pencilContactEnded(on: currentCanvas.id)
+                    }
+                }
             )
             .id(targetCanvasID)
             floatingToolbar

@@ -1,10 +1,6 @@
 import Foundation
 
 extension AppModel {
-    func enqueueForSync(_ operation: DocumentOperation, notebookID: NotebookID) {
-        enqueueForSync(SyncedDocumentAction(operation: operation, direction: .apply), notebookID: notebookID)
-    }
-
     func enqueueForSync(_ action: SyncedDocumentAction, notebookID: NotebookID) {
         guard let syncEngine else { return }
         syncSequence = nextSyncSequence()
@@ -69,7 +65,15 @@ extension AppModel {
 
     func synchronize(using engine: SyncEngine? = nil) async {
         guard let engine = engine ?? syncEngine else { return }
+        guard activePencilCanvasIDs.isEmpty else {
+            isSyncDeferredForPencilContact = true
+            return
+        }
         await engine.synchronize()
+        guard activePencilCanvasIDs.isEmpty else {
+            isSyncDeferredForPencilContact = true
+            return
+        }
         let changes = await engine.receivedChangesSnapshot()
         let locallyAppliedChangeIDs = await engine.locallyAppliedChangeIDsSnapshot()
         let outcome = applyRemoteChanges(
@@ -111,6 +115,10 @@ extension AppModel {
                 await pruneRemoteChangeReceipts(acknowledgedIDs)
             }
         }
+        await updateSyncIssue(from: engine)
+    }
+
+    private func updateSyncIssue(from engine: SyncEngine) async {
         let state = await engine.state
         let failure = await engine.lastFailure
         syncIssue = state == .idle ? nil : failure?.userMessage
@@ -127,6 +135,12 @@ extension AppModel {
             if appliedRemoteChangeIDsByNotebook[notebookID]?.isEmpty == true {
                 appliedRemoteChangeIDsByNotebook[notebookID] = nil
             }
+        }
+        if !activePencilCanvasIDs.isEmpty {
+            for notebookID in affectedNotebookIDs {
+                scheduleDeferredCheckpoint(for: notebookID)
+            }
+            return
         }
         guard let documentStore else { return }
         let checkpoints = affectedNotebookIDs.compactMap { notebookID in
@@ -205,6 +219,10 @@ extension AppModel {
             $0.formUnion($1)
         }
         guard let documentStore, !allChangeIDs.isEmpty else { return allChangeIDs }
+        guard activePencilCanvasIDs.isEmpty else {
+            isSyncDeferredForPencilContact = true
+            return []
+        }
         var failedChangeIDs = Set<ChangeID>()
         let checkpoints: [RemoteDocumentCheckpoint] = changesByNotebook.compactMap { notebookID, changeIDs in
             guard let notebook = library.notebook(id: notebookID) else { return nil }

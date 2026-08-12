@@ -1,5 +1,25 @@
 # Current work
 
+## Release the picker dismissal fix in build 29
+
+- [x] Run release-tool tests and App Store Connect preflight.
+- [x] Archive, export, and upload TestFlight build 29.
+- [x] Confirm Apple marks build 29 valid and internal testers can receive it.
+- [x] Commit the build-number and release record on `canvas-performance`.
+- [x] Fast-forward `main` to the verified release and push it.
+
+### Build 29 review
+
+- All 33 release-tool tests passed, and the release preflight authenticated with
+  App Store Connect.
+- Version 1.0.0 build 29 archived, exported, and uploaded without errors. Apple
+  marked it valid. Delivery UUID: `d219d029-55d2-4281-9f73-4eca35a80381`.
+- The signed IPA uses bundle identifier `com.strategicnerds.notenerds`, build 29,
+  and team `955GSY56UT`.
+- The `Internal Testers` group has access to every valid build, including build
+  29.
+- Strict SwiftLint and `git diff --check` passed after the release files changed.
+
 ## Dismiss the Notion destination picker
 
 - [x] Reproduce the picker remaining open after successful database creation.

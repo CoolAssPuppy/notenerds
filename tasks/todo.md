@@ -31,14 +31,50 @@ notebook in the library, including ones that were not open.
 - [x] Stage 2: the drawing tool is not reassigned during a live contact.
 - [x] Stage 3: stroke archives decode once and are cached.
 - [x] Stage 4: canvas redraw decisions compare identity, not every sample.
-- [ ] Stage 5: incremental reconciliation. Still real, no longer urgent.
-- [ ] Stage 6: single stroke representation. Changes the stored format.
-- [ ] Stage 7: single owner for canvas stroke state.
+- [x] Stage 5: investigated and rejected. Evidence below.
+- [x] Stage 6: investigated and rejected. Evidence below.
+- [ ] Stage 7: single owner for canvas stroke state. Reduced in scope, see below.
 
-Stages 6 and 7 are deliberately not done. Both are large rewrites whose
-motivation was page-size scaling, which the device trace did not support, and
-both risk the stroke-loss regressions recorded in `tasks/lessons.md`. They
-should not land unattended before a build the user cannot verify.
+### Stage 5 cannot be done safely
+
+The plan was to verify only the changed suffix of a pen lift instead of walking
+every point of every committed stroke. That walk is what detects PencilKit
+revising a stroke it already committed: a late pressure update changes `force`
+on existing points while leaving the seed, transform, render bounds, mask
+ranges and point count identical, so every cheap field the check runs first
+still matches.
+
+Proven, not argued. Deleting the per-point loop and running the suite fails
+`testAppendSnapshotKeepsAnEarlierCommittedStrokeChange`, which exists for
+exactly this case. The walk stays.
+
+### Stage 6 is wrong on the merits, not just risky
+
+The plan was to stop storing both the sampled path and the PencilKit archive
+for every stroke. Each has a consumer the other cannot serve. Samples drive
+bounds, lasso selection, the vector eraser, shape recognition, handwriting
+recognition, export and the sync wire format. The archive is what reproduces
+marker and highlighter rendering exactly, whose loss is already recorded in
+`tasks/lessons.md` as a shipped regression.
+
+Dropping samples would decode an archive on every hit test and erase, which is
+the cost stage 3 removed. Dropping the archive loses rendering fidelity. The
+duplication is two representations for two jobs, not waste.
+
+The real storage cost is that `JSONEncoder` writes the archive as base64 and
+inflates it by a third. That is worth fixing with a binary container, and it is
+a separate piece of work with its own migration.
+
+### Stage 7 is reduced to what the evidence supports
+
+The three-copy model and its flags coordinate the model, the coordinator's
+canonical strokes and PencilKit's own drawing. Two of the three are inherent to
+bridging SwiftUI and PencilKit and cannot be collapsed away.
+
+One suspected data-loss bug in that area, a flush returning before ink that
+arrived during it was saved, was tested and does not exist: the running flush
+re-reads the canvas until nothing is pending. `PencilFlushBehaviorTests` keeps
+that property from regressing.
 
 ### Behaviour change to know about
 

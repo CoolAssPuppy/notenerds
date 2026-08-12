@@ -2,11 +2,24 @@
 
 ## Release responsive Notion sync to TestFlight
 
-- [ ] Commit the verified Notion sync, Settings, and invalid URL fixes.
-- [ ] Run release-tool tests and App Store Connect preflight.
-- [ ] Build, sign, export, and upload the next TestFlight build.
-- [ ] Confirm Apple marks the build valid and internal testers can receive it.
-- [ ] Commit the build number and release record.
+- [x] Commit the verified Notion sync, Settings, and invalid URL fixes.
+- [x] Run release-tool tests and App Store Connect preflight.
+- [x] Build, sign, export, and upload TestFlight build 31.
+- [x] Confirm Apple marks the build valid and internal testers can receive it.
+- [x] Commit the build number and release record.
+
+### Build 31 review
+
+- Commit `62975d6` contains the verified Notion responsiveness, Settings, and
+  invalid URL fixes.
+- All 33 release-tool tests passed. Release preflight authenticated with App
+  Store Connect and confirmed XcodeGen 2.46.0, signing credentials, iOS 26.0,
+  and universal iPhone and iPad support.
+- Version 1.0.0 build 31 archived, exported, and uploaded without errors. Apple
+  marked it valid. Delivery UUID: `660267a3-acd2-4326-848e-b0922e11ece9`.
+- The signed archive uses bundle identifier `com.strategicnerds.notenerds`,
+  build 31, and team `955GSY56UT`.
+- The `Internal Testers` group is internal and has access to every valid build.
 
 ## Keep Settings responsive during Notion sync
 

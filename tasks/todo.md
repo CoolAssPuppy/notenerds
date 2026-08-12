@@ -1,5 +1,26 @@
 # Current work
 
+## Release the Notion session-sync fix in build 30
+
+- [x] Push the verified fix on `main`.
+- [x] Run release-tool tests and App Store Connect preflight.
+- [x] Archive, export, and upload TestFlight build 30.
+- [x] Confirm Apple marks build 30 valid and internal testers can receive it.
+- [x] Record the release, commit the build number, and push `main`.
+
+### Build 30 review
+
+- The fix was already committed on `main`, so no branch merge was needed. Commit
+  `cabeff8` was pushed before the release archive was created.
+- All 33 release-tool tests passed. Release preflight authenticated with App
+  Store Connect and confirmed XcodeGen 2.46.0, signing credentials, iOS 26.0,
+  and universal iPhone and iPad support.
+- Version 1.0.0 build 30 archived, exported, and uploaded without errors. Apple
+  marked it valid. Delivery UUID: `d1c50749-8173-48be-8c18-dc092dda9033`.
+- The signed IPA uses bundle identifier `com.strategicnerds.notenerds`, build 30,
+  arm64, and team `955GSY56UT`.
+- The `Internal Testers` group is internal and receives every valid build.
+
 ## Fix the repeatable notebook rename freeze
 
 - [x] Measure the rename path and separate immediate work from delayed Notion work.

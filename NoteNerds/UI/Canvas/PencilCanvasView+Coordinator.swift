@@ -415,6 +415,7 @@ extension PencilCanvasView {
 
         func scrollViewDidZoom(_ scrollView: UIScrollView) {
             guard let canvasView = scrollView as? PKCanvasView else { return }
+            CanvasOverlayGeometry.synchronizeZoom(in: canvasView)
             focusPlannerRegionIfNeeded(in: canvasView)
             reportViewport(canvasView)
         }

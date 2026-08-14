@@ -19,6 +19,38 @@ final class CanvasToolbarBehaviorTests: XCTestCase {
         XCTAssertTrue(defaults.bool(forKey: CanvasToolbarPreferences.isExpandedKey))
     }
 
+    func testFinishingAndCancellingTextEditingDoNotLookAlike() {
+        let confirm = InlineTextEditorButtonRole.confirm
+        let cancel = InlineTextEditorButtonRole.cancel
+
+        XCTAssertNotEqual(confirm.backgroundColor, cancel.backgroundColor)
+        XCTAssertNotEqual(confirm.foregroundColor, cancel.foregroundColor)
+        XCTAssertNotEqual(confirm.backgroundColor, UIColor.clear)
+        XCTAssertNotEqual(cancel.backgroundColor, UIColor.clear)
+        XCTAssertEqual(InlineTextEditorButtonRole.plain.backgroundColor, UIColor.clear)
+    }
+
+    func testNoDrawingToolLooksSelectedWhileTextIsBeingPlaced() {
+        XCTAssertFalse(CanvasToolbarPresentation.isDrawingToolHighlighted(
+            isTextToolActive: true,
+            shapeKind: nil
+        ))
+    }
+
+    func testNoDrawingToolLooksSelectedWhileAShapeIsBeingPlaced() {
+        XCTAssertFalse(CanvasToolbarPresentation.isDrawingToolHighlighted(
+            isTextToolActive: false,
+            shapeKind: .rectangle
+        ))
+    }
+
+    func testTheChosenDrawingToolLooksSelectedWhenNothingElseIsBeingPlaced() {
+        XCTAssertTrue(CanvasToolbarPresentation.isDrawingToolHighlighted(
+            isTextToolActive: false,
+            shapeKind: nil
+        ))
+    }
+
     func testCompactToolbarKeepsEveryCoreDrawingControlVisible() {
         XCTAssertEqual(
             CanvasToolbarPresentation.actions(isExpanded: false),

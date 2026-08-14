@@ -20,6 +20,7 @@ struct PencilCanvasView: UIViewRepresentable {
     let isPlannerRegionPagingEnabled: Bool
     let shouldAnimatePlannerRegionChanges: Bool
     let isFingerDrawingEnabled: Bool
+    let isCanvasLocked: Bool
     let textEditingSession: CanvasTextEditingSession?
     let isTextToolActive: Bool
     let shapePlacementKind: RecognizedShapeKind?
@@ -87,6 +88,7 @@ struct PencilCanvasView: UIViewRepresentable {
         updateInlineTextEditor(in: canvasView, coordinator: context.coordinator)
         bringCanvasOverlaysToFront(in: canvasView, coordinator: context.coordinator)
         applyInputPolicy(to: canvasView)
+        Self.applyCanvasLock(isCanvasLocked, to: canvasView)
         canvasView.delegate = context.coordinator
         return canvasView
     }
@@ -115,6 +117,7 @@ struct PencilCanvasView: UIViewRepresentable {
         context.coordinator.receiveModelStrokes(strokes)
         updatePlannerContext(context.coordinator)
         applyInputPolicy(to: canvasView)
+        Self.applyCanvasLock(isCanvasLocked, to: canvasView)
         if context.coordinator.paperType != template {
             applyPaper(to: canvasView, coordinator: context.coordinator)
         }

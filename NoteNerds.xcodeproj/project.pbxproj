@@ -99,6 +99,7 @@
 		5A356DBA3D5783A7B6F68A6A /* CanvasPNGExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FAF65C49A2AB6B12EB437A0 /* CanvasPNGExporter.swift */; };
 		5B8BEA8A23223E8C477A27C9 /* HandwritingGrouping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 396068D8D63F6F44EC72DA94 /* HandwritingGrouping.swift */; };
 		5BA1BA9D7DBDEED7985AF6D0 /* CanvasToolbarOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126B0A1AABC812B50FB9CB0F /* CanvasToolbarOrientation.swift */; };
+		5C2D1024644C8DB22019B06E /* LassoSelectionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632033DB7D176DD6A9B261DA /* LassoSelectionUITests.swift */; };
 		5C4FAB2F14470692BF2362E7 /* DomainFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC6498E2FAD0ED227F5E99A /* DomainFixtures.swift */; };
 		5CC57863D13C878EF6615311 /* SyncDependencyRetryBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90B528C04C382AB316FE5222 /* SyncDependencyRetryBehaviorTests.swift */; };
 		60D0EC03E1346221134434B0 /* NotionRequestRateLimiterBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0843C14E77BE5615301B9B4B /* NotionRequestRateLimiterBehaviorTests.swift */; };
@@ -271,6 +272,7 @@
 		F68577E4EB4AB0A0CB814161 /* NotionSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C3B9E5C8EAFDA972933B539 /* NotionSyncCoordinator.swift */; };
 		F6E5F5CCD6414D3965E643C1 /* FolderCustomizationBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB209201F729A396FA36E481 /* FolderCustomizationBehaviorTests.swift */; };
 		F7BC8258D88A333305A79094 /* CanvasToolbarBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B977ECACE86D14C39E6A29C /* CanvasToolbarBehaviorTests.swift */; };
+		F7D2E8767C1700141529CF8D /* CanvasViewportBoundaryBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 123945946D61AE76CBE1CBFA /* CanvasViewportBoundaryBehaviorTests.swift */; };
 		F7E1B6496B17243EA1C548C8 /* NotionLibraryPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB09202065E9561317EB9280 /* NotionLibraryPublisher.swift */; };
 		FA85E68B0FF394CCC906A967 /* AppModel+LibrarySynchronization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B9AB1B4153AB309A7728857 /* AppModel+LibrarySynchronization.swift */; };
 		FA9A24228E6B3A8A75B99A0C /* PencilDrawingReconciliation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D6239E868AFAA78DA8C00CD /* PencilDrawingReconciliation.swift */; };
@@ -320,6 +322,7 @@
 		0D6E5F63CA16253EC3572D81 /* LibrarySidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySidebarView.swift; sourceTree = "<group>"; };
 		0E3A307A2992E6717E979EB3 /* PlannerPageLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlannerPageLayout.swift; sourceTree = "<group>"; };
 		0F0360B7B76A58F9C1BDF7E4 /* SystemNotionBrowserBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemNotionBrowserBehaviorTests.swift; sourceTree = "<group>"; };
+		123945946D61AE76CBE1CBFA /* CanvasViewportBoundaryBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasViewportBoundaryBehaviorTests.swift; sourceTree = "<group>"; };
 		126B0A1AABC812B50FB9CB0F /* CanvasToolbarOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolbarOrientation.swift; sourceTree = "<group>"; };
 		127D61A2A199D33915A8A2F1 /* LibraryAssetBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryAssetBehaviorTests.swift; sourceTree = "<group>"; };
 		1577AB36069737A5AA5214C0 /* PencilCanvasSnapshotFlusher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilCanvasSnapshotFlusher.swift; sourceTree = "<group>"; };
@@ -403,6 +406,7 @@
 		60ACBD6D93D49303CE2D2419 /* WritingLatencyBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WritingLatencyBehaviorTests.swift; sourceTree = "<group>"; };
 		626A246CD0CCC545BC704A59 /* NotebookEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookEditorView.swift; sourceTree = "<group>"; };
 		627E08FE9624209393A49526 /* CanvasLayersPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasLayersPanel.swift; sourceTree = "<group>"; };
+		632033DB7D176DD6A9B261DA /* LassoSelectionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LassoSelectionUITests.swift; sourceTree = "<group>"; };
 		6542558098F21147111B59C6 /* PencilCanvasInputAccessories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilCanvasInputAccessories.swift; sourceTree = "<group>"; };
 		65461A67A75E7DDC96F5AA6A /* PencilStrokeClipboardBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilStrokeClipboardBehaviorTests.swift; sourceTree = "<group>"; };
 		65E3E99589221D6E8FD346B5 /* PaperRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperRenderer.swift; sourceTree = "<group>"; };
@@ -733,6 +737,7 @@
 				EDAA9289C84C25603373125D /* CanvasRedrawDecisionBehaviorTests.swift */,
 				3B977ECACE86D14C39E6A29C /* CanvasToolbarBehaviorTests.swift */,
 				BEF65808EEC04339C30E6A1D /* CanvasViewportBehaviorTests.swift */,
+				123945946D61AE76CBE1CBFA /* CanvasViewportBoundaryBehaviorTests.swift */,
 				A594E670F354199EEBB2D317 /* FolderCreationBehaviorTests.swift */,
 				AB209201F729A396FA36E481 /* FolderCustomizationBehaviorTests.swift */,
 				2D93A8D6630F1974BDF33414 /* FolderRestoreCompatibilityBehaviorTests.swift */,
@@ -786,6 +791,7 @@
 			isa = PBXGroup;
 			children = (
 				D47CCECA583591164947B37D /* CanvasBrowserUITests.swift */,
+				632033DB7D176DD6A9B261DA /* LassoSelectionUITests.swift */,
 				C5DA2BBD341BEFB9414FEC9B /* LayerPanelUITests.swift */,
 				094F7F51C4540C9B014146B5 /* LibraryCreationPlacementUITests.swift */,
 				BE8BF59512C4CA34E80AF003 /* NoteNerdsLaunchTests.swift */,
@@ -1446,6 +1452,7 @@
 				8FC0F5AC24FFBA18987C3E1A /* CanvasSystemsBehaviorTests.swift in Sources */,
 				F7BC8258D88A333305A79094 /* CanvasToolbarBehaviorTests.swift in Sources */,
 				C6FF54DCCCCC31FEA1C808A2 /* CanvasViewportBehaviorTests.swift in Sources */,
+				F7D2E8767C1700141529CF8D /* CanvasViewportBoundaryBehaviorTests.swift in Sources */,
 				EFE1F84522F739979F128CB9 /* CloudKitSyncProviderBehaviorTests.swift in Sources */,
 				3563252A417A136CE40EAFB1 /* DocumentHistoryBehaviorTests.swift in Sources */,
 				BE4D74ED2365268561A9A070 /* DocumentModelBehaviorTests.swift in Sources */,
@@ -1534,6 +1541,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1C0D23FF2DEB3D52BF37CECE /* CanvasBrowserUITests.swift in Sources */,
+				5C2D1024644C8DB22019B06E /* LassoSelectionUITests.swift in Sources */,
 				90B9BE9F935D5669FDC2C301 /* LayerPanelUITests.swift in Sources */,
 				38D5657D45C8E321AA08D60E /* LibraryCreationPlacementUITests.swift in Sources */,
 				C1227228EFE39F93189D3956 /* NoteNerdsLaunchTests.swift in Sources */,

@@ -74,19 +74,34 @@ final class CanvasSystemsBehaviorTests: XCTestCase {
         XCTAssertEqual(session.textBlock, textBlock)
     }
 
-    func testEachDrawingToolRemembersItsOwnWidthAndColor() {
+    func testChoosingADrawingToolKeepsTheCurrentWidthAndColor() {
         var palette = ToolPaletteState()
         let red = InkColor(red: 0.8, green: 0.1, blue: 0.1, alpha: 1)
         palette.select(.pencil)
         palette.setWidth(.thin)
         palette.setColor(red)
-        palette.select(.highlighter)
-        palette.setWidth(.thick)
-        palette.select(.pencil)
 
+        palette.select(.marker)
+
+        XCTAssertEqual(palette.current.tool, .marker)
         XCTAssertEqual(palette.current.width, .thin)
         XCTAssertEqual(palette.current.color, red)
-        palette.select(.highlighter)
-        XCTAssertEqual(palette.current.width, .thick)
+    }
+
+    func testReturningToAnEarlierToolDoesNotBringBackItsOldWidthAndColor() {
+        var palette = ToolPaletteState()
+        let red = InkColor(red: 0.8, green: 0.1, blue: 0.1, alpha: 1)
+        let blue = InkColor(red: 0.1, green: 0.2, blue: 0.9, alpha: 1)
+        palette.select(.pencil)
+        palette.setWidth(.thin)
+        palette.setColor(red)
+        palette.select(.marker)
+        palette.setWidth(.extraBold)
+        palette.setColor(blue)
+
+        palette.select(.pencil)
+
+        XCTAssertEqual(palette.current.width, .extraBold)
+        XCTAssertEqual(palette.current.color, blue)
     }
 }

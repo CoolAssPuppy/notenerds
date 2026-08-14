@@ -1,5 +1,45 @@
 # Current work
 
+## Fix five editing complaints from build 33
+
+- [x] Keep width, color, and eraser mode when a different tool is chosen.
+- [x] Add a lock in the canvas header that pins the page, with a double tap
+      that fits what is written into the window.
+- [x] Make the lasso select ink after the canvas has been zoomed.
+- [x] Tell the confirm and cancel buttons apart in the text toolbar.
+- [x] Stop the pen from looking selected while text or a shape is being placed.
+
+### Editing fixes review
+
+- `ToolPaletteState` no longer keeps a separate width and color per tool. It
+  holds one configuration and `select` changes only the instrument. Switching
+  to the highlighter now keeps the current ink instead of restoring the
+  translucent yellow it used to default to.
+- The lock lives in `@AppStorage("isCanvasLocked")`, so it survives leaving and
+  reopening a notebook. Locking turns off the scroll view's scrolling and its
+  pinch recognizer and nothing else, which leaves drawing and programmatic
+  zoom working. Both are covered by tests.
+- The lasso bug was a coordinate mismatch, not lasso maths. Canvas overlays are
+  siblings of the view PencilKit zooms, so they kept their unzoomed size while
+  the ink grew. Every hit test, lasso point, and drag distance was read at the
+  wrong scale as soon as the zoom left 1. `CanvasOverlayGeometry` now anchors
+  each overlay to the content origin and scales it with the zoom.
+- A UI test reproduced the lasso failure before the fix: draw, pinch to 2.2x,
+  lasso, and the selection menu still read "Selection tool".
+- The text toolbar's confirm button is now filled with the tint colour and the
+  cancel button with a grey fill, through `InlineTextEditorButtonRole`.
+- `CanvasToolbarPresentation.isDrawingToolHighlighted` gates the drawing,
+  eraser, and lasso highlights on text and shape placement being off.
+- 585 behavior and performance tests passed, and 55 interface tests passed.
+  Strict lint passed.
+- Four interface tests still tap a "Select" button in the library sidebar that
+  commit `85c1e54` deleted on 10 August. The same commit added an assertion
+  that the button is gone, so the four tests have been failing since then and
+  were failing before any of today's work. Multi-select in the library is also
+  unreachable from the interface, though `selectionActions` and `moveSelection`
+  are still in `LibrarySidebarView`. Left alone: whether selection comes back
+  or comes out is a product decision.
+
 ## Release the sync watchdog fix to TestFlight
 
 - [x] Commit the verified sync decoding change.

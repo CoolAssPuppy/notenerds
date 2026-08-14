@@ -14,6 +14,42 @@ enum CanvasOverlayPresentation {
     }
 }
 
+/// Keeps the canvas overlays sitting exactly on top of the ink.
+///
+/// PencilKit zooms its own drawing view, and our overlays are siblings of it
+/// rather than children, so they keep their unzoomed size unless we scale them
+/// ourselves. Anchoring each one to the content origin and scaling it by the
+/// zoom leaves overlay coordinates equal to canvas coordinates at every zoom,
+/// which is what lasso selection, hit testing, and drag distances all read.
+@MainActor
+enum CanvasOverlayGeometry {
+    static let tags = 8_417...8_420
+
+    static func pinToContentOrigin(_ overlay: UIView) {
+        overlay.layer.anchorPoint = .zero
+        overlay.layer.position = .zero
+    }
+
+    static func synchronizeZoom(in canvasView: PKCanvasView) {
+        let scale = max(canvasView.zoomScale, CGFloat(CanvasViewport.minimumZoom))
+        let transform = CGAffineTransform(scaleX: scale, y: scale)
+        for tag in tags {
+            guard let overlay = canvasView.viewWithTag(tag), overlay.transform != transform else { continue }
+            overlay.transform = transform
+        }
+    }
+
+    /// The content size with any zoom taken back out, which is the coordinate
+    /// space strokes are stored in.
+    static func unzoomedContentSize(of canvasView: PKCanvasView) -> CGSize {
+        let scale = max(canvasView.zoomScale, CGFloat(CanvasViewport.minimumZoom))
+        return CGSize(
+            width: canvasView.contentSize.width / scale,
+            height: canvasView.contentSize.height / scale
+        )
+    }
+}
+
 enum CanvasOverlayModelReconciliation {
     static func requiresRefresh(
         currentStrokes: [Stroke],
@@ -26,7 +62,7 @@ enum CanvasOverlayModelReconciliation {
 
 extension PencilCanvasView {
     func bringCanvasOverlaysToFront(in canvasView: PKCanvasView, coordinator: Coordinator) {
-        for tag in 8_417...8_420 {
+        for tag in CanvasOverlayGeometry.tags {
             if let overlay = canvasView.viewWithTag(tag) {
                 canvasView.bringSubviewToFront(overlay)
             }
@@ -55,10 +91,10 @@ extension PencilCanvasView {
         coordinator.isLassoOverlayEnabled = configuration.tool == .lasso
         coordinator.isTextPlacementOverlayEnabled = isTextToolActive
         coordinator.shapePlacementKind = shapePlacementKind
-        let contentOverlayTag = 8_417
-        let selectionOverlayTag = 8_418
-        let highlightOverlayTag = 8_419
-        let textPlacementOverlayTag = 8_420
+        let contentOverlayTag = CanvasOverlayGeometry.tags.lowerBound
+        let selectionOverlayTag = contentOverlayTag + 1
+        let highlightOverlayTag = contentOverlayTag + 2
+        let textPlacementOverlayTag = contentOverlayTag + 3
         canvasView.viewWithTag(contentOverlayTag)?.removeFromSuperview()
         canvasView.viewWithTag(selectionOverlayTag)?.removeFromSuperview()
         canvasView.viewWithTag(highlightOverlayTag)?.removeFromSuperview()
@@ -78,30 +114,33 @@ extension PencilCanvasView {
         }
         addSearchHighlights(to: canvasView, tag: highlightOverlayTag)
         addTextPlacementOverlay(to: canvasView, tag: textPlacementOverlayTag)
+        CanvasOverlayGeometry.synchronizeZoom(in: canvasView)
     }
 
     private func addSearchHighlights(to canvasView: PKCanvasView, tag: Int) {
         let highlightedStrokes = strokes.filter { highlightedStrokeIDs.contains($0.id) }
         guard !highlightedStrokes.isEmpty else { return }
         let highlightOverlay = CanvasSearchHighlightView(
-            frame: CGRect(origin: .zero, size: canvasView.contentSize),
+            frame: CGRect(origin: .zero, size: CanvasOverlayGeometry.unzoomedContentSize(of: canvasView)),
             strokes: highlightedStrokes
         )
         highlightOverlay.tag = tag
         highlightOverlay.isUserInteractionEnabled = false
         canvasView.addSubview(highlightOverlay)
+        CanvasOverlayGeometry.pinToContentOrigin(highlightOverlay)
     }
 
     private func addTextPlacementOverlay(to canvasView: PKCanvasView, tag: Int) {
         guard isTextToolActive else { return }
         let placementOverlay = CanvasTextPlacementOverlayView(
-            frame: CGRect(origin: .zero, size: canvasView.contentSize),
+            frame: CGRect(origin: .zero, size: CanvasOverlayGeometry.unzoomedContentSize(of: canvasView)),
             objects: nonStrokeObjects,
             onPlaceText: onPlaceText,
             onEditText: onEditText
         )
         placementOverlay.tag = tag
         canvasView.addSubview(placementOverlay)
+        CanvasOverlayGeometry.pinToContentOrigin(placementOverlay)
     }
 
     private func addObjectOverlays(
@@ -111,7 +150,7 @@ extension PencilCanvasView {
         selectionTag: Int
     ) {
         let contentOverlay = CanvasObjectOverlayView(
-            frame: CGRect(origin: .zero, size: canvasView.contentSize),
+            frame: CGRect(origin: .zero, size: CanvasOverlayGeometry.unzoomedContentSize(of: canvasView)),
             objects: nonStrokeObjects,
             assets: assets
         )
@@ -119,9 +158,10 @@ extension PencilCanvasView {
         contentOverlay.isUserInteractionEnabled = false
         contentOverlay.backgroundColor = .clear
         canvasView.addSubview(contentOverlay)
+        CanvasOverlayGeometry.pinToContentOrigin(contentOverlay)
 
         let selectionOverlay = CanvasSelectionOverlayView(
-            frame: CGRect(origin: .zero, size: canvasView.contentSize),
+            frame: CGRect(origin: .zero, size: CanvasOverlayGeometry.unzoomedContentSize(of: canvasView)),
             objects: configuration.tool == .lasso
                 ? strokes.map(CanvasObject.stroke) + nonStrokeObjects
                 : nonStrokeObjects,
@@ -145,6 +185,7 @@ extension PencilCanvasView {
         )
         selectionOverlay.tag = selectionTag
         canvasView.addSubview(selectionOverlay)
+        CanvasOverlayGeometry.pinToContentOrigin(selectionOverlay)
         coordinator.objectSelectionOverlay = selectionOverlay
     }
 }

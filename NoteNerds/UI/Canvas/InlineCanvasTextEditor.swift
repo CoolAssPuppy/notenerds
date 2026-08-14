@@ -1,6 +1,32 @@
 import PencilKit
 import UIKit
 
+/// Tells the two decisions in the text toolbar apart at a glance.
+///
+/// Keep and discard used to be two grey glyphs of the same weight next to each
+/// other, so the only thing separating them was the shape of a small symbol.
+enum InlineTextEditorButtonRole {
+    case confirm
+    case cancel
+    case plain
+
+    var backgroundColor: UIColor {
+        switch self {
+        case .confirm: .tintColor
+        case .cancel: .tertiarySystemFill
+        case .plain: .clear
+        }
+    }
+
+    var foregroundColor: UIColor {
+        switch self {
+        case .confirm: .white
+        case .cancel: .secondaryLabel
+        case .plain: .tintColor
+        }
+    }
+}
+
 @MainActor
 final class InlineCanvasTextEditor: UIView, UITextViewDelegate {
     var sessionID: ObjectID?
@@ -59,13 +85,13 @@ final class InlineCanvasTextEditor: UIView, UITextViewDelegate {
         addSubview(toolbar)
 
         let stack = UIStackView(arrangedSubviews: [
-            button(symbol: "xmark", label: "Cancel text editing", action: cancel),
+            button(symbol: "xmark", label: "Cancel text editing", role: .cancel, action: cancel),
             fontButton,
             alignmentControl,
             button(symbol: "minus", label: "Decrease text size", action: decreaseSize),
             sizeLabel,
             button(symbol: "plus", label: "Increase text size", action: increaseSize),
-            button(symbol: "checkmark", label: "Finish text editing", action: commit)
+            button(symbol: "checkmark", label: "Finish text editing", role: .confirm, action: commit)
         ])
         stack.axis = .horizontal
         stack.alignment = .center
@@ -114,9 +140,22 @@ final class InlineCanvasTextEditor: UIView, UITextViewDelegate {
         resizeForContent()
     }
 
-    private func button(symbol: String, label: String, action: @escaping () -> Void) -> UIButton {
-        let button = UIButton(type: .system, primaryAction: UIAction { _ in action() })
-        button.setImage(UIImage(systemName: symbol), for: .normal)
+    private func button(
+        symbol: String,
+        label: String,
+        role: InlineTextEditorButtonRole = .plain,
+        action: @escaping () -> Void
+    ) -> UIButton {
+        var configuration = UIButton.Configuration.plain()
+        configuration.image = UIImage(systemName: symbol)
+        configuration.background.backgroundColor = role.backgroundColor
+        configuration.baseForegroundColor = role.foregroundColor
+        configuration.cornerStyle = .capsule
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8)
+        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
+            weight: role == .plain ? .regular : .semibold
+        )
+        let button = UIButton(configuration: configuration, primaryAction: UIAction { _ in action() })
         button.accessibilityLabel = label
         button.widthAnchor.constraint(greaterThanOrEqualToConstant: 32).isActive = true
         button.heightAnchor.constraint(equalToConstant: 32).isActive = true

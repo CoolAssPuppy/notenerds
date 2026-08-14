@@ -12,6 +12,20 @@ extension PencilCanvasView {
         canvasView.contentOffset = CGPoint(x: 9_500, y: 9_500)
     }
 
+    /// Pins the page in place without taking the pen away.
+    ///
+    /// Only the two touch gestures are switched off, so drawing carries on and
+    /// the app can still move and scale the page itself, which is what lets a
+    /// locked canvas be fitted to its content.
+    static func applyCanvasLock(_ isLocked: Bool, to canvasView: PKCanvasView) {
+        if canvasView.isScrollEnabled == isLocked {
+            canvasView.isScrollEnabled = !isLocked
+        }
+        if let pinch = canvasView.pinchGestureRecognizer, pinch.isEnabled == isLocked {
+            pinch.isEnabled = !isLocked
+        }
+    }
+
     func updatePlannerContext(_ coordinator: Coordinator) {
         if coordinator.canvasID != canvasID {
             coordinator.hasAppliedInitialPlannerViewport = false

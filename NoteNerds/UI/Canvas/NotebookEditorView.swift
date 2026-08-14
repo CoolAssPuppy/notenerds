@@ -34,6 +34,7 @@ struct NotebookEditorView: View {
     @GestureState var isToolbarDragging = false
     @AppStorage("defaultPaperType") private var defaultPaperTypeRawValue = PaperType.blankWhite.rawValue
     @AppStorage("isFingerDrawingEnabled") var isFingerDrawingEnabled = false
+    @AppStorage("isCanvasLocked") var isCanvasLocked = false
     @AppStorage("isToolbarOnLeft") var isToolbarOnLeft = true
     @AppStorage("canvasToolbarOrientation") var toolbarOrientationRawValue =
         CanvasToolbarOrientation.vertical.rawValue
@@ -84,6 +85,7 @@ struct NotebookEditorView: View {
                 isPlannerRegionPagingEnabled: isPlannerRegionPagingPresented,
                 shouldAnimatePlannerRegionChanges: !isReduceMotionEnabled,
                 isFingerDrawingEnabled: allowsFingerDrawingOnCanvas,
+                isCanvasLocked: isCanvasLocked,
                 textEditingSession: textEditingSession,
                 isTextToolActive: isTextToolActive,
                 shapePlacementKind: selectedShapeKind,
@@ -275,11 +277,14 @@ struct NotebookEditorView: View {
             layers: currentCanvas.layers,
             isSelectionMenuVisible: configuration.tool == .lasso || isObjectSelectionActive,
             isObjectSelectionActive: isObjectSelectionActive,
+            isCanvasLocked: isCanvasLocked,
             onClose: model.closeNotebook,
             onRenameNotebook: { model.renameNotebook(notebook.id, to: $0) },
             onOpenBrowser: { isCanvasBrowserPresented = true },
             onNewCanvas: { paperPickerPurpose = .newCanvas },
             onSelectionAction: sendEditingCommand,
+            onToggleCanvasLock: toggleCanvasLock,
+            onFitCanvasToContent: zoomToContent,
             onExportPDF: preparePDFExport,
             onExportPNG: preparePNGExport,
             onExportNative: prepareNativeExport,
@@ -430,6 +435,11 @@ struct NotebookEditorView: View {
 
     func toggleMinimap() {
         isMinimapVisible.toggle()
+    }
+
+    func toggleCanvasLock() {
+        UISelectionFeedbackGenerator().selectionChanged()
+        isCanvasLocked.toggle()
     }
 }
 

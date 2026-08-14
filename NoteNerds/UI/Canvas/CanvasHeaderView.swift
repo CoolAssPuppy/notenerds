@@ -8,11 +8,14 @@ struct CanvasHeaderView: ToolbarContent {
     let layers: [Layer]
     let isSelectionMenuVisible: Bool
     let isObjectSelectionActive: Bool
+    let isCanvasLocked: Bool
     let onClose: () -> Void
     let onRenameNotebook: (String) -> Void
     let onOpenBrowser: () -> Void
     let onNewCanvas: () -> Void
     let onSelectionAction: (CanvasEditingAction) -> Void
+    let onToggleCanvasLock: () -> Void
+    let onFitCanvasToContent: () -> Void
     let onExportPDF: () -> Void
     let onExportPNG: () -> Void
     let onExportNative: () -> Void
@@ -36,10 +39,31 @@ struct CanvasHeaderView: ToolbarContent {
             if isSelectionMenuVisible { selectionMenu }
             Button("New canvas", systemImage: AppSymbol.add, action: onNewCanvas)
                 .keyboardShortcut("n", modifiers: [.command, .shift])
+            lockButton
             shareMenu
             Button("Canvases", systemImage: AppSymbol.more, action: onOpenBrowser)
                 .accessibilityHint("Shows every canvas in this notebook")
         }
+    }
+
+    /// One tap pins the page, two taps fit what is written to the screen.
+    ///
+    /// The double tap is registered first so a second tap is never swallowed
+    /// by the toggle.
+    private var lockButton: some View {
+        Image(systemName: isCanvasLocked ? "lock.fill" : "lock.open")
+            .font(.system(size: 17, weight: .regular))
+            .frame(width: 32, height: 32)
+            .contentShape(Rectangle())
+            .onTapGesture(count: 2, perform: onFitCanvasToContent)
+            .onTapGesture(count: 1, perform: onToggleCanvasLock)
+            .accessibilityElement()
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel("Lock canvas")
+            .accessibilityValue(isCanvasLocked ? "Locked" : "Unlocked")
+            .accessibilityHint("Stops the page being scrolled or zoomed by touch")
+            .accessibilityAction(named: "Fit page to content", onFitCanvasToContent)
+            .help(isCanvasLocked ? "Unlock canvas" : "Lock canvas")
     }
 
     private var selectionMenu: some View {

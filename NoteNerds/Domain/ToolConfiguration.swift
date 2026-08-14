@@ -62,40 +62,25 @@ struct ToolConfiguration: Codable, Hashable, Sendable {
 }
 
 struct ToolPaletteState: Codable, Hashable, Sendable {
-    private(set) var current: ToolConfiguration
-    private var configurations: [CanvasTool: ToolConfiguration]
+    private(set) var current = ToolConfiguration(tool: .ballpoint, width: .medium, color: .black)
 
-    init() {
-        configurations = Dictionary(uniqueKeysWithValues: CanvasTool.allCases.map { tool in
-            (tool, ToolConfiguration(tool: tool, width: .medium, color: Self.defaultColor(for: tool)))
-        })
-        current = configurations[.ballpoint] ?? .favoriteOne
-    }
-
+    /// Changes the instrument and leaves every other setting alone.
+    ///
+    /// Width, color, and eraser mode belong to the person drawing, not to the
+    /// tool. Picking a different pen mid-sentence should not reset them.
     mutating func select(_ tool: CanvasTool) {
-        configurations[current.tool] = current
-        current = configurations[tool]
-            ?? ToolConfiguration(tool: tool, width: .medium, color: Self.defaultColor(for: tool))
+        current.tool = tool
     }
 
     mutating func setWidth(_ width: ToolWidth) {
         current.width = width
-        configurations[current.tool] = current
     }
 
     mutating func setColor(_ color: InkColor) {
         current.color = color
-        configurations[current.tool] = current
     }
 
     mutating func setEraserMode(_ mode: EraserMode) {
         current.eraserMode = mode
-        configurations[current.tool] = current
-    }
-
-    private static func defaultColor(for tool: CanvasTool) -> InkColor {
-        tool == .highlighter
-            ? InkColor(red: 0.95, green: 0.78, blue: 0.2, alpha: 0.45)
-            : .black
     }
 }

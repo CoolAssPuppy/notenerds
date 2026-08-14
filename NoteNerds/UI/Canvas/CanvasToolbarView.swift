@@ -15,6 +15,13 @@ struct CanvasToolbarView: View {
 
     private let drawingTools = CanvasToolbarPresentation.specializedDrawingTools
 
+    private var isDrawingToolHighlighted: Bool {
+        CanvasToolbarPresentation.isDrawingToolHighlighted(
+            isTextToolActive: editor.isTextToolActive,
+            shapeKind: editor.selectedShapeKind
+        )
+    }
+
     var body: some View {
         toolbarContainer
         .popover(item: $presentedInspector) { inspector in
@@ -71,7 +78,11 @@ struct CanvasToolbarView: View {
         widthInspectorButton
         colorInspectorButton
         eraserInspectorButton
-        chromeButton("Lasso", symbol: "lasso", isSelected: editor.configuration.tool == .lasso) {
+        chromeButton(
+            "Lasso",
+            symbol: "lasso",
+            isSelected: isDrawingToolHighlighted && editor.configuration.tool == .lasso
+        ) {
             editor.selectTool(.lasso)
         }
     }
@@ -104,7 +115,7 @@ struct CanvasToolbarView: View {
         Button { presentedInspector = .drawing } label: {
             CanvasChromeIcon(
                 symbol: editor.selectedDrawingTool.symbol,
-                isSelected: editor.configuration.tool.instrument != nil
+                isSelected: isDrawingToolHighlighted && editor.configuration.tool.instrument != nil
             )
         }
         .accessibilityLabel("Drawing tools")
@@ -145,7 +156,10 @@ struct CanvasToolbarView: View {
 
     private var eraserInspectorButton: some View {
         Button { presentedInspector = .eraser } label: {
-            CanvasChromeIcon(symbol: "eraser", isSelected: editor.configuration.tool == .eraser)
+            CanvasChromeIcon(
+                symbol: "eraser",
+                isSelected: isDrawingToolHighlighted && editor.configuration.tool == .eraser
+            )
         }
         .accessibilityLabel("Eraser")
         .accessibilityValue(editor.configuration.eraserMode.rawValue.capitalized)

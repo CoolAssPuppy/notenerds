@@ -24,6 +24,19 @@ enum CanvasToolbarPresentation {
         1
     }
 
+    /// Whether the drawing tool, eraser, and lasso buttons should read as the
+    /// chosen tool.
+    ///
+    /// Placing text or a shape takes over the canvas, and the pen the person
+    /// will come back to is not the pen they are using. Showing it selected
+    /// says the wrong thing about what a tap will do next.
+    static func isDrawingToolHighlighted(
+        isTextToolActive: Bool,
+        shapeKind: RecognizedShapeKind?
+    ) -> Bool {
+        !isTextToolActive && shapeKind == nil
+    }
+
     static func actions(isExpanded: Bool) -> [CanvasToolbarAction] {
         let essentials: [CanvasToolbarAction] = [.drawing, .width, .color, .eraser, .lasso]
         guard isExpanded else { return essentials }

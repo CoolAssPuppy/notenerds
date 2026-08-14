@@ -1,5 +1,24 @@
 # Current work
 
+## Release the sync watchdog fix to TestFlight
+
+- [x] Commit the verified sync decoding change.
+- [x] Run the release preflight against App Store Connect.
+- [x] Build, sign, export, and upload TestFlight build 33.
+- [x] Confirm Apple marks build 33 valid.
+- [x] Commit the build number and release record, then push `main`.
+
+### Build 33 review
+
+- Commit `cfe488a` contains the verified sync decoding change.
+- Release preflight passed: XcodeGen 2.46.0, signing credentials, iOS 26.0,
+  and universal iPhone and iPad support.
+- Version 1.0.0 build 33 archived, exported, and uploaded without errors.
+  Apple marked it valid. Delivery UUID: `ede39f9e-897a-4419-a2f2-b9de5c77afd0`.
+- Build identifier in App Store Connect: `ede39f9e-897a-4419-a2f2-b9de5c77afd0`.
+- What to Test notes are in `dist/whats-new-33.txt`. They ask testers to write
+  over a long session with iCloud sync on, ideally across two devices.
+
 ## Stop the watchdog kill while remote changes arrive
 
 - [x] Pull the crash reports from the iPad and symbolicate them against build 32.

@@ -1,5 +1,33 @@
 # Current work
 
+## Stop the watchdog kill while remote changes arrive
+
+- [x] Pull the crash reports from the iPad and symbolicate them against build 32.
+- [x] Write a failing test for a main thread stall while a large remote batch is applied.
+- [x] Read each incoming payload once, away from the main actor.
+- [x] Run the full suite and confirm the test fails without the fix.
+
+### Watchdog review
+
+- Two crash reports, 13 August 16:48 and 14 August 09:46, both build 32, both
+  `0x8BADF00D` from FRONTBOARD with the main thread inside `JSONDecoder`.
+  Symbolication put them in `AppModel.applyRemoteChanges` and
+  `AppModel.applyRemoteChange`, decoding `SyncChangeEncoder.Payload` down to
+  every `StrokeSample` and `CanvasPoint` of an incoming stroke.
+- Each change was decoded at least three times on the main actor: once to ask
+  whether it was a document action, once as a library mutation, once as a
+  document action again. A change that stayed deferred was decoded twice more
+  on every pass of the retry loop.
+- `SyncChangeEncoder.decodePayload` now reads a change once and reports what it
+  holds. `decode`, `decodeDocumentAction`, and `decodeLibraryMutation` all go
+  through it, so the size guards and the legacy raw-operation fallback are
+  unchanged.
+- `AppModel.synchronize` decodes the whole batch in a detached task before it
+  touches the library, and the apply loop reuses those results.
+- 200 remote strokes of 1,500 samples stalled the main thread for 2.74 seconds
+  before the change and 0 after it, measured on the iPad Pro 11-inch simulator.
+- All 562 unit tests and 13 performance tests passed.
+
 ## Release palm rejection to TestFlight
 
 - [x] Commit the verified two-finger canvas navigation change.

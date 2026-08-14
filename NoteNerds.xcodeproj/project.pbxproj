@@ -258,6 +258,7 @@
 		EA8CFDFDD4352A825D07C132 /* NotionRestoreCoordinatorBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 887687B2930361DFD4B4484F /* NotionRestoreCoordinatorBehaviorTests.swift */; };
 		EEBC8216AD141E92B6506FAC /* CanvasViewportModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8304B81E21A16E08ACF6F44 /* CanvasViewportModel.swift */; };
 		EFE1F84522F739979F128CB9 /* CloudKitSyncProviderBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440127D5250CFA146CB1ECBB /* CloudKitSyncProviderBehaviorTests.swift */; };
+		F08F65B8A7ADA05F2DDD7514 /* RemoteChangeThroughputBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F93EE218C0380563571D6B1 /* RemoteChangeThroughputBehaviorTests.swift */; };
 		F0E2CE1A2E8FF9807E494DD6 /* AppModel+Notion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948128EE1097679CE29A2136 /* AppModel+Notion.swift */; };
 		F140673CE3E6731A2DF8485C /* PencilStrokeArchiveCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7045CDA1D2D6754431E82C3C /* PencilStrokeArchiveCache.swift */; };
 		F169E505ED2879B193D70D5F /* FolderRestoreCompatibilityBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D93A8D6630F1974BDF33414 /* FolderRestoreCompatibilityBehaviorTests.swift */; };
@@ -381,6 +382,7 @@
 		4D72280FBE085FEA26A09B8B /* RemoteHandwritingSyncPersistenceBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteHandwritingSyncPersistenceBehaviorTests.swift; sourceTree = "<group>"; };
 		4EA0BDF971D5CAB85D50670B /* NotebookTitleToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookTitleToolbarView.swift; sourceTree = "<group>"; };
 		4F009A7A111D7E1D2F61810D /* FolderDeletionConvergenceBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderDeletionConvergenceBehaviorTests.swift; sourceTree = "<group>"; };
+		4F93EE218C0380563571D6B1 /* RemoteChangeThroughputBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteChangeThroughputBehaviorTests.swift; sourceTree = "<group>"; };
 		4F9EECABD947F86A68F6FC6F /* LibraryFolderTreeRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryFolderTreeRow.swift; sourceTree = "<group>"; };
 		53640357D2761811D69F6227 /* ToolConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolConfiguration.swift; sourceTree = "<group>"; };
 		54175B0146804F079F2CE6A3 /* CanvasSelectionOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSelectionOverlayView.swift; sourceTree = "<group>"; };
@@ -888,6 +890,7 @@
 				FEF2A54899215CF29F3956EC /* FolderMoveIntoDeletionBehaviorTests.swift */,
 				E65B4DF5AD865915D22F7D80 /* FolderSyncBehaviorTests.swift */,
 				CDC52EE20BB0CDEE5089CAE9 /* LocalEchoRecoveryBehaviorTests.swift */,
+				4F93EE218C0380563571D6B1 /* RemoteChangeThroughputBehaviorTests.swift */,
 				4D72280FBE085FEA26A09B8B /* RemoteHandwritingSyncPersistenceBehaviorTests.swift */,
 				CD43D0904572F825D29BD00A /* RemoteSyncReceiptBehaviorTests.swift */,
 				B996C3B3A94B3B0366A2BE56 /* SyncBehaviorTests.swift */,
@@ -1506,6 +1509,7 @@
 				767CC510093D8AD9BB58D735 /* PencilStrokePersistenceBehaviorTests.swift in Sources */,
 				FAD07D92C7BFD399EB236E10 /* PencilStrokeTestFixture.swift in Sources */,
 				6BBE18CCA6C8A31EA97C605A /* RadialPaletteBehaviorTests.swift in Sources */,
+				F08F65B8A7ADA05F2DDD7514 /* RemoteChangeThroughputBehaviorTests.swift in Sources */,
 				AAB2D0D943D831FD59531507 /* RemoteHandwritingSyncPersistenceBehaviorTests.swift in Sources */,
 				28680C08081731E1C7371FE2 /* RemoteSyncReceiptBehaviorTests.swift in Sources */,
 				9464405F3028390F36AE20F8 /* SearchIndexBehaviorTests.swift in Sources */,

@@ -76,8 +76,9 @@ extension AppModel {
         }
         let changes = await engine.receivedChangesSnapshot()
         let locallyAppliedChangeIDs = await engine.locallyAppliedChangeIDsSnapshot()
+        let decodedChanges = await Self.decodeRemoteChanges(changes)
         let outcome = applyRemoteChanges(
-            changes,
+            decodedChanges,
             locallyAppliedChangeIDs: locallyAppliedChangeIDs
         )
         var acknowledgedIDs = outcome.immediateAcknowledgements
@@ -162,14 +163,31 @@ extension AppModel {
         await persistenceTask.value
     }
 
+    /// Reads every incoming payload once, away from the main thread.
+    ///
+    /// A batch of remote strokes holds every sample of every gesture, and the
+    /// main thread used to decode each one several times over while the canvas
+    /// waited. That is what the watchdog was killing the app for.
+    nonisolated private static func decodeRemoteChanges(
+        _ changes: [DocumentChange]
+    ) async -> [DecodedRemoteChange] {
+        guard !changes.isEmpty else { return [] }
+        return await Task.detached(priority: .userInitiated) {
+            changes.map {
+                DecodedRemoteChange(change: $0, payload: try? SyncChangeEncoder.decodePayload($0))
+            }
+        }.value
+    }
+
     private func applyRemoteChanges(
-        _ changes: [DocumentChange],
+        _ decodedChanges: [DecodedRemoteChange],
         locallyAppliedChangeIDs: Set<ChangeID>
     ) -> RemoteChangeApplicationOutcome {
         var outcome = RemoteChangeApplicationOutcome()
-        var deferredChanges: [DocumentChange] = []
-        for change in changes {
-            let isDocumentAction = (try? SyncChangeEncoder.decodeDocumentAction(change)) != nil
+        var deferredChanges: [DecodedRemoteChange] = []
+        for decoded in decodedChanges {
+            let change = decoded.change
+            let isDocumentAction = decoded.documentAction != nil
             let isDurableLocalDocumentEcho = isDocumentAction
                 && locallyAppliedChangeIDs.contains(change.id)
             if isDurableLocalDocumentEcho || (!isDocumentAction && seenSyncChangeIDs.contains(change.id)) {
@@ -182,26 +200,27 @@ extension AppModel {
                     notebookIDs: remoteNotebookIDsAwaitingPersistence[change.id, default: []]
                 )
             } else {
-                deferredChanges.append(change)
+                deferredChanges.append(decoded)
             }
         }
         var madeProgress = true
         while madeProgress, !deferredChanges.isEmpty {
             madeProgress = false
-            deferredChanges = deferredChanges.filter { change in
-                switch applyRemoteChange(change) {
+            deferredChanges = deferredChanges.filter { decoded in
+                let changeID = decoded.change.id
+                switch applyRemoteChange(decoded) {
                 case let .applied(notebookIDs):
                     madeProgress = true
-                    remoteChangeIDsAwaitingPersistence.insert(change.id)
-                    remoteNotebookIDsAwaitingPersistence[change.id] = notebookIDs
-                    outcome.requirePersistence(changeID: change.id, notebookIDs: notebookIDs)
+                    remoteChangeIDsAwaitingPersistence.insert(changeID)
+                    remoteNotebookIDsAwaitingPersistence[changeID] = notebookIDs
+                    outcome.requirePersistence(changeID: changeID, notebookIDs: notebookIDs)
                     return false
                 case .alreadyApplied:
                     madeProgress = true
-                    outcome.immediateAcknowledgements.insert(change.id)
+                    outcome.immediateAcknowledgements.insert(changeID)
                     return false
                 case .discarded:
-                    outcome.immediateAcknowledgements.insert(change.id)
+                    outcome.immediateAcknowledgements.insert(changeID)
                     return false
                 case .deferred:
                     return true
@@ -249,8 +268,9 @@ extension AppModel {
         return await persistenceTask.value
     }
 
-    private func applyRemoteChange(_ change: DocumentChange) -> RemoteChangeDisposition {
-        if let mutation = try? SyncChangeEncoder.decodeLibraryMutation(change) {
+    private func applyRemoteChange(_ decoded: DecodedRemoteChange) -> RemoteChangeDisposition {
+        let change = decoded.change
+        if let mutation = decoded.libraryMutation {
             if let disposition = missingNotebookDisposition(for: mutation) {
                 return disposition
             }
@@ -260,7 +280,7 @@ extension AppModel {
             updateSearchIndex(after: mutation)
             return .applied(changedNotebookIDs)
         }
-        guard let action = try? SyncChangeEncoder.decodeDocumentAction(change) else {
+        guard let action = decoded.documentAction else {
             return .discarded
         }
         guard var notebook = library.notebook(id: change.notebookID) else {
@@ -349,6 +369,18 @@ extension AppModel {
     private func nextSyncSequence() -> Int {
         max(syncSequence + 1, Int(Date().timeIntervalSince1970 * 1_000_000))
     }
+}
+
+/// A change paired with the payload it was found to hold.
+///
+/// `nil` means the bytes were unreadable, which is how a change earns being
+/// discarded rather than retried.
+private struct DecodedRemoteChange: Sendable {
+    let change: DocumentChange
+    let payload: SyncChangePayload?
+
+    var documentAction: SyncedDocumentAction? { payload?.documentAction }
+    var libraryMutation: LibrarySyncMutation? { payload?.libraryMutation }
 }
 
 private struct RemoteChangeApplicationOutcome {

@@ -17,6 +17,22 @@ struct SyncedDocumentAction: Codable, Hashable, Sendable {
     }
 }
 
+/// What a change turned out to be once its JSON was read.
+enum SyncChangePayload: Hashable, Sendable {
+    case document(SyncedDocumentAction)
+    case library(LibrarySyncMutation)
+
+    var documentAction: SyncedDocumentAction? {
+        guard case let .document(action) = self else { return nil }
+        return action
+    }
+
+    var libraryMutation: LibrarySyncMutation? {
+        guard case let .library(mutation) = self else { return nil }
+        return mutation
+    }
+}
+
 struct SyncChangeEncoder: Sendable {
     static let maximumLibraryMutationPayloadByteCount = 1_024 * 1_024
     static let maximumChangePayloadByteCount = 512 * 1_024 * 1_024
@@ -61,20 +77,36 @@ struct SyncChangeEncoder: Sendable {
         )
     }
 
-    static func decode(_ change: DocumentChange) throws -> DocumentOperation {
-        if let payload = try? makeDecoder().decode(Payload.self, from: change.payload),
-           case let .document(action) = payload {
-            return action.operation
+    /// Reads a change's JSON once and reports what it holds.
+    ///
+    /// A stroke payload carries every sample of a gesture, so a single decode
+    /// can run into megabytes. Callers that need to know both what kind of
+    /// change this is and what it says must go through here rather than
+    /// decoding the same bytes again for each question.
+    static func decodePayload(_ change: DocumentChange) throws -> SyncChangePayload {
+        try enforcePayloadSizeLimit(for: change)
+        guard let payload = try? makeDecoder().decode(Payload.self, from: change.payload) else {
+            let operation = try makeDecoder().decode(DocumentOperation.self, from: change.payload)
+            return .document(SyncedDocumentAction(operation: operation, direction: .apply))
         }
-        return try makeDecoder().decode(DocumentOperation.self, from: change.payload)
+        switch payload {
+        case let .document(action):
+            return .document(action)
+        case let .library(mutation):
+            try validate(mutation, against: change)
+            return .library(mutation)
+        }
+    }
+
+    static func decode(_ change: DocumentChange) throws -> DocumentOperation {
+        try decodeDocumentAction(change).operation
     }
 
     static func decodeDocumentAction(_ change: DocumentChange) throws -> SyncedDocumentAction {
-        if let payload = try? makeDecoder().decode(Payload.self, from: change.payload),
-           case let .document(action) = payload {
-            return action
+        guard let action = try decodePayload(change).documentAction else {
+            throw CocoaError(.coderInvalidValue)
         }
-        return SyncedDocumentAction(operation: try decode(change), direction: .apply)
+        return action
     }
 
     func change(
@@ -101,16 +133,35 @@ struct SyncChangeEncoder: Sendable {
     }
 
     static func decodeLibraryMutation(_ change: DocumentChange) throws -> LibrarySyncMutation {
-        let maximumByteCount = maximumPayloadByteCount(
-            forEnvelopePrefix: Data(change.payload.prefix(maximumEnvelopePrefixByteCount))
+        guard let mutation = try decodePayload(change).libraryMutation else {
+            throw CocoaError(.coderInvalidValue)
+        }
+        return mutation
+    }
+
+    /// Rejects an oversized payload before anything decodes it.
+    ///
+    /// Reading the envelope's first few keys costs a few hundred bytes and
+    /// tells us which limit applies, which is what stops a runaway folder
+    /// mutation from being parsed at all.
+    private static func enforcePayloadSizeLimit(for change: DocumentChange) throws {
+        var preflight = SyncPayloadEnvelopePreflight(
+            prefix: Data(change.payload.prefix(maximumEnvelopePrefixByteCount))
         )
+        guard let kind = try? preflight.payloadKind() else { return }
+        let maximumByteCount = switch kind {
+        case .folderMutation: maximumLibraryMutationPayloadByteCount
+        case .general: maximumChangePayloadByteCount
+        }
         guard change.payload.count <= maximumByteCount else {
             throw CocoaError(.fileReadTooLarge)
         }
-        let payload = try makeDecoder().decode(Payload.self, from: change.payload)
-        guard case let .library(mutation) = payload else {
-            throw CocoaError(.coderInvalidValue)
-        }
+    }
+
+    private static func validate(
+        _ mutation: LibrarySyncMutation,
+        against change: DocumentChange
+    ) throws {
         guard !mutation.objectKey.hasPrefix("folder:")
                 || change.payload.count <= maximumLibraryMutationPayloadByteCount else {
             throw CocoaError(.fileReadTooLarge)
@@ -118,7 +169,6 @@ struct SyncChangeEncoder: Sendable {
         guard mutation.objectKey == change.objectKey else {
             throw CocoaError(.coderInvalidValue)
         }
-        return mutation
     }
 
     static func maximumPayloadByteCount(forEnvelopePrefix prefix: Data) -> Int {

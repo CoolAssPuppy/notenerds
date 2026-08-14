@@ -1,5 +1,23 @@
 # Current work
 
+## Release the editing fixes to TestFlight
+
+- [x] Commit the five verified editing fixes.
+- [x] Run the release preflight against App Store Connect.
+- [x] Build, sign, export, and upload TestFlight build 34.
+- [x] Confirm Apple marks build 34 valid.
+- [x] Commit the build number and release record, then push `main`.
+
+### Build 34 review
+
+- Commit `7ab4128` contains the five verified editing fixes.
+- Release preflight passed: XcodeGen 2.46.0, signing credentials, iOS 26.0,
+  and universal iPhone and iPad support.
+- Version 1.0.0 build 34 archived, exported, and uploaded without errors.
+  Apple marked it valid. Delivery UUID: `c49045cb-4c80-48ba-abea-1195152a1f44`.
+- What to Test notes are in `dist/whats-new-34.txt`. They ask testers to lasso
+  after zooming, check that a tool change keeps the ink, and try the lock.
+
 ## Fix five editing complaints from build 33
 
 - [x] Keep width, color, and eraser mode when a different tool is chosen.

@@ -9,7 +9,7 @@ extension PencilCanvasView {
         // Pencil is writing. Two fingers still pan and pinch as expected.
         canvasView.panGestureRecognizer.minimumNumberOfTouches = 2
         canvasView.contentSize = CGSize(width: 20_000, height: 20_000)
-        canvasView.contentOffset = CGPoint(x: 9_500, y: 9_500)
+        canvasView.contentOffset = CGPoint(x: CanvasViewport.homeOrigin.x, y: CanvasViewport.homeOrigin.y)
     }
 
     /// Pins the page in place without taking the pen away.
@@ -38,6 +38,55 @@ extension PencilCanvasView {
     }
 
     func applyInitialPlannerViewport(to canvasView: PKCanvasView, coordinator: Coordinator) {
+        if template.isPlanner {
+            applyInitialPlannerPageViewport(to: canvasView, coordinator: coordinator)
+            return
+        }
+        applyInitialHomeViewport(to: canvasView, coordinator: coordinator)
+    }
+
+    func applyInitialHomeViewport(to canvasView: PKCanvasView, coordinator: Coordinator) {
+        guard !coordinator.hasAppliedInitialPlannerViewport,
+              canvasView.bounds.width > 0 else { return }
+        Self.applyOpeningViewport(
+            CanvasViewportPolicy.openingAction(contentBounds: visibleContentBounds),
+            to: canvasView
+        )
+        coordinator.hasAppliedInitialPlannerViewport = true
+    }
+
+    static func applyOpeningViewport(_ action: CanvasNavigationAction, to canvasView: PKCanvasView) {
+        switch action {
+        case .home:
+            canvasView.setZoomScale(1, animated: false)
+            canvasView.setContentOffset(
+                CGPoint(x: CanvasViewport.homeOrigin.x, y: CanvasViewport.homeOrigin.y),
+                animated: false
+            )
+        case let .zoomToContent(bounds):
+            canvasView.zoom(to: zoomRect(for: bounds), animated: false)
+        }
+    }
+
+    static func zoomRect(for bounds: CanvasRect) -> CGRect {
+        let margin = max(bounds.size.width, bounds.size.height) * 0.08 + 40
+        return bounds.pencilKitRect.insetBy(dx: -margin, dy: -margin)
+    }
+
+    private var visibleContentBounds: CanvasRect? {
+        let objects = strokes.map(CanvasObject.stroke) + nonStrokeObjects
+        guard let first = objects.first else { return nil }
+        return objects.dropFirst().reduce(first.bounds) { bounds, object in
+            CanvasRect.enclosing([
+                bounds.origin,
+                CanvasPoint(x: bounds.maxX, y: bounds.maxY),
+                object.bounds.origin,
+                CanvasPoint(x: object.bounds.maxX, y: object.bounds.maxY)
+            ])
+        }
+    }
+
+    private func applyInitialPlannerPageViewport(to canvasView: PKCanvasView, coordinator: Coordinator) {
         guard template.isPlanner,
               !coordinator.isPlannerRegionPagingEnabled,
               !coordinator.hasAppliedInitialPlannerViewport,

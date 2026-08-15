@@ -170,10 +170,12 @@ struct PencilCanvasView: UIViewRepresentable {
         switch command.action {
         case .home:
             canvasView.setZoomScale(1, animated: true)
-            canvasView.setContentOffset(CGPoint(x: 9_500, y: 9_500), animated: true)
+            canvasView.setContentOffset(
+                CGPoint(x: CanvasViewport.homeOrigin.x, y: CanvasViewport.homeOrigin.y),
+                animated: true
+            )
         case let .zoomToContent(bounds):
-            let margin = max(bounds.size.width, bounds.size.height) * 0.08 + 40
-            canvasView.zoom(to: bounds.pencilKitRect.insetBy(dx: -margin, dy: -margin), animated: true)
+            canvasView.zoom(to: Self.zoomRect(for: bounds), animated: true)
         }
     }
 

@@ -1,5 +1,22 @@
 # Current work
 
+## Show writing after leaving a notebook
+
+- [x] Reproduce strokes visible in the thumbnail but missing on reopen.
+- [x] Open onto writing that sits outside the home page.
+- [x] Keep an empty notebook on the centred home page.
+
+### Review
+
+The library thumbnail crops to the ink. The editor always opened the
+centred home page at 9500,9500. `PKCanvasView` often drops that offset
+while its bounds are still zero, so the first strokes are saved near the
+origin. Coming back showed a blank page even though the strokes were
+still in the notebook.
+
+`CanvasViewportPolicy` now zooms to that writing when it does not
+intersect the home page. Empty notes still open at home.
+
 ## Release the review fixes to TestFlight
 
 - [x] Commit the review and journal sidecar work.

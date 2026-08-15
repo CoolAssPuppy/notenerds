@@ -38,7 +38,7 @@ enum CanvasThumbnailRenderer {
         return renderer.image { context in
             UIColor.secondarySystemBackground.setFill()
             context.fill(CGRect(origin: .zero, size: size))
-            let sourceBounds = canvas.contentBounds ?? CanvasRect(x: 0, y: 0, width: 400, height: 300)
+            let sourceBounds = canvas.contentBounds ?? CanvasViewport.defaultVisibleBounds
             let transform = thumbnailTransform(source: sourceBounds, destination: size)
             for object in canvas.layers.filter(\.isVisible).flatMap(\.objects) {
                 draw(object, transform: transform, in: context.cgContext)

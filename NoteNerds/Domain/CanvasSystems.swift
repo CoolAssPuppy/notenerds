@@ -106,9 +106,31 @@ enum CanvasInputAction: Sendable {
     case navigate
 }
 
-enum CanvasNavigationAction: Sendable {
+enum CanvasNavigationAction: Equatable, Sendable {
     case home
     case zoomToContent(CanvasRect)
+}
+
+/// Decides where a reopened canvas should look.
+///
+/// New writing is supposed to land in the centred home page. `PKCanvasView`
+/// often drops that offset while its bounds are still zero, so the first
+/// strokes are saved near the origin. The library thumbnail crops to those
+/// strokes, then opening the note shows the empty home page. If the ink is
+/// outside home, this zooms to it.
+enum CanvasViewportPolicy {
+    static func openingAction(
+        contentBounds: CanvasRect?,
+        defaultViewport: CanvasRect = CanvasViewport.defaultVisibleBounds
+    ) -> CanvasNavigationAction {
+        guard let contentBounds, hasVisibleInk(contentBounds) else { return .home }
+        if contentBounds.intersects(defaultViewport) { return .home }
+        return .zoomToContent(contentBounds)
+    }
+
+    private static func hasVisibleInk(_ bounds: CanvasRect) -> Bool {
+        bounds.size.width > 0 || bounds.size.height > 0 || bounds.minX != 0 || bounds.minY != 0
+    }
 }
 
 struct CanvasNavigationCommand: Identifiable, Sendable {
@@ -173,7 +195,7 @@ extension Canvas {
     }
 
     var exportBounds: CanvasRect {
-        contentBounds ?? CanvasRect(x: 9_500, y: 9_500, width: 1_024, height: 1_366)
+        contentBounds ?? CanvasViewport.defaultVisibleBounds
     }
 }
 

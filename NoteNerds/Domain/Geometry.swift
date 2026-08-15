@@ -56,6 +56,14 @@ struct CanvasRect: Codable, Hashable, Sendable {
 struct CanvasViewport: Codable, Equatable, Sendable {
     static let minimumZoom = 0.1
     static let maximumZoom = 8.0
+    static let homeOrigin = CanvasPoint(x: 9_500, y: 9_500)
+    static let defaultVisibleSize = CanvasSize(width: 1_024, height: 1_366)
+    static let defaultVisibleBounds = CanvasRect(
+        x: homeOrigin.x,
+        y: homeOrigin.y,
+        width: defaultVisibleSize.width,
+        height: defaultVisibleSize.height
+    )
 
     var origin: CanvasPoint
     private(set) var zoom: Double

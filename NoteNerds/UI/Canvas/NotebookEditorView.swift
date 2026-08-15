@@ -142,6 +142,7 @@ struct NotebookEditorView: View {
         .onAppear {
             loadFavoriteTools()
             applyPendingSearchNavigation()
+            revealWrittenContentIfNeeded()
         }
         .fileImporter(
             isPresented: $isFileImporterPresented,
@@ -393,6 +394,13 @@ struct NotebookEditorView: View {
 private extension NotebookEditorView {
     func sendEditingCommand(_ action: CanvasEditingAction) {
         editingCommand = CanvasEditingCommand(action: action)
+    }
+
+    func revealWrittenContentIfNeeded() {
+        guard navigationCommand == nil else { return }
+        let action = CanvasViewportPolicy.openingAction(contentBounds: currentCanvas.contentBounds)
+        guard case .zoomToContent = action else { return }
+        navigationCommand = CanvasNavigationCommand(action: action)
     }
 
     func applyPendingSearchNavigation() {

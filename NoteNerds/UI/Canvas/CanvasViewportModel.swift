@@ -9,7 +9,7 @@ import Foundation
 /// the open canvas. Only the minimap needs the live value, so it observes this
 /// object directly and the editor body stays out of the scroll path.
 final class CanvasViewportModel: ObservableObject {
-    static let defaultBounds = CanvasRect(x: 9_500, y: 9_500, width: 1_024, height: 1_366)
+    static let defaultBounds = CanvasViewport.defaultVisibleBounds
 
     @Published private(set) var bounds: CanvasRect
 

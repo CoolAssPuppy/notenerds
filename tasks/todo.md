@@ -5,6 +5,12 @@
 - [x] Reproduce strokes visible in the thumbnail but missing on reopen.
 - [x] Open onto writing that sits outside the home page.
 - [x] Keep an empty notebook on the centred home page.
+- [x] Restore samples from compacted envelope snapshots.
+- [x] Commit in-progress text when the canvas is dismantled.
+- [x] Invalidate thumbnails when objects change.
+- [x] Restore library Select so multi-item actions are reachable.
+- [x] Bump the marketing version to 1.0.1.
+- [ ] Run the signed TestFlight upload on a Mac with Xcode and ASC credentials.
 
 ### Review
 
@@ -15,7 +21,10 @@ origin. Coming back showed a blank page even though the strokes were
 still in the notebook.
 
 `CanvasViewportPolicy` now zooms to that writing when it does not
-intersect the home page. Empty notes still open at home.
+intersect the home page, using zoom and offset instead of `zoom(to:)`.
+Empty notes still open at home. Leaving a notebook commits typed text.
+Envelope snapshots restore omitted samples. Thumbnails refresh when
+objects change. Select is back in the library sidebar.
 
 ## Release the review fixes to TestFlight
 

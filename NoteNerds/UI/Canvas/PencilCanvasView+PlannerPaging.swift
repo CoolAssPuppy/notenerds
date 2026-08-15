@@ -58,14 +58,33 @@ extension PencilCanvasView {
     static func applyOpeningViewport(_ action: CanvasNavigationAction, to canvasView: PKCanvasView) {
         switch action {
         case .home:
-            canvasView.setZoomScale(1, animated: false)
-            canvasView.setContentOffset(
-                CGPoint(x: CanvasViewport.homeOrigin.x, y: CanvasViewport.homeOrigin.y),
-                animated: false
+            canvasView.zoomScale = 1
+            canvasView.contentOffset = CGPoint(
+                x: CanvasViewport.homeOrigin.x,
+                y: CanvasViewport.homeOrigin.y
             )
         case let .zoomToContent(bounds):
-            canvasView.zoom(to: zoomRect(for: bounds), animated: false)
+            applyZoom(to: zoomRect(for: bounds), in: canvasView)
         }
+    }
+
+    /// Sets zoom and offset directly. `zoom(to:)` traps on a canvas that is not
+    /// in a window, which is how opening and tests apply this policy.
+    static func applyZoom(to rect: CGRect, in canvasView: PKCanvasView) {
+        let viewSize = canvasView.bounds.size
+        guard viewSize.width > 0, viewSize.height > 0 else { return }
+        let zoom = min(
+            canvasView.maximumZoomScale,
+            max(
+                canvasView.minimumZoomScale,
+                min(viewSize.width / max(rect.width, 1), viewSize.height / max(rect.height, 1))
+            )
+        )
+        canvasView.zoomScale = zoom
+        canvasView.contentOffset = CGPoint(
+            x: rect.midX * zoom - viewSize.width / 2,
+            y: rect.midY * zoom - viewSize.height / 2
+        )
     }
 
     static func zoomRect(for bounds: CanvasRect) -> CGRect {

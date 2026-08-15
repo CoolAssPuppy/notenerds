@@ -67,6 +67,7 @@ struct PencilCanvasView: UIViewRepresentable {
     }
 
     static func dismantleUIView(_ uiView: PKCanvasView, coordinator: Coordinator) {
+        coordinator.inlineTextEditor?.commitIfEditing()
         coordinator.prepareForDismantle(uiView)
         uiView.delegate = nil
     }
@@ -168,14 +169,8 @@ struct PencilCanvasView: UIViewRepresentable {
         guard let command, coordinator.lastNavigationCommandID != command.id else { return }
         coordinator.lastNavigationCommandID = command.id
         switch command.action {
-        case .home:
-            canvasView.setZoomScale(1, animated: true)
-            canvasView.setContentOffset(
-                CGPoint(x: CanvasViewport.homeOrigin.x, y: CanvasViewport.homeOrigin.y),
-                animated: true
-            )
-        case let .zoomToContent(bounds):
-            canvasView.zoom(to: Self.zoomRect(for: bounds), animated: true)
+        case .home, .zoomToContent:
+            Self.applyOpeningViewport(command.action, to: canvasView)
         }
     }
 

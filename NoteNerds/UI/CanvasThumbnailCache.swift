@@ -14,7 +14,8 @@ enum CanvasThumbnailCache {
 
     private static func cacheKey(for canvas: Canvas, size: CGSize) -> NSString {
         let stamp = canvas.modifiedAt.timeIntervalSince1970
-        return "\(canvas.id.rawValue.uuidString)-\(stamp)-\(Int(size.width))x\(Int(size.height))" as NSString
+        let objects = canvas.layers.flatMap(\.objects).map(\.id.rawValue.uuidString).joined(separator: ",")
+        return "\(canvas.id.rawValue.uuidString)-\(stamp)-\(objects)-\(Int(size.width))x\(Int(size.height))" as NSString
     }
 
     private final class Cache: @unchecked Sendable {

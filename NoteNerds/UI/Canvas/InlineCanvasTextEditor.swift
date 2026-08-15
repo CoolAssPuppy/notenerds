@@ -175,6 +175,15 @@ final class InlineCanvasTextEditor: UIView, UITextViewDelegate {
         textView.resignFirstResponder()
     }
 
+    func commitIfEditing() {
+        guard !isFinishingEditing else { return }
+        if textView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            cancel()
+        } else {
+            commit()
+        }
+    }
+
     private func commit() {
         let text = textView.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else {

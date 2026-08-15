@@ -31,6 +31,17 @@ final class CanvasViewportBehaviorTests: XCTestCase {
         )
     }
 
+    func testOpeningOntoOriginWritingMovesOffTheHomePage() {
+        let canvasView = PKCanvasView(frame: CGRect(x: 0, y: 0, width: 820, height: 600))
+        PencilCanvasView.configureViewport(canvasView)
+        let writing = CanvasRect(x: 40, y: 60, width: 180, height: 50)
+
+        PencilCanvasView.applyOpeningViewport(.zoomToContent(writing), to: canvasView)
+
+        XCTAssertNotEqual(canvasView.contentOffset.x, 9_500, accuracy: 1)
+        XCTAssertNotEqual(canvasView.contentOffset.y, 9_500, accuracy: 1)
+    }
+
     func testOpeningZoomRectIncludesTheWrittenInk() {
         let writing = CanvasRect(x: 40, y: 60, width: 180, height: 50)
 

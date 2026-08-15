@@ -331,7 +331,7 @@ final class NoteNerdsLaunchTests: XCTestCase {
         XCTAssertGreaterThan(newNotebook.frame.minX, application.frame.width * 0.5)
         XCTAssertLessThan(newFolder.frame.midY, application.frame.height * 0.5)
         XCTAssertLessThan(newNotebook.frame.midY, application.frame.height * 0.2)
-        XCTAssertFalse(application.buttons["Select"].exists)
+        XCTAssertTrue(application.buttons["Select"].exists)
 
         let settings = application.buttons["Settings"]
         XCTAssertTrue(settings.exists)

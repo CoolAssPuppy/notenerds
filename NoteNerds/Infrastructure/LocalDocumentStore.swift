@@ -249,11 +249,13 @@ actor LocalDocumentStore {
         let decoder = makeDecoder()
         if let envelope = try? decoder.decode(SnapshotEnvelope.self, from: data) {
             try validateStorageVersion(envelope.storageVersion, maximum: SnapshotEnvelope.currentStorageVersion)
+            var package = try serializer.validatedPackage(envelope.package)
+            package.notebook = PencilKitStrokeArchiveCodec.restoringSamples(in: package.notebook)
             return DecodedSnapshot(
                 envelope: SnapshotEnvelope(
                     storageVersion: envelope.storageVersion,
                     journalWatermark: envelope.journalWatermark,
-                    package: try serializer.validatedPackage(envelope.package)
+                    package: package
                 ),
                 isLegacy: false,
                 storedSchemaVersion: envelope.package.schemaVersion

@@ -24,4 +24,15 @@ final class CanvasThumbnailCacheBehaviorTests: XCTestCase {
 
         XCTAssertFalse(first === second)
     }
+
+    func testRendersANewImageAfterTheObjectsChange() {
+        var canvas = DomainFixtures.notebook().canvases[0]
+        let size = CGSize(width: 80, height: 60)
+        let first = CanvasThumbnailCache.image(for: canvas, size: size)
+        canvas.layers[0].objects = []
+
+        let second = CanvasThumbnailCache.image(for: canvas, size: size)
+
+        XCTAssertFalse(first === second)
+    }
 }

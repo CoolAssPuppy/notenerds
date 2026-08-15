@@ -63,6 +63,17 @@ struct LibrarySidebarView: View {
         }
         .listStyle(.sidebar)
         .navigationTitle("Note Nerds")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(isSelecting ? "Done" : "Select") {
+                    if isSelecting {
+                        stopSelecting()
+                    } else {
+                        isSelecting = true
+                    }
+                }
+            }
+        }
         .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 320)
         .safeAreaInset(edge: .bottom, spacing: 0) { sidebarFooter }
         .confirmationDialog(

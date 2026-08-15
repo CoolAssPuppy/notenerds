@@ -10,6 +10,32 @@ import XCTest
 /// document store rather than exercising the repair in isolation.
 @MainActor
 final class StoredNoteCompatibilityBehaviorTests: XCTestCase {
+    func testACompactedEnvelopeSnapshotRestoresSamplesOnRecover() async throws {
+        let context = try makeStore()
+        defer { context.remove() }
+        let stroke = archivedStroke()
+        var notebook = DomainFixtures.notebook(id: context.notebookID, title: "Compacted")
+        notebook.canvases[0].layers[0].objects = [.stroke(stroke)]
+        let compacted = PencilKitStrokeArchiveCodec.compactingSamplesForStorage(in: notebook)
+        XCTAssertTrue(
+            try XCTUnwrap(compacted.canvases[0].layers[0].objects.compactMap(\.strokeValue).first)
+                .samples.isEmpty
+        )
+
+        try await context.store.save(
+            NativeNotebookPackage(schemaVersion: .current, notebook: compacted)
+        )
+        let recovered = try await context.store.recover(notebookID: context.notebookID)
+
+        let restored = try XCTUnwrap(firstStroke(in: recovered))
+        XCTAssertFalse(restored.samples.isEmpty)
+        XCTAssertNotNil(restored.pencilKitArchive)
+        XCTAssertEqual(
+            PencilCanvasRenderer.drawing(from: [restored]).strokes.count,
+            1
+        )
+    }
+
     func testCurrentNotesOmitStrokeSamplesWhenAnArchiveIsPresent() throws {
         let stroke = archivedStroke()
         var notebook = DomainFixtures.notebook()

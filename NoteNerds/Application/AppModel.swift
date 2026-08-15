@@ -186,6 +186,10 @@ final class AppModel: ObservableObject {
         let operation = action.operation
         let handwritingCanvasID = cancelHandwritingRecognition(after: operation)
         notebook.modifiedAt = Date()
+        if let canvasID = operation.searchCanvasID,
+           let index = notebook.canvases.firstIndex(where: { $0.id == canvasID }) {
+            notebook.canvases[index].modifiedAt = notebook.modifiedAt
+        }
         histories[notebook.id] = history
         library.updateNotebook(notebook)
         if let handwritingCanvasID {

@@ -98,7 +98,7 @@ extension NotionAPIClient {
     }
 
     func downloadFile(from url: URL, maximumByteCount: Int) async throws -> Data {
-        guard url.scheme?.lowercased() == "https", url.host != nil, maximumByteCount > 0 else {
+        guard NotionDownloadHost.isAllowed(url), maximumByteCount > 0 else {
             throw NotionAPIError.invalidResponse
         }
         var request = URLRequest(url: url)
@@ -159,8 +159,8 @@ private struct RestoreNotebookPage: Decodable {
                   contentHash.count == 64,
                   contentHash.allSatisfy({ $0.isHexDigit }),
                   let file = properties["Native Notebook"]?.files?.first,
-                  let url = file.url,
-                  url.scheme?.lowercased() == "https" else {
+                  let url = file.hostedURL,
+                  NotionDownloadHost.isAllowed(url) else {
                 throw NotionAPIError.invalidResponse
             }
             return NotionRemoteNotebookFile(
@@ -195,7 +195,7 @@ private struct RestoreFile: Decodable {
     let file: RestoreURLValue?
     let external: RestoreURLValue?
 
-    var url: URL? { file?.url ?? external?.url }
+    var hostedURL: URL? { file?.url }
 }
 
 private struct RestoreURLValue: Decodable {
@@ -220,6 +220,6 @@ private struct RestoreBlock: Decodable {
 
     var downloadURL: URL? {
         guard type == "file" else { return nil }
-        return file?.url
+        return file?.hostedURL
     }
 }

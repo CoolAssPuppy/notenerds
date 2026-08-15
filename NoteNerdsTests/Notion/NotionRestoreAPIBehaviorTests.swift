@@ -91,6 +91,16 @@ final class NotionRestoreAPIBehaviorTests: XCTestCase {
             XCTAssertEqual(error as? NotionAPIError, .invalidResponse)
         }
 
+        do {
+            _ = try await unused.downloadFile(
+                from: URL(string: "https://example.com/file")!,
+                maximumByteCount: 10
+            )
+            XCTFail("Expected an external HTTPS host to fail")
+        } catch {
+            XCTAssertEqual(error as? NotionAPIError, .invalidResponse)
+        }
+
         let oversized = NotionAPIClient(
             accessToken: "token",
             transport: RestoreAPITransport(responses: [

@@ -56,7 +56,8 @@ enum CanvasOverlayModelReconciliation {
         incomingStrokes: [Stroke],
         isLassoEnabled: Bool
     ) -> Bool {
-        isLassoEnabled && currentStrokes != incomingStrokes
+        isLassoEnabled
+            && !PencilCanvasModelReconciliation.isSameRenderedContent(currentStrokes, incomingStrokes)
     }
 }
 
@@ -74,23 +75,23 @@ extension PencilCanvasView {
 
     func updateObjectOverlays(in canvasView: PKCanvasView, coordinator: Coordinator) {
         guard CanvasOverlayModelReconciliation.requiresRefresh(
-                currentStrokes: coordinator.overlayStrokes,
+                currentStrokes: coordinator.overlay.strokes,
                 incomingStrokes: strokes,
                 isLassoEnabled: configuration.tool == .lasso
               )
-                || coordinator.overlayObjects != nonStrokeObjects
-                || coordinator.overlayAssets != assets
-                || coordinator.highlightedStrokeIDs != highlightedStrokeIDs
-                || coordinator.isLassoOverlayEnabled != (configuration.tool == .lasso)
-                || coordinator.isTextPlacementOverlayEnabled != isTextToolActive
-                || coordinator.shapePlacementKind != shapePlacementKind else { return }
-        coordinator.overlayStrokes = strokes
-        coordinator.overlayObjects = nonStrokeObjects
-        coordinator.overlayAssets = assets
-        coordinator.highlightedStrokeIDs = highlightedStrokeIDs
-        coordinator.isLassoOverlayEnabled = configuration.tool == .lasso
-        coordinator.isTextPlacementOverlayEnabled = isTextToolActive
-        coordinator.shapePlacementKind = shapePlacementKind
+                || coordinator.overlay.objects != nonStrokeObjects
+                || Set(coordinator.overlay.assets.keys) != Set(assets.keys)
+                || coordinator.overlay.highlightedStrokeIDs != highlightedStrokeIDs
+                || coordinator.overlay.isLassoEnabled != (configuration.tool == .lasso)
+                || coordinator.overlay.isTextPlacementEnabled != isTextToolActive
+                || coordinator.overlay.shapePlacementKind != shapePlacementKind else { return }
+        coordinator.overlay.strokes = strokes
+        coordinator.overlay.objects = nonStrokeObjects
+        coordinator.overlay.assets = assets
+        coordinator.overlay.highlightedStrokeIDs = highlightedStrokeIDs
+        coordinator.overlay.isLassoEnabled = configuration.tool == .lasso
+        coordinator.overlay.isTextPlacementEnabled = isTextToolActive
+        coordinator.overlay.shapePlacementKind = shapePlacementKind
         let contentOverlayTag = CanvasOverlayGeometry.tags.lowerBound
         let selectionOverlayTag = contentOverlayTag + 1
         let highlightOverlayTag = contentOverlayTag + 2
@@ -135,8 +136,8 @@ extension PencilCanvasView {
         let placementOverlay = CanvasTextPlacementOverlayView(
             frame: CGRect(origin: .zero, size: CanvasOverlayGeometry.unzoomedContentSize(of: canvasView)),
             objects: nonStrokeObjects,
-            onPlaceText: onPlaceText,
-            onEditText: onEditText
+            onPlaceText: actions.onPlaceText,
+            onEditText: actions.onEditText
         )
         placementOverlay.tag = tag
         canvasView.addSubview(placementOverlay)
@@ -173,15 +174,15 @@ extension PencilCanvasView {
                     center: center,
                     in: canvasView
                 )
-                onTransformObjects(objectIDs, transform, center, transformedStrokes)
+                actions.onTransformObjects(objectIDs, transform, center, transformedStrokes)
             },
-            onDelete: onDeleteObjects,
-            onPaste: onPasteObjects,
-            onMoveToLayer: onMoveObjectsToLayer,
-            onEditText: onEditText,
+            onDelete: actions.onDeleteObjects,
+            onPaste: actions.onPasteObjects,
+            onMoveToLayer: actions.onMoveObjectsToLayer,
+            onEditText: actions.onEditText,
             shapePlacementKind: shapePlacementKind,
-            onPlaceShape: onPlaceShape,
-            onSelectionChanged: onObjectSelectionChanged
+            onPlaceShape: actions.onPlaceShape,
+            onSelectionChanged: actions.onObjectSelectionChanged
         )
         selectionOverlay.tag = selectionTag
         canvasView.addSubview(selectionOverlay)

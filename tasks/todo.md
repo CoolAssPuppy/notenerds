@@ -1,5 +1,82 @@
 # Current work
 
+## Fix the security, performance, and cleanliness review
+
+- [x] S1 Allowlist Notion download hosts
+- [x] S2 Document accepted Notion client-secret risk
+- [x] S3 Ignore invalid first OAuth loopback connections
+- [x] S4 Import only real notebook packages
+- [x] S5 Tighten PDF and image import caps
+- [x] S6 Remove unused CloudDocuments entitlements
+- [x] S7 Use an ephemeral Notion browser session
+- [x] S8 Single-flight Notion token refresh
+- [x] S9 File protection on share and export
+- [x] S10 Bound library.json load
+- [x] P1 Recover notebooks with bounded parallelism
+- [x] P2 Lazy asset loading
+- [x] P3 Stop journal fsync on every stroke
+- [x] P4 CloudKit batch record save
+- [x] P5 Encode sync off the main actor
+- [x] P6 Cheap overlay equality
+- [x] P7 Use the spatial index on the highlight path
+- [x] P8 Compact undo history capacity
+- [x] P9 Reduce library search observation churn
+- [x] P10 Debounce sync outbox persist
+- [x] P11 Checkpoint only dirty notebooks
+- [x] P12 Single search path plus debounce
+- [x] P13 Cache library thumbnails
+- [x] C1 Extract AppModel search and persistence
+- [x] C2 Group canvas overlay presentation state
+- [x] C3 Group PencilCanvasView callbacks
+- [x] C4 Omit stroke samples from storage when an archive is present
+- [x] C5 Split Notion restore off the integration model
+- [x] C6 Keep files under the lint ceiling
+- [x] C7 Move the PencilKit codec out of UI
+- [x] C8 Update README schema and Notion tree
+
+### Review
+
+`NoteNerdsTests` passed (587 tests). `swiftlint lint --strict` is clean.
+
+Security: Notion downloads are host-allowlisted HTTPS only. Import requires both
+`Document.json` and `Manifest.json`. PDF and image caps are 50 MB, 200 pages, and
+25M pixels. Entitlements are CloudKit-only. The Notion browser is ephemeral.
+Token refresh is single-flight. Share and export use complete file protection and
+UUID temp names. `library.json` loads through a 64 MB bound. The Notion client
+secret stays in the app binary; README records that as an accepted OAuth limit.
+
+Performance: restore recovers up to four notebooks at a time and loads assets on
+open. Journal append no longer fsyncs every stroke. CloudKit saves a batch in one
+call. Sync encode runs off the main actor. Overlay refresh uses rendered-content
+equality. Search highlights use the spatial index. Undo keeps 40 operations. The
+outbox writes the first pending change immediately and coalesces the rest for
+250ms, then flushes on checkpoint and synchronize. Checkpoints write dirty or
+never-snapshotted notebooks only. Library search uses the index plus a 200ms
+debounce. Thumbnails are cached.
+
+Cleanliness: search, restore, and checkpoint helpers left `AppModel`. Overlay
+presentation is one `CanvasOverlayState`. `PencilCanvasView` takes
+`PencilCanvasActions`. Stored notes omit samples when a PencilKit archive is
+present. Notion restore lives in its own file. The codec sits under
+`Infrastructure/PencilKit`. README lists schema version 7 and the Notion folder.
+
+## Add binary journal sidecars
+
+- [x] Journal lines omit PencilKit archive bytes
+- [x] Recover restores those archives from a sidecar
+- [x] A checkpoint deletes the sidecar directory
+- [x] A missing sidecar does not replay a hollow stroke
+- [x] Existing journal recover tests still pass
+
+### Journal sidecar review
+
+Each journal append now writes PencilKit archives to
+`Journals/<notebook>.sidecars/<sequence>.plist` and keeps the JSON line small.
+Recover reattaches those archives. A missing sidecar skips that entry instead of
+replaying empty ink. A checkpoint deletes the journal and its sidecars. Version
+1 and 2 journal lines still replay. Covered by `JournalSidecarBehaviorTests` and
+the existing `LocalDocumentStoreBehaviorTests`.
+
 ## Release the editing fixes to TestFlight
 
 - [x] Commit the five verified editing fixes.

@@ -16,11 +16,17 @@ struct ImportedPDFDocument: Sendable {
 
 @MainActor
 struct PDFImporter {
+    static let defaultMaximumByteCount = 50 * 1_024 * 1_024
+    static let defaultMaximumPageCount = 200
+
     private let pageGap = 40.0
     private let maximumByteCount: Int
     private let maximumPageCount: Int
 
-    init(maximumByteCount: Int = 512 * 1_024 * 1_024, maximumPageCount: Int = 10_000) {
+    init(
+        maximumByteCount: Int = defaultMaximumByteCount,
+        maximumPageCount: Int = defaultMaximumPageCount
+    ) {
         self.maximumByteCount = maximumByteCount
         self.maximumPageCount = maximumPageCount
     }

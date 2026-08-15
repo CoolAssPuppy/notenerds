@@ -23,6 +23,7 @@ actor SyncEngine {
     private var receivedChangeIDsPendingSave: Set<ChangeID> = []
     private var locallyAppliedChangeIDs: Set<ChangeID> = []
     private var locallyAppliedChangeIDsPendingRemoval: Set<ChangeID> = []
+    private var persistTask: Task<Void, Never>?
 
     init(provider: any SyncProvider, stateStore: (any SyncStateStore)? = nil) {
         self.provider = provider
@@ -38,20 +39,42 @@ actor SyncEngine {
         let didInsertLocalMarker = wasAppliedLocally
             && locallyAppliedChangeIDs.insert(change.id).inserted
         guard didInsertChange || didInsertLocalMarker else { return }
-        await persistState()
+        await persistEnqueuedState(immediately: didInsertChange && pendingChanges.count == 1)
     }
 
     func enqueue(_ asset: DocumentAsset) async {
         await restoreStateIfNeeded()
         pendingAssets[asset.id] = asset
-        await persistState()
+        await persistEnqueuedState(immediately: pendingAssets.count == 1)
+    }
+
+    func flushPendingState() async {
+        await restoreStateIfNeeded()
+        persistTask?.cancel()
+        persistTask = nil
+        _ = await persistState()
+    }
+
+    private func persistEnqueuedState(immediately: Bool) async {
+        if immediately {
+            persistTask?.cancel()
+            persistTask = nil
+            _ = await persistState()
+        } else {
+            schedulePersistState()
+        }
     }
 
     func synchronize() async {
         await restoreStateIfNeeded()
+        await flushPendingState()
         if let synchronizationTask {
             shouldSynchronizeAgain = true
             await synchronizationTask.value
+            guard state != .waitingToRetry else { return }
+            if !pendingChanges.isEmpty || !pendingAssets.isEmpty {
+                await synchronize()
+            }
             return
         }
         let task = Task { await runSynchronizationTask() }
@@ -113,6 +136,7 @@ actor SyncEngine {
             return $0.deviceID < $1.deviceID
         }
         cursor = batch.cursor
+        _ = await persistState()
     }
 
     func drainReceivedChanges() -> [DocumentChange] {
@@ -181,6 +205,15 @@ actor SyncEngine {
         }
         locallyAppliedChangeIDs.formUnion(snapshot.locallyAppliedChangeIDs)
         cursor = snapshot.cursor
+    }
+
+    private func schedulePersistState() {
+        persistTask?.cancel()
+        persistTask = Task {
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            _ = await persistState()
+        }
     }
 
     @discardableResult

@@ -357,8 +357,8 @@ extension PencilCanvasView {
         coordinator.inlineTextEditor?.removeFromSuperview()
         let editor = InlineCanvasTextEditor(
             session: textEditingSession,
-            onCommit: onCommitText,
-            onCancel: onCancelText
+            onCommit: actions.onCommitText,
+            onCancel: actions.onCancelText
         )
         editor.sessionID = textEditingSession.textBlock.id
         canvasView.addSubview(editor)

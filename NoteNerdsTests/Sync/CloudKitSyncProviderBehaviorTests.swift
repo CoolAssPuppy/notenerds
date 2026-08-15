@@ -19,9 +19,12 @@ final class CloudKitSyncProviderBehaviorTests: XCTestCase {
         }
 
         let request = await recordSaver.requestSnapshot()
-        XCTAssertEqual(request.sequences, [1])
-        XCTAssertEqual(request.recordCounts, [1])
-        XCTAssertEqual(request.zoneNames, [CKRecordZone.ID.defaultZoneName])
+        XCTAssertEqual(request.sequences, [1, 2])
+        XCTAssertEqual(request.recordCounts, [2])
+        XCTAssertEqual(request.zoneNames, [
+            CKRecordZone.ID.defaultZoneName,
+            CKRecordZone.ID.defaultZoneName
+        ])
     }
 
     func testReturnedChangeRecordFailureIsReportedForRetry() async {

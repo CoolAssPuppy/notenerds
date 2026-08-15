@@ -6,54 +6,12 @@ enum LocalDocumentStoreError: Error, Equatable {
 }
 
 actor LocalDocumentStore {
-    private enum JournalEntryCodingKeys: String, CodingKey {
-        case storageVersion
-        case sequence
-        case action
-        case operation
-    }
-
     private struct SnapshotEnvelope: Codable {
         static let currentStorageVersion = 1
 
         let storageVersion: Int
         let journalWatermark: UInt64
         let package: NativeNotebookPackage
-    }
-
-    private struct JournalEntry: Codable {
-        static let currentStorageVersion = 2
-
-        let storageVersion: Int
-        let sequence: UInt64
-        let action: SyncedDocumentAction
-
-        init(storageVersion: Int, sequence: UInt64, action: SyncedDocumentAction) {
-            self.storageVersion = storageVersion
-            self.sequence = sequence
-            self.action = action
-        }
-
-        init(from decoder: any Decoder) throws {
-            let values = try decoder.container(keyedBy: JournalEntryCodingKeys.self)
-            storageVersion = try values.decode(Int.self, forKey: .storageVersion)
-            sequence = try values.decode(UInt64.self, forKey: .sequence)
-            if let action = try values.decodeIfPresent(SyncedDocumentAction.self, forKey: .action) {
-                self.action = action
-            } else {
-                action = SyncedDocumentAction(
-                    operation: try values.decode(DocumentOperation.self, forKey: .operation),
-                    direction: .apply
-                )
-            }
-        }
-
-        func encode(to encoder: any Encoder) throws {
-            var values = encoder.container(keyedBy: JournalEntryCodingKeys.self)
-            try values.encode(storageVersion, forKey: .storageVersion)
-            try values.encode(sequence, forKey: .sequence)
-            try values.encode(action, forKey: .action)
-        }
     }
 
     private struct DecodedSnapshot {
@@ -104,6 +62,7 @@ actor LocalDocumentStore {
         if fileManager.fileExists(atPath: journalURL.path()) {
             try fileManager.removeItem(at: journalURL)
         }
+        try DocumentJournal.removeSidecars(for: notebookID, journalsURL: journalsURL)
         journalSequences[notebookID] = watermark
     }
 
@@ -141,17 +100,26 @@ actor LocalDocumentStore {
         let url = journalURL(for: notebookID)
         try removeInterruptedFinalRecord(at: url)
         let sequence = try currentJournalSequence(for: notebookID) + 1
-        var encoded = try encode(JournalEntry(
-            storageVersion: JournalEntry.currentStorageVersion,
+        let prepared = DocumentJournal.preparing(action)
+        if !prepared.sidecar.isEmpty {
+            try DocumentJournal.writeSidecar(
+                prepared.sidecar,
+                notebookID: notebookID,
+                sequence: sequence,
+                journalsURL: journalsURL
+            )
+        }
+        var encoded = try encode(DocumentJournalEntry(
+            storageVersion: DocumentJournal.currentStorageVersion,
             sequence: sequence,
-            action: action
+            action: prepared.action,
+            sidecarCount: prepared.sidecar.count
         ))
         encoded.append(0x0A)
         if fileManager.fileExists(atPath: url.path()) {
             let handle = try FileHandle(forWritingTo: url)
             try handle.seekToEnd()
             try handle.write(contentsOf: encoded)
-            try handle.synchronize()
             try handle.close()
         } else {
             try encoded.write(to: url, options: [.atomic, .completeFileProtection])
@@ -216,7 +184,7 @@ actor LocalDocumentStore {
         for (index, line) in lines.enumerated() {
             do {
                 let lineData = Data(line)
-                if let entry = try? decoder.decode(JournalEntry.self, from: lineData) {
+                if let entry = try? decoder.decode(DocumentJournalEntry.self, from: lineData) {
                     try apply(entry, to: &package, notebookID: notebookID, watermark: snapshotWatermark)
                 } else {
                     hasLegacyEntries = true
@@ -235,16 +203,26 @@ actor LocalDocumentStore {
     }
 
     private func apply(
-        _ entry: JournalEntry,
+        _ entry: DocumentJournalEntry,
         to package: inout NativeNotebookPackage,
         notebookID: NotebookID,
         watermark: UInt64
     ) throws {
-        try validateStorageVersion(entry.storageVersion, maximum: JournalEntry.currentStorageVersion)
+        try validateStorageVersion(entry.storageVersion, maximum: DocumentJournal.currentStorageVersion)
         recordSequence(entry.sequence, notebookID: notebookID, watermark: watermark)
-        if entry.sequence > watermark {
-            try entry.action.perform(on: &package.notebook)
+        guard entry.sequence > watermark else { return }
+        let action: SyncedDocumentAction
+        if entry.sidecarCount > 0 {
+            guard let sidecar = try DocumentJournal.readSidecar(
+                notebookID: notebookID,
+                sequence: entry.sequence,
+                journalsURL: journalsURL
+            ), sidecar.count == entry.sidecarCount else { return }
+            action = DocumentJournal.restoring(entry.action, sidecar: sidecar)
+        } else {
+            action = entry.action
         }
+        try action.perform(on: &package.notebook)
     }
 
     private func recordSequence(_ sequence: UInt64, notebookID: NotebookID, watermark: UInt64) {
@@ -307,7 +285,7 @@ actor LocalDocumentStore {
         if let data = try? readData(journalURL(for: notebookID)) {
             let decoder = makeDecoder()
             for (index, line) in data.split(separator: 0x0A).enumerated() {
-                if let entry = try? decoder.decode(JournalEntry.self, from: Data(line)) {
+                if let entry = try? decoder.decode(DocumentJournalEntry.self, from: Data(line)) {
                     sequence = max(sequence, entry.sequence)
                 } else if (try? decoder.decode(DocumentOperation.self, from: Data(line))) != nil {
                     sequence = max(sequence, UInt64(index + 1))
@@ -337,7 +315,7 @@ actor LocalDocumentStore {
         let finalRecordStart = data.lastIndex(of: 0x0A).map { data.index(after: $0) } ?? data.startIndex
         let finalRecord = Data(data[finalRecordStart...])
         let decoder = makeDecoder()
-        let isCompleteRecord = (try? decoder.decode(JournalEntry.self, from: finalRecord)) != nil
+        let isCompleteRecord = (try? decoder.decode(DocumentJournalEntry.self, from: finalRecord)) != nil
             || (try? decoder.decode(DocumentOperation.self, from: finalRecord)) != nil
         var repairedData: Data
         if isCompleteRecord {

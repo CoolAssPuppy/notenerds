@@ -240,11 +240,11 @@ Notebook.notenerds/
     └── <asset UUID files>
 ```
 
-`Document.json` contains the versioned canonical notebook model. `Manifest.json` maps asset identifiers to their files. The current document schema is version 6.
+`Document.json` contains the versioned canonical notebook model. `Manifest.json` maps asset identifiers to their files. The current document schema is version 7. Strokes store a PencilKit archive for exact marker and highlighter rendering. The archive is enough to restore samples when a note is opened, so the stored JSON omits sample points whenever that archive is present.
 
 Serialization uses sorted JSON keys and millisecond timestamps for deterministic output. Newer unsupported schema versions are rejected before document data is changed. Older supported documents are migrated to the current schema. Archive reads validate asset names, constrain file sizes, and reject paths outside the package asset directory.
 
-During editing, Note Nerds writes notebook checkpoints and operation journal entries under Application Support. Assets are stored separately from frequently updated library metadata. The app checkpoints active documents when it leaves the active scene phase.
+During editing, Note Nerds writes notebook checkpoints and operation journal entries under Application Support. PencilKit stroke archives sit in binary sidecar files next to the journal so the log itself stays small. Assets are stored separately from frequently updated library metadata. The app checkpoints active documents when it leaves the active scene phase.
 
 ## Synchronization
 
@@ -277,7 +277,7 @@ Release builds read `NOTION_CLIENT_ID` and `NOTION_CLIENT_SECRET` from Doppler t
 http://localhost:53117/oauth/notion
 ```
 
-The app binds its one-use callback listener to `127.0.0.1`. User access and refresh tokens stay in device-only Keychain items. The Notion client secret is part of the distributed application because Notion's public OAuth flow does not provide PKCE. Treat that client value as public application configuration rather than user authorization.
+The app binds its one-use callback listener to `127.0.0.1`. The listener waits up to five minutes for a valid callback and ignores invalid first connections so a probe or stale request cannot steal the port. User access and refresh tokens stay in device-only Keychain items with `AfterFirstUnlockThisDeviceOnly` and are not synchronizable. The Notion client secret is part of the distributed application because Notion's public OAuth flow does not provide PKCE. Treat that client value as public application configuration rather than user authorization. File downloads accept only Notion-hosted HTTPS URLs.
 
 Implementation details, database properties, restore rules, security limits, and tests are in [the Notion integration plan](docs/notion-integration-plan.md).
 
@@ -331,7 +331,8 @@ NoteNerds/
 ├── App/                    App entry point
 ├── Application/            State and use-case coordination
 ├── Domain/                 Canonical document and library model
-├── Infrastructure/         Files, import/export, recognition, and sync adapters
+├── Infrastructure/         Files, import/export, recognition, PencilKit, and sync adapters
+├── Notion/                 OAuth, publish, restore, and meeting-link integration
 ├── Resources/              Asset catalog and app icon
 └── UI/                     SwiftUI, UIKit, and PencilKit interface code
 NoteNerdsTests/               Behavior and integration tests

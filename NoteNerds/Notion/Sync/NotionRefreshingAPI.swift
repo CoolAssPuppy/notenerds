@@ -4,6 +4,7 @@ actor NotionRefreshingAPI: NotionSyncAPI {
     private let credentialStore: any NotionCredentialStore
     private let refresh: @Sendable () async throws -> NotionStoredConnection
     private let apiFactory: @Sendable (String) -> any NotionSyncAPI
+    private var inFlightRefresh: Task<NotionStoredConnection, Error>?
 
     init(
         credentialStore: any NotionCredentialStore,
@@ -87,9 +88,19 @@ actor NotionRefreshingAPI: NotionSyncAPI {
         do {
             return try await operation(apiFactory(current.credentials.accessToken))
         } catch let error as NotionAPIError where error.statusCode == 401 {
-            let updated = try await refresh()
+            let updated = try await singleFlightRefresh()
             return try await operation(apiFactory(updated.credentials.accessToken))
         }
+    }
+
+    private func singleFlightRefresh() async throws -> NotionStoredConnection {
+        if let inFlightRefresh {
+            return try await inFlightRefresh.value
+        }
+        let task = Task { try await refresh() }
+        inFlightRefresh = task
+        defer { inFlightRefresh = nil }
+        return try await task.value
     }
 }
 

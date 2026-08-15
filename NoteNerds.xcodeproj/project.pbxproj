@@ -13,6 +13,7 @@
 		0257AD620FA202E44123C17B /* NotionLoopbackServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE789DBE79873EDE5489960 /* NotionLoopbackServer.swift */; };
 		028764875694996F60447969 /* NotebookModifiedTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3A81FBA53AE525FA27F047 /* NotebookModifiedTime.swift */; };
 		0492B62B2285A5CB4E2F64DB /* PaperSelectionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 729C5C69697CF6C71D5439F4 /* PaperSelectionUITests.swift */; };
+		0791ED1B10CCC9EFDC131A67 /* NotionDownloadHostBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B196E8D6D5BCB1C5B4F0EB52 /* NotionDownloadHostBehaviorTests.swift */; };
 		08610E8011B10CAE17C6393C /* LibraryFolderSidebarRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A63687859DC4861FC6ACA6 /* LibraryFolderSidebarRow.swift */; };
 		08818B4ABB7AE9AC803CD37E /* CanvasToolPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43BFB37D859543702A9237D5 /* CanvasToolPresentation.swift */; };
 		08CDD1292741663973BA2108 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 28396265C1E00DC01ECC7EBA /* Assets.xcassets */; };
@@ -25,6 +26,7 @@
 		10A4E058C85A37A3ED7FF84C /* ToolInspectorBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D365DEC6CA5B3B7C060EA482 /* ToolInspectorBehaviorTests.swift */; };
 		10E730F14915B3040CD05099 /* ImportExportBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C6528B8032EF606CA09118 /* ImportExportBehaviorTests.swift */; };
 		127D24459B969A40D4D09C2F /* PencilCanvasView+Coordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A3D77EE35168DC6AC71660 /* PencilCanvasView+Coordinator.swift */; };
+		1281A308944CD37C1635C904 /* NotionIntegrationModel+Restore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9372A859A0239F78F3B9DAC5 /* NotionIntegrationModel+Restore.swift */; };
 		1342D76BD7424083D7E0AF24 /* PencilCanvasStrokeMetadataBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425D757D5513B6DADE79E78C /* PencilCanvasStrokeMetadataBehaviorTests.swift */; };
 		13BCFC9B1EEEB8C195B56B92 /* NotebookTitleToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA0BDF971D5CAB85D50670B /* NotebookTitleToolbarView.swift */; };
 		14CFF39D376DF578720E940B /* LibraryBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80502B993BADA665B8C5FD87 /* LibraryBehaviorTests.swift */; };
@@ -39,10 +41,13 @@
 		1C45F170B4AA59B25E01D0BD /* FolderIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8214D55C09DDC192332C7812 /* FolderIconView.swift */; };
 		1C5142833E1C431FB0D6FA7D /* AppModel+FolderPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A28C8A425FBA1DDA1FAE874 /* AppModel+FolderPlacement.swift */; };
 		1C6152FB9F5184399FBA3634 /* HandwritingRecognitionBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC454EA0EDE7D79A105BF2C /* HandwritingRecognitionBehaviorTests.swift */; };
+		1F5BD716AC50457AF18DCB2F /* DocumentJournal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 534628A95026B8A638328D11 /* DocumentJournal.swift */; };
 		217F4C9600630504B0791B24 /* NotionNotebookPayloadBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F68F3C5A88872048FC3E472 /* NotionNotebookPayloadBuilder.swift */; };
+		22DD857C7E651D949AC1B09F /* SearchQueryDebouncerBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E5F2553DC26DD831D21E72 /* SearchQueryDebouncerBehaviorTests.swift */; };
 		230F1BD74BF22DE9B08840B7 /* PaperRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E3E99589221D6E8FD346B5 /* PaperRenderer.swift */; };
 		237CB5FA2C5FA3547513C9D0 /* CanvasBrowserBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B835107C42DFF1C4D92A4DCE /* CanvasBrowserBehaviorTests.swift */; };
 		24D4E1432E5D1659F936F548 /* NotionIntegrationModelBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327AB49929B7FEDF1A72CBB5 /* NotionIntegrationModelBehaviorTests.swift */; };
+		25564FC5919A3D270DA7F454 /* PencilKitStrokeArchiveCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9D63C331D6C2B3AF3A46C1E /* PencilKitStrokeArchiveCodec.swift */; };
 		26E92CC635C145A4ADD059C7 /* ActivityShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1802D43991C50106A28A91E /* ActivityShareSheet.swift */; };
 		28680C08081731E1C7371FE2 /* RemoteSyncReceiptBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD43D0904572F825D29BD00A /* RemoteSyncReceiptBehaviorTests.swift */; };
 		29BF80C106A5350278B6A974 /* NotebookEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 626A246CD0CCC545BC704A59 /* NotebookEditorView.swift */; };
@@ -66,6 +71,7 @@
 		35014390603D48F6CB3F2CF8 /* NotionAuthenticatedAPIBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FD4334AAEC09C58ABAECF8 /* NotionAuthenticatedAPIBehaviorTests.swift */; };
 		3563252A417A136CE40EAFB1 /* DocumentHistoryBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9771C65D7819D2360C176779 /* DocumentHistoryBehaviorTests.swift */; };
 		36B5126F8229B137C795C7EE /* NotionLibraryManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84178A7549F2C4BA1F47F249 /* NotionLibraryManifest.swift */; };
+		3745733217DEF43D8365BA81 /* PencilCanvasActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BD6877C3C4F87617046C686 /* PencilCanvasActions.swift */; };
 		383D8247932AE3CB5A9F0AC7 /* PencilSqueezeBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2FA015D0BB033D151949BC /* PencilSqueezeBehavior.swift */; };
 		38D5657D45C8E321AA08D60E /* LibraryCreationPlacementUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 094F7F51C4540C9B014146B5 /* LibraryCreationPlacementUITests.swift */; };
 		39B661F49CCBB7D859E32ECC /* PencilCanvasPersistenceBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDBF87A14174B24529A3CF28 /* PencilCanvasPersistenceBehaviorTests.swift */; };
@@ -77,6 +83,7 @@
 		42ADBB5E8A092E9AD37265DC /* NotionLibraryRestoreServiceBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38429F50E1C61F32F0271DC4 /* NotionLibraryRestoreServiceBehaviorTests.swift */; };
 		42EB00801E6FB4835978BAB7 /* PencilSqueezeBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC7D88841D14E1EAFF777FB /* PencilSqueezeBehaviorTests.swift */; };
 		43D9C491B74EA8E733AA3997 /* FolderIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67096CA66A85041A47B0CBFB /* FolderIcon.swift */; };
+		448F7C59770BA9D4BDB643C2 /* AppSessionImportRestoreBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A47E4429D7ABEAD09F5CBFF /* AppSessionImportRestoreBehaviorTests.swift */; };
 		45B75E207AA357BAC1E25CFB /* NotionOAuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C05985105C985058AF69FBD5 /* NotionOAuthModels.swift */; };
 		4A5726E4D5CBF554E209D16A /* SelectionAndShapeBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC08DC359144E3CEE961C6C1 /* SelectionAndShapeBehaviorTests.swift */; };
 		4A72EF76B48A9CDFCAB47D8E /* Search.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE15AF6C016BDE7548BC97C /* Search.swift */; };
@@ -88,6 +95,7 @@
 		5379016DD94D82D97FE6F1A1 /* PlannerRegions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99583FD367323336DB18D3A2 /* PlannerRegions.swift */; };
 		546C6B30417A763A20D12AC8 /* NotebookEditorToolbarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58BEF9EF64CAA12B5A73E7EE /* NotebookEditorToolbarLayout.swift */; };
 		54719E2C857917B661D94CD3 /* NotionRestoreCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCD628FB567AE2C944C3ADAD /* NotionRestoreCoordinator.swift */; };
+		54DBA15170FD1909614966D9 /* CanvasSearchHighlights.swift in Sources */ = {isa = PBXBuildFile; fileRef = F19129993DBBBAC7BA12D3B4 /* CanvasSearchHighlights.swift */; };
 		55D56AD35C185E05F7069C4C /* CanvasSelectionOutlineLayers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F478B70E62372610218328B5 /* CanvasSelectionOutlineLayers.swift */; };
 		55D60714EA885980E630E701 /* FolderIconImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B931EC2B0DBCF9FD4F9A69E /* FolderIconImporter.swift */; };
 		55F2B56643FF8EABBAA08FA1 /* PencilCanvasView+PlannerPaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = A655A9D0F4C929D2166F65BA /* PencilCanvasView+PlannerPaging.swift */; };
@@ -102,8 +110,10 @@
 		5C2D1024644C8DB22019B06E /* LassoSelectionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632033DB7D176DD6A9B261DA /* LassoSelectionUITests.swift */; };
 		5C4FAB2F14470692BF2362E7 /* DomainFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC6498E2FAD0ED227F5E99A /* DomainFixtures.swift */; };
 		5CC57863D13C878EF6615311 /* SyncDependencyRetryBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90B528C04C382AB316FE5222 /* SyncDependencyRetryBehaviorTests.swift */; };
+		5DD8ABA12C0FE4FD616D2013 /* CanvasOverlayState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E5637A359825854A0E25E19 /* CanvasOverlayState.swift */; };
 		60D0EC03E1346221134434B0 /* NotionRequestRateLimiterBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0843C14E77BE5615301B9B4B /* NotionRequestRateLimiterBehaviorTests.swift */; };
 		6115B2ACDA78072114EF40D3 /* NotionAPIClient+MeetingLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 326CFC8964C9C2549C1AD506 /* NotionAPIClient+MeetingLinks.swift */; };
+		61848FBA74A24E25999E4182 /* SearchQueryDebouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6104F876797ACE0165BAE8 /* SearchQueryDebouncer.swift */; };
 		62BE5440E3C465A4DDA247D6 /* NotionConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC472D9D6FD69873DB280990 /* NotionConnectionService.swift */; };
 		631A8F8D0AC884C07B2CC159 /* NotebookEditorContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2ACC802EA6BAF4A0E604393 /* NotebookEditorContent.swift */; };
 		63F859DB877AD4D64006574E /* DocumentHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5E16C35BC6348493A49B8E9 /* DocumentHistory.swift */; };
@@ -128,7 +138,6 @@
 		72F6E91F807770FA61EC78FE /* PencilStrokeClipboardBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65461A67A75E7DDC96F5AA6A /* PencilStrokeClipboardBehaviorTests.swift */; };
 		73721F8DBB6E1B09E01C38C3 /* UIImage+PixelInspection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D90429CC856582C5B85DFE6B /* UIImage+PixelInspection.swift */; };
 		7384C287C45DF23C0BF5E5E1 /* NotionRefreshingAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5942E25DF0EC71E3C9D4D3E /* NotionRefreshingAPI.swift */; };
-		73C6996D38D26D8572B0C4AC /* PencilKitStrokeArchiveCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = E381756CB3815686C5518B17 /* PencilKitStrokeArchiveCodec.swift */; };
 		7417765ACE48689F1DF12058 /* NotionManagedPageUpdateBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 489826EDBE52D75FF1CC0EA3 /* NotionManagedPageUpdateBehaviorTests.swift */; };
 		767CC510093D8AD9BB58D735 /* PencilStrokePersistenceBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9BAB8B119602AED084F2D49 /* PencilStrokePersistenceBehaviorTests.swift */; };
 		77694DC78FEA513521F43D6C /* NotebookCanvasPreviewStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = A628C2FF531A9E0B2757FCC7 /* NotebookCanvasPreviewStack.swift */; };
@@ -159,6 +168,7 @@
 		8C7B3AAE1F75B094824319A5 /* LibraryAssetBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127D61A2A199D33915A8A2F1 /* LibraryAssetBehaviorTests.swift */; };
 		8CE8E66D0630BCC55E5184D3 /* PencilCanvasInputBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9414846452B365414915F390 /* PencilCanvasInputBehaviorTests.swift */; };
 		8D334771E163C04648156F2B /* NotionSyncRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE56DBF9966911EF44CF12BD /* NotionSyncRegistry.swift */; };
+		8D97C72518CD67DF5A6D3C76 /* NotionDownloadHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E32EC34487B7C7D356996A2 /* NotionDownloadHost.swift */; };
 		8FC0F5AC24FFBA18987C3E1A /* CanvasSystemsBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFB6B45061DDBFF19E7C4DE7 /* CanvasSystemsBehaviorTests.swift */; };
 		8FE9AB1CC1AA81B12315F7E3 /* NotionOAuthRequestFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E0B03B02289A589F7CB39A /* NotionOAuthRequestFactory.swift */; };
 		900E7C43236A17F75449474F /* AppSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD7AE53E59B2C5D935415F58 /* AppSettingsView.swift */; };
@@ -169,6 +179,7 @@
 		91D686C6BD6C2F423ABA1294 /* SyncChangeEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376127333FE73FD4A9D3F6E2 /* SyncChangeEncoder.swift */; };
 		920A81E7C2E26CA67A7EA6D8 /* AppleHandwritingRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46A96891915DD707B1FD5E6D /* AppleHandwritingRecognizer.swift */; };
 		9464405F3028390F36AE20F8 /* SearchIndexBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25B164522B41432948EA3B15 /* SearchIndexBehaviorTests.swift */; };
+		94DBFC6D128169AE8334E47D /* CanvasThumbnailCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD06E0ABAC169127DE65F379 /* CanvasThumbnailCache.swift */; };
 		96FC01A182432B979FEAD5A9 /* LocalSyncStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9986D74DEB878C663AEF0D63 /* LocalSyncStateStore.swift */; };
 		979C8452A19099B5CC0F173E /* NotionRemoteLibraryLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC092E7917A67E2BFEA054F2 /* NotionRemoteLibraryLoader.swift */; };
 		97AC0ECBE7E8B608B1F34E41 /* PencilKitMappings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F81BBD57522E83C4057F5A7 /* PencilKitMappings.swift */; };
@@ -183,6 +194,7 @@
 		9F918A380C5AEDFBC817B5AF /* AppModel+Recognition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1369A486CDB231CA907EEE /* AppModel+Recognition.swift */; };
 		9FC279333058639D84C1CC00 /* NotebookPreviewBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 938751EEAA0A5733C745F0B8 /* NotebookPreviewBehaviorTests.swift */; };
 		A0DC76269D0A38C15509028F /* NotionLibraryManifestPageBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8808F2E4684F6BE21DD151A1 /* NotionLibraryManifestPageBuilder.swift */; };
+		A29646BB628AB2141894DC09 /* SyncOutboxPersistBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A53DFECA5C8B56A6BC0C238 /* SyncOutboxPersistBehaviorTests.swift */; };
 		A6DE979DCEBE0160AA4F5F98 /* CanvasMinimapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B157EC5AA38C6D63875D759 /* CanvasMinimapView.swift */; };
 		A73DEF04E175AF5DB7E1DFD3 /* Identifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7104D752F001CC3F3958B047 /* Identifiers.swift */; };
 		A7A1C2AF481FA6A3E95C7FBB /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35CE901E2EF18BDA2CD2FEAD /* AppModel.swift */; };
@@ -190,8 +202,10 @@
 		A8421E3D37B30E566E6204C3 /* HandwritingTextLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9C95CEFFECB358E07BCD40 /* HandwritingTextLayout.swift */; };
 		A9D0E1390FFA68692370A669 /* SyncBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B996C3B3A94B3B0366A2BE56 /* SyncBehaviorTests.swift */; };
 		AAB2D0D943D831FD59531507 /* RemoteHandwritingSyncPersistenceBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D72280FBE085FEA26A09B8B /* RemoteHandwritingSyncPersistenceBehaviorTests.swift */; };
+		AAFBFDAA8EDD1D59AD085793 /* SyncPersistenceTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F15788AE6712801788BAC65 /* SyncPersistenceTestSupport.swift */; };
 		AC1B801994B882ABEF901AAE /* NotionTransportArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00F088E12370DBB52913B39 /* NotionTransportArchive.swift */; };
 		AD4D860BD98BC4EA4C954BAB /* KeychainNotionCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A4EC585E0B752ECD20A916 /* KeychainNotionCredentialStore.swift */; };
+		AEF123F21EE538A46F8AE150 /* ProtectedTemporaryFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C3EA9AFEACC2B0261EC61FF /* ProtectedTemporaryFile.swift */; };
 		B03D162FAA47E50E68242341 /* DocumentStructureHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB058C798ABB1675A6B3F71 /* DocumentStructureHistoryTests.swift */; };
 		B0B9A4C936586EBFF97A6F3A /* NotionNotebookMappingBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E4582AF462CBADB15441B7F /* NotionNotebookMappingBehaviorTests.swift */; };
 		B10648B8065BD34D45141343 /* RadialToolMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C3C7013D5E8CC0BE01B606 /* RadialToolMenu.swift */; };
@@ -207,6 +221,8 @@
 		BA7E8DEEEB293F81759F5E28 /* ShapePlacementBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A7A054CE9C959C6B170D271 /* ShapePlacementBehaviorTests.swift */; };
 		BC08A533F5922A659BA4BCAA /* LibrarySearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F928A3CAA386FE4447917114 /* LibrarySearchBar.swift */; };
 		BE4D74ED2365268561A9A070 /* DocumentModelBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DBFF262927397B40AF061BC /* DocumentModelBehaviorTests.swift */; };
+		C0C2F046D5951766F4E3EDAE /* JournalSidecarBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B70F28B9FA6030995444B91D /* JournalSidecarBehaviorTests.swift */; };
+		C112D4F1CDA3D429F1AFADC4 /* AppModel+Restore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D29570E3FAF502A89729C859 /* AppModel+Restore.swift */; };
 		C1227228EFE39F93189D3956 /* NoteNerdsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE8BF59512C4CA34E80AF003 /* NoteNerdsLaunchTests.swift */; };
 		C1507AD8EB0D0653918E177F /* ShapeFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF3557339BEF5E8EDBDFF7CC /* ShapeFactory.swift */; };
 		C2724303C0A2FA9EAF77D833 /* NotionCredentialStoreBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D21D4A9D7E588BA73AB62C6B /* NotionCredentialStoreBehaviorTests.swift */; };
@@ -221,6 +237,7 @@
 		C65F3DA3EC2C8581BC4DD1DA /* LocalDocumentStoreBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D60D4D9C48BD56DBA2A636A1 /* LocalDocumentStoreBehaviorTests.swift */; };
 		C6AE6CB7B7A08995A39599E5 /* NotionFileUploadBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6CA986D5D18418792683148 /* NotionFileUploadBehaviorTests.swift */; };
 		C6FF54DCCCCC31FEA1C808A2 /* CanvasViewportBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEF65808EEC04339C30E6A1D /* CanvasViewportBehaviorTests.swift */; };
+		C87A5FFF46D27ABD26BCF06C /* ProtectedTemporaryFileBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD28E550D3AEC9493D6F5C1A /* ProtectedTemporaryFileBehaviorTests.swift */; };
 		C88A3A2F37B79BB01DD3CC6D /* PencilCanvasView+Overlays.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DA1D780A74CDA492B700E2 /* PencilCanvasView+Overlays.swift */; };
 		C8B8296B101A398CADC7A21D /* AppModel+Editing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FA69301493F74C68182218D /* AppModel+Editing.swift */; };
 		C9A81BE23987C71EC7CEC5E2 /* SVGFolderIconRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD75E7451C2FFFFA0D3ACEFA /* SVGFolderIconRasterizer.swift */; };
@@ -231,6 +248,7 @@
 		CD2C6024392173659E0F2B6A /* NotebookPDFExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BF613D9CC1F1C20D5123026 /* NotebookPDFExporter.swift */; };
 		CD4A28F4A70ED78D76EC2666 /* CanvasRedrawDecisionBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDAA9289C84C25603373125D /* CanvasRedrawDecisionBehaviorTests.swift */; };
 		CE41FAAFEBC4C4253C0AA1AF /* CanvasPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0B7530E86329AD339CA4B3 /* CanvasPerformanceTests.swift */; };
+		D00DA5115D75D940FE1F6087 /* PencilStrokeArchiveCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 824C2E370D22BE5BCBC0A811 /* PencilStrokeArchiveCache.swift */; };
 		D3CFFEF09CEFCEDD09FF2BD0 /* NotionFolderPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = E99A67652715C21F7BF64B3B /* NotionFolderPath.swift */; };
 		D45654CAA8688951BA2D7D13 /* NotionNotebookSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5044FB714BF03EB244B667A /* NotionNotebookSnapshot.swift */; };
 		D5492BDCFBA7A8C1FC242657 /* NotionAPIClient+Files.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0846B9B642B48ACAF56C1D15 /* NotionAPIClient+Files.swift */; };
@@ -247,11 +265,13 @@
 		DF9181D40C47F7ABF7C23B62 /* CloudKitSyncProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B45FCE3E6D9FF50292F61257 /* CloudKitSyncProvider.swift */; };
 		DFF5D5ECD752C8E10F29B7A5 /* NativeDocumentSerializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABE58739DCC1D21AAE42CCBC /* NativeDocumentSerializer.swift */; };
 		E05BF7036606A30B0746A6C3 /* LocalNotionSyncStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF65F3796AA5EB842EEDC0F4 /* LocalNotionSyncStateStore.swift */; };
+		E117E606C1DE135D55E4C8CB /* SelectionClipboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4FA487A920730C44F1C3CD9 /* SelectionClipboard.swift */; };
 		E19EEAC2B77F886BCC490348 /* WritingLatencyBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60ACBD6D93D49303CE2D2419 /* WritingLatencyBehaviorTests.swift */; };
 		E1B22E21D62D938ED97AFA2E /* LibrarySidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6E5F63CA16253EC3572D81 /* LibrarySidebarView.swift */; };
 		E1CB87263375713F5666BEB3 /* NoteNerdsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C353FA77172BE0675A9E5B /* NoteNerdsApp.swift */; };
 		E399C438C01F71BF51543E9E /* NotionEndToEndIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 564EB000BAC305B973FC8E18 /* NotionEndToEndIntegrationTests.swift */; };
 		E48A454E72120802D79AE81A /* NotionTransportArchiveBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C0F8AE1996D073D1CA0F6AD /* NotionTransportArchiveBehaviorTests.swift */; };
+		E7F19A5EA2783000D6E4F780 /* CanvasThumbnailCacheBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F567A18DAB5E0A80CE3F641 /* CanvasThumbnailCacheBehaviorTests.swift */; };
 		E87A8A330C7BAD77143B1CEF /* StartupBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F05C57C9C7A5B5DABC92812 /* StartupBehaviorTests.swift */; };
 		E8F2FDE89D43E4E00AB1D722 /* NotionIntegrationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA2C86949EA4ECB66ECE434D /* NotionIntegrationModel.swift */; };
 		E90C61348B0D49E7C55FD7D5 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7215772E477B818C39C2DA /* Library.swift */; };
@@ -261,11 +281,11 @@
 		EFE1F84522F739979F128CB9 /* CloudKitSyncProviderBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440127D5250CFA146CB1ECBB /* CloudKitSyncProviderBehaviorTests.swift */; };
 		F08F65B8A7ADA05F2DDD7514 /* RemoteChangeThroughputBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F93EE218C0380563571D6B1 /* RemoteChangeThroughputBehaviorTests.swift */; };
 		F0E2CE1A2E8FF9807E494DD6 /* AppModel+Notion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948128EE1097679CE29A2136 /* AppModel+Notion.swift */; };
-		F140673CE3E6731A2DF8485C /* PencilStrokeArchiveCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7045CDA1D2D6754431E82C3C /* PencilStrokeArchiveCache.swift */; };
 		F169E505ED2879B193D70D5F /* FolderRestoreCompatibilityBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D93A8D6630F1974BDF33414 /* FolderRestoreCompatibilityBehaviorTests.swift */; };
 		F1D8CBAFDA69313DF0CC3071 /* CanvasBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CCB6CD1881F31CA0B50E60A /* CanvasBrowserView.swift */; };
 		F2C34AE8C7BAA4B28904D3A7 /* HandwritingRecognition.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3427B7AEE35A47EDC1568D /* HandwritingRecognition.swift */; };
 		F46C02362866E0785F769B91 /* DocumentOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04E50B50F424591A5A00AF88 /* DocumentOperation.swift */; };
+		F47016130887CF26F221C0F6 /* AppModel+Search.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B655C6A74B8D19F90CBB7C7 /* AppModel+Search.swift */; };
 		F4F6934E00D8C4FA9A0F1450 /* NotebookEditorPlannerPaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37466B17E80958B0968FF09 /* NotebookEditorPlannerPaging.swift */; };
 		F6033D54ECE091036DFCA590 /* AppModel+Sync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D35FFF78B9896C64AEE5FFD /* AppModel+Sync.swift */; };
 		F613CE2582165A5540AA2E6A /* PencilFlushBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30D915DFE63F34C9C0B54F76 /* PencilFlushBehaviorTests.swift */; };
@@ -321,6 +341,7 @@
 		0CCB6CD1881F31CA0B50E60A /* CanvasBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasBrowserView.swift; sourceTree = "<group>"; };
 		0D6E5F63CA16253EC3572D81 /* LibrarySidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySidebarView.swift; sourceTree = "<group>"; };
 		0E3A307A2992E6717E979EB3 /* PlannerPageLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlannerPageLayout.swift; sourceTree = "<group>"; };
+		0E6104F876797ACE0165BAE8 /* SearchQueryDebouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchQueryDebouncer.swift; sourceTree = "<group>"; };
 		0F0360B7B76A58F9C1BDF7E4 /* SystemNotionBrowserBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemNotionBrowserBehaviorTests.swift; sourceTree = "<group>"; };
 		123945946D61AE76CBE1CBFA /* CanvasViewportBoundaryBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasViewportBoundaryBehaviorTests.swift; sourceTree = "<group>"; };
 		126B0A1AABC812B50FB9CB0F /* CanvasToolbarOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolbarOrientation.swift; sourceTree = "<group>"; };
@@ -345,6 +366,7 @@
 		28396265C1E00DC01ECC7EBA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2975AB85C71310DB25A1D772 /* PencilCanvasView+Paper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PencilCanvasView+Paper.swift"; sourceTree = "<group>"; };
 		29B553318C8638EFBFDEAB89 /* PaperLayoutBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperLayoutBehaviorTests.swift; sourceTree = "<group>"; };
+		2A53DFECA5C8B56A6BC0C238 /* SyncOutboxPersistBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncOutboxPersistBehaviorTests.swift; sourceTree = "<group>"; };
 		2A683C238F7A873A99ADC767 /* ApplicationBackgroundSaveCoordinatorBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationBackgroundSaveCoordinatorBehaviorTests.swift; sourceTree = "<group>"; };
 		2CA8BD87A0FC842CF2C17033 /* EditingBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditingBehaviorTests.swift; sourceTree = "<group>"; };
 		2CAF88692C72CAFE1B640F7A /* NotionLibraryRestoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionLibraryRestoreService.swift; sourceTree = "<group>"; };
@@ -366,6 +388,7 @@
 		3867AC699833D85ACCDD24FE /* InlineCanvasTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineCanvasTextEditor.swift; sourceTree = "<group>"; };
 		396068D8D63F6F44EC72DA94 /* HandwritingGrouping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingGrouping.swift; sourceTree = "<group>"; };
 		3A7A054CE9C959C6B170D271 /* ShapePlacementBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapePlacementBehaviorTests.swift; sourceTree = "<group>"; };
+		3B655C6A74B8D19F90CBB7C7 /* AppModel+Search.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Search.swift"; sourceTree = "<group>"; };
 		3B977ECACE86D14C39E6A29C /* CanvasToolbarBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolbarBehaviorTests.swift; sourceTree = "<group>"; };
 		3BD15D83A3627F99CDB00EBF /* RadialPaletteBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialPaletteBehaviorTests.swift; sourceTree = "<group>"; };
 		3CB379125E9AD313B19B529A /* Content.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Content.swift; sourceTree = "<group>"; };
@@ -383,11 +406,14 @@
 		4B931EC2B0DBCF9FD4F9A69E /* FolderIconImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderIconImporter.swift; sourceTree = "<group>"; };
 		4CC15788FAB8F1B5C7FCF380 /* SyncEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncEngine.swift; sourceTree = "<group>"; };
 		4D72280FBE085FEA26A09B8B /* RemoteHandwritingSyncPersistenceBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteHandwritingSyncPersistenceBehaviorTests.swift; sourceTree = "<group>"; };
+		4E32EC34487B7C7D356996A2 /* NotionDownloadHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionDownloadHost.swift; sourceTree = "<group>"; };
 		4EA0BDF971D5CAB85D50670B /* NotebookTitleToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookTitleToolbarView.swift; sourceTree = "<group>"; };
 		4F009A7A111D7E1D2F61810D /* FolderDeletionConvergenceBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderDeletionConvergenceBehaviorTests.swift; sourceTree = "<group>"; };
 		4F93EE218C0380563571D6B1 /* RemoteChangeThroughputBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteChangeThroughputBehaviorTests.swift; sourceTree = "<group>"; };
 		4F9EECABD947F86A68F6FC6F /* LibraryFolderTreeRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryFolderTreeRow.swift; sourceTree = "<group>"; };
+		534628A95026B8A638328D11 /* DocumentJournal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentJournal.swift; sourceTree = "<group>"; };
 		53640357D2761811D69F6227 /* ToolConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolConfiguration.swift; sourceTree = "<group>"; };
+		53E5F2553DC26DD831D21E72 /* SearchQueryDebouncerBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchQueryDebouncerBehaviorTests.swift; sourceTree = "<group>"; };
 		54175B0146804F079F2CE6A3 /* CanvasSelectionOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSelectionOverlayView.swift; sourceTree = "<group>"; };
 		542D90679C1A4FB4545E036C /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		54AD0AF27DB7F625D0D13863 /* NotionSettingsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionSettingsUITests.swift; sourceTree = "<group>"; };
@@ -396,10 +422,12 @@
 		564EB000BAC305B973FC8E18 /* NotionEndToEndIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionEndToEndIntegrationTests.swift; sourceTree = "<group>"; };
 		58A63687859DC4861FC6ACA6 /* LibraryFolderSidebarRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryFolderSidebarRow.swift; sourceTree = "<group>"; };
 		58BEF9EF64CAA12B5A73E7EE /* NotebookEditorToolbarLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookEditorToolbarLayout.swift; sourceTree = "<group>"; };
+		5A47E4429D7ABEAD09F5CBFF /* AppSessionImportRestoreBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSessionImportRestoreBehaviorTests.swift; sourceTree = "<group>"; };
 		5B157EC5AA38C6D63875D759 /* CanvasMinimapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasMinimapView.swift; sourceTree = "<group>"; };
 		5D781E49EF1603065CD6EA7F /* NotionRequestRateLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionRequestRateLimiter.swift; sourceTree = "<group>"; };
 		5E18CF8F637939E6CDA0F967 /* NotionManifestSyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionManifestSyncCoordinator.swift; sourceTree = "<group>"; };
 		5F05C57C9C7A5B5DABC92812 /* StartupBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupBehaviorTests.swift; sourceTree = "<group>"; };
+		5F15788AE6712801788BAC65 /* SyncPersistenceTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPersistenceTestSupport.swift; sourceTree = "<group>"; };
 		5F68F3C5A88872048FC3E472 /* NotionNotebookPayloadBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionNotebookPayloadBuilder.swift; sourceTree = "<group>"; };
 		5FA69301493F74C68182218D /* AppModel+Editing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Editing.swift"; sourceTree = "<group>"; };
 		6089D24C15AA2010E8807B5D /* NotionManifestSyncCoordinatorBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionManifestSyncCoordinatorBehaviorTests.swift; sourceTree = "<group>"; };
@@ -416,7 +444,6 @@
 		69B83A66B06430C9EC8BCFFB /* ShapeRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeRecognizer.swift; sourceTree = "<group>"; };
 		6C8EE4EC96BEB638E3E195A0 /* PencilCanvasRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilCanvasRenderer.swift; sourceTree = "<group>"; };
 		6CD784154DA64B660B9E47F1 /* NotionPersistenceBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionPersistenceBehaviorTests.swift; sourceTree = "<group>"; };
-		7045CDA1D2D6754431E82C3C /* PencilStrokeArchiveCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilStrokeArchiveCache.swift; sourceTree = "<group>"; };
 		7104D752F001CC3F3958B047 /* Identifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Identifiers.swift; sourceTree = "<group>"; };
 		726085B59B037F9B7BFFD92B /* ApplicationBackgroundSyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationBackgroundSyncCoordinator.swift; sourceTree = "<group>"; };
 		72768733A741582CBAE86449 /* CanvasTextEditingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasTextEditingSession.swift; sourceTree = "<group>"; };
@@ -430,8 +457,10 @@
 		7CD842FB91D9AC6344DCAD28 /* CanvasDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasDiagnostics.swift; sourceTree = "<group>"; };
 		7DA2CC7EC6CB7531CBA18429 /* ApplicationBackgroundSaveCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationBackgroundSaveCoordinator.swift; sourceTree = "<group>"; };
 		7E2FA015D0BB033D151949BC /* PencilSqueezeBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilSqueezeBehavior.swift; sourceTree = "<group>"; };
+		7F567A18DAB5E0A80CE3F641 /* CanvasThumbnailCacheBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasThumbnailCacheBehaviorTests.swift; sourceTree = "<group>"; };
 		80502B993BADA665B8C5FD87 /* LibraryBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryBehaviorTests.swift; sourceTree = "<group>"; };
 		8214D55C09DDC192332C7812 /* FolderIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderIconView.swift; sourceTree = "<group>"; };
+		824C2E370D22BE5BCBC0A811 /* PencilStrokeArchiveCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilStrokeArchiveCache.swift; sourceTree = "<group>"; };
 		84178A7549F2C4BA1F47F249 /* NotionLibraryManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionLibraryManifest.swift; sourceTree = "<group>"; };
 		84C6528B8032EF606CA09118 /* ImportExportBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportExportBehaviorTests.swift; sourceTree = "<group>"; };
 		856C12459DD709D6C820CB7B /* RadialPaletteBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialPaletteBehavior.swift; sourceTree = "<group>"; };
@@ -441,11 +470,14 @@
 		88FD4334AAEC09C58ABAECF8 /* NotionAuthenticatedAPIBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionAuthenticatedAPIBehaviorTests.swift; sourceTree = "<group>"; };
 		89906DAED13885195F293C21 /* NotionIntegrationModel+MeetingLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotionIntegrationModel+MeetingLinks.swift"; sourceTree = "<group>"; };
 		8B3A81FBA53AE525FA27F047 /* NotebookModifiedTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookModifiedTime.swift; sourceTree = "<group>"; };
+		8BD6877C3C4F87617046C686 /* PencilCanvasActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilCanvasActions.swift; sourceTree = "<group>"; };
 		8BF613D9CC1F1C20D5123026 /* NotebookPDFExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookPDFExporter.swift; sourceTree = "<group>"; };
 		8C192996BD5CA940EEEB69A9 /* CanvasBrowserAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasBrowserAction.swift; sourceTree = "<group>"; };
+		8C3EA9AFEACC2B0261EC61FF /* ProtectedTemporaryFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtectedTemporaryFile.swift; sourceTree = "<group>"; };
 		8CB81FF5BB75643DEFDD94A2 /* AppleInterfaceBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleInterfaceBehaviorTests.swift; sourceTree = "<group>"; };
 		8D250440A1EC762ED1B2F3A8 /* RadialMenuPlacementUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialMenuPlacementUITests.swift; sourceTree = "<group>"; };
 		8E4582AF462CBADB15441B7F /* NotionNotebookMappingBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionNotebookMappingBehaviorTests.swift; sourceTree = "<group>"; };
+		8E5637A359825854A0E25E19 /* CanvasOverlayState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasOverlayState.swift; sourceTree = "<group>"; };
 		8F81BBD57522E83C4057F5A7 /* PencilKitMappings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilKitMappings.swift; sourceTree = "<group>"; };
 		8FC4414A02D30C22FB6D79EE /* NotionAPIClientBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionAPIClientBehaviorTests.swift; sourceTree = "<group>"; };
 		90B528C04C382AB316FE5222 /* SyncDependencyRetryBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDependencyRetryBehaviorTests.swift; sourceTree = "<group>"; };
@@ -453,6 +485,7 @@
 		90EA3D3E13BCF16BB1A16976 /* NotebookExportDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookExportDocument.swift; sourceTree = "<group>"; };
 		93379E7A35F9E89ADFED564E /* CanvasObjectOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasObjectOverlayView.swift; sourceTree = "<group>"; };
 		934DF4D1D763ECCBA574D817 /* NotionAPIClient+Notebooks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotionAPIClient+Notebooks.swift"; sourceTree = "<group>"; };
+		9372A859A0239F78F3B9DAC5 /* NotionIntegrationModel+Restore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotionIntegrationModel+Restore.swift"; sourceTree = "<group>"; };
 		938751EEAA0A5733C745F0B8 /* NotebookPreviewBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookPreviewBehaviorTests.swift; sourceTree = "<group>"; };
 		9414846452B365414915F390 /* PencilCanvasInputBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilCanvasInputBehaviorTests.swift; sourceTree = "<group>"; };
 		948128EE1097679CE29A2136 /* AppModel+Notion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Notion.swift"; sourceTree = "<group>"; };
@@ -495,19 +528,23 @@
 		B00702C4BA223AAE1533B978 /* InkColor+UIKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InkColor+UIKit.swift"; sourceTree = "<group>"; };
 		B096BCFBC6F4E22CF4A39B59 /* NotebookEditorPencilActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookEditorPencilActions.swift; sourceTree = "<group>"; };
 		B09CB8764F7BD8F1375F6BB3 /* NoteNerdsTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NoteNerdsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B196E8D6D5BCB1C5B4F0EB52 /* NotionDownloadHostBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionDownloadHostBehaviorTests.swift; sourceTree = "<group>"; };
 		B24214171C906EC3C2D70E4C /* SyncPersistenceBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPersistenceBehaviorTests.swift; sourceTree = "<group>"; };
 		B2E0B03B02289A589F7CB39A /* NotionOAuthRequestFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionOAuthRequestFactory.swift; sourceTree = "<group>"; };
 		B45FCE3E6D9FF50292F61257 /* CloudKitSyncProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSyncProvider.swift; sourceTree = "<group>"; };
 		B4B59E0354ED02D080CAC071 /* CanvasTextPlacementOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasTextPlacementOverlayView.swift; sourceTree = "<group>"; };
 		B5044FB714BF03EB244B667A /* NotionNotebookSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionNotebookSnapshot.swift; sourceTree = "<group>"; };
 		B5942E25DF0EC71E3C9D4D3E /* NotionRefreshingAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionRefreshingAPI.swift; sourceTree = "<group>"; };
+		B70F28B9FA6030995444B91D /* JournalSidecarBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalSidecarBehaviorTests.swift; sourceTree = "<group>"; };
 		B7C40CF71BB5A037F57A3B52 /* StoredNoteCompatibilityBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredNoteCompatibilityBehaviorTests.swift; sourceTree = "<group>"; };
 		B835107C42DFF1C4D92A4DCE /* CanvasBrowserBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasBrowserBehaviorTests.swift; sourceTree = "<group>"; };
 		B996C3B3A94B3B0366A2BE56 /* SyncBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncBehaviorTests.swift; sourceTree = "<group>"; };
+		B9D63C331D6C2B3AF3A46C1E /* PencilKitStrokeArchiveCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilKitStrokeArchiveCodec.swift; sourceTree = "<group>"; };
 		BA98F93CBD2254E09CAA2F7A /* NotionManagedPageBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionManagedPageBehaviorTests.swift; sourceTree = "<group>"; };
 		BB9C95CEFFECB358E07BCD40 /* HandwritingTextLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingTextLayout.swift; sourceTree = "<group>"; };
 		BC08DC359144E3CEE961C6C1 /* SelectionAndShapeBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionAndShapeBehaviorTests.swift; sourceTree = "<group>"; };
 		BCD628FB567AE2C944C3ADAD /* NotionRestoreCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionRestoreCoordinator.swift; sourceTree = "<group>"; };
+		BD06E0ABAC169127DE65F379 /* CanvasThumbnailCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasThumbnailCache.swift; sourceTree = "<group>"; };
 		BD75E7451C2FFFFA0D3ACEFA /* SVGFolderIconRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SVGFolderIconRasterizer.swift; sourceTree = "<group>"; };
 		BE8BF59512C4CA34E80AF003 /* NoteNerdsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteNerdsLaunchTests.swift; sourceTree = "<group>"; };
 		BEB13920DA24632E0120DF87 /* VectorEraser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VectorEraser.swift; sourceTree = "<group>"; };
@@ -524,6 +561,7 @@
 		CB09202065E9561317EB9280 /* NotionLibraryPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionLibraryPublisher.swift; sourceTree = "<group>"; };
 		CC031AC7A01AB651D91E6C85 /* PencilCanvasView+StrokeSamples.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PencilCanvasView+StrokeSamples.swift"; sourceTree = "<group>"; };
 		CD14A8F5E08A305682A7991D /* NotionAPIClient+Restore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotionAPIClient+Restore.swift"; sourceTree = "<group>"; };
+		CD28E550D3AEC9493D6F5C1A /* ProtectedTemporaryFileBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtectedTemporaryFileBehaviorTests.swift; sourceTree = "<group>"; };
 		CD43D0904572F825D29BD00A /* RemoteSyncReceiptBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteSyncReceiptBehaviorTests.swift; sourceTree = "<group>"; };
 		CDC52EE20BB0CDEE5089CAE9 /* LocalEchoRecoveryBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalEchoRecoveryBehaviorTests.swift; sourceTree = "<group>"; };
 		CE55E4F8EA96BF1D93E78220 /* NotionMeetingLinkCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionMeetingLinkCoordinator.swift; sourceTree = "<group>"; };
@@ -533,6 +571,7 @@
 		D0157B1A373B98F51F7CB7F8 /* NotebookEditorExporting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookEditorExporting.swift; sourceTree = "<group>"; };
 		D1802D43991C50106A28A91E /* ActivityShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityShareSheet.swift; sourceTree = "<group>"; };
 		D21D4A9D7E588BA73AB62C6B /* NotionCredentialStoreBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionCredentialStoreBehaviorTests.swift; sourceTree = "<group>"; };
+		D29570E3FAF502A89729C859 /* AppModel+Restore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Restore.swift"; sourceTree = "<group>"; };
 		D365DEC6CA5B3B7C060EA482 /* ToolInspectorBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolInspectorBehaviorTests.swift; sourceTree = "<group>"; };
 		D37466B17E80958B0968FF09 /* NotebookEditorPlannerPaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookEditorPlannerPaging.swift; sourceTree = "<group>"; };
 		D3FAD5FE08B247A6CA049EDF /* NoteNerdsPerformanceTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NoteNerdsPerformanceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -554,7 +593,6 @@
 		E1B259B05F6D44A43B20E3FC /* LayerStackPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayerStackPresentation.swift; sourceTree = "<group>"; };
 		E1C3C7013D5E8CC0BE01B606 /* RadialToolMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialToolMenu.swift; sourceTree = "<group>"; };
 		E35EB2C2F188E167E1AABDB4 /* NotebookEditorLayerActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookEditorLayerActions.swift; sourceTree = "<group>"; };
-		E381756CB3815686C5518B17 /* PencilKitStrokeArchiveCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilKitStrokeArchiveCodec.swift; sourceTree = "<group>"; };
 		E4B6B2419B3550A7A5A8DC01 /* LocalDocumentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDocumentStore.swift; sourceTree = "<group>"; };
 		E5C762BF7C014887D797C8ED /* PencilStrokeTestFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilStrokeTestFixture.swift; sourceTree = "<group>"; };
 		E5DEFD4B3C73F3B711A59BDF /* NotionLibraryManifestPageBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionLibraryManifestPageBehaviorTests.swift; sourceTree = "<group>"; };
@@ -569,9 +607,11 @@
 		EE56DBF9966911EF44CF12BD /* NotionSyncRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionSyncRegistry.swift; sourceTree = "<group>"; };
 		EF0B9FA460544B213AA530BD /* InMemorySyncProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemorySyncProvider.swift; sourceTree = "<group>"; };
 		EF65F3796AA5EB842EEDC0F4 /* LocalNotionSyncStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotionSyncStateStore.swift; sourceTree = "<group>"; };
+		F19129993DBBBAC7BA12D3B4 /* CanvasSearchHighlights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSearchHighlights.swift; sourceTree = "<group>"; };
 		F27BE3F7D492118817933436 /* CanvasToolInspectors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolInspectors.swift; sourceTree = "<group>"; };
 		F3E85E913EA62D5B971CD272 /* Clipboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clipboard.swift; sourceTree = "<group>"; };
 		F478B70E62372610218328B5 /* CanvasSelectionOutlineLayers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSelectionOutlineLayers.swift; sourceTree = "<group>"; };
+		F4FA487A920730C44F1C3CD9 /* SelectionClipboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionClipboard.swift; sourceTree = "<group>"; };
 		F5E16C35BC6348493A49B8E9 /* DocumentHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentHistory.swift; sourceTree = "<group>"; };
 		F79D8597DB1B9F7BE6ADB5DA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		F7F00FED5868763C3F9E3D88 /* FolderEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderEditorView.swift; sourceTree = "<group>"; };
@@ -620,6 +660,7 @@
 				7CD842FB91D9AC6344DCAD28 /* CanvasDiagnostics.swift */,
 				1FAF65C49A2AB6B12EB437A0 /* CanvasPNGExporter.swift */,
 				B45FCE3E6D9FF50292F61257 /* CloudKitSyncProvider.swift */,
+				534628A95026B8A638328D11 /* DocumentJournal.swift */,
 				4B931EC2B0DBCF9FD4F9A69E /* FolderIconImporter.swift */,
 				47A89BC025216F5B4C409E8A /* HexagonPaperRenderer.swift */,
 				FD12F5C626F1BEFF57B61729 /* ImageImporter.swift */,
@@ -635,7 +676,9 @@
 				95FA6DFC225002491F8DB20F /* PDFImporter.swift */,
 				0E3A307A2992E6717E979EB3 /* PlannerPageLayout.swift */,
 				263DB81C0E706A054E085E00 /* PlannerPaperRenderer.swift */,
+				8C3EA9AFEACC2B0261EC61FF /* ProtectedTemporaryFile.swift */,
 				BD75E7451C2FFFFA0D3ACEFA /* SVGFolderIconRasterizer.swift */,
+				DA4537E2CAB77D1B790E18AA /* PencilKit */,
 			);
 			path = Infrastructure;
 			sourceTree = "<group>";
@@ -644,6 +687,7 @@
 			isa = PBXGroup;
 			children = (
 				25B164522B41432948EA3B15 /* SearchIndexBehaviorTests.swift */,
+				53E5F2553DC26DD831D21E72 /* SearchQueryDebouncerBehaviorTests.swift */,
 			);
 			path = Search;
 			sourceTree = "<group>";
@@ -687,10 +731,13 @@
 				2A683C238F7A873A99ADC767 /* ApplicationBackgroundSaveCoordinatorBehaviorTests.swift */,
 				2DCA118E2B1A95EA10995F4C /* ApplicationBackgroundSyncCoordinatorBehaviorTests.swift */,
 				C308DC989F54270BA942B11F /* AppSessionBackgroundCheckpointBehaviorTests.swift */,
+				5A47E4429D7ABEAD09F5CBFF /* AppSessionImportRestoreBehaviorTests.swift */,
 				00D03CE9401CE97CDC86B22B /* AppSessionPersistenceBehaviorTests.swift */,
 				84C6528B8032EF606CA09118 /* ImportExportBehaviorTests.swift */,
+				B70F28B9FA6030995444B91D /* JournalSidecarBehaviorTests.swift */,
 				D60D4D9C48BD56DBA2A636A1 /* LocalDocumentStoreBehaviorTests.swift */,
 				D8E58C88D6FE3BC739D6547F /* LocalLibraryRepositoryBehaviorTests.swift */,
+				CD28E550D3AEC9493D6F5C1A /* ProtectedTemporaryFileBehaviorTests.swift */,
 				5F05C57C9C7A5B5DABC92812 /* StartupBehaviorTests.swift */,
 				B7C40CF71BB5A037F57A3B52 /* StoredNoteCompatibilityBehaviorTests.swift */,
 				95ACF0611ADB91D29B510286 /* StrokeArchiveRepairBehaviorTests.swift */,
@@ -735,6 +782,7 @@
 			children = (
 				B835107C42DFF1C4D92A4DCE /* CanvasBrowserBehaviorTests.swift */,
 				EDAA9289C84C25603373125D /* CanvasRedrawDecisionBehaviorTests.swift */,
+				7F567A18DAB5E0A80CE3F641 /* CanvasThumbnailCacheBehaviorTests.swift */,
 				3B977ECACE86D14C39E6A29C /* CanvasToolbarBehaviorTests.swift */,
 				BEF65808EEC04339C30E6A1D /* CanvasViewportBehaviorTests.swift */,
 				123945946D61AE76CBE1CBFA /* CanvasViewportBoundaryBehaviorTests.swift */,
@@ -780,7 +828,10 @@
 				7B9AB1B4153AB309A7728857 /* AppModel+LibrarySynchronization.swift */,
 				948128EE1097679CE29A2136 /* AppModel+Notion.swift */,
 				9C1369A486CDB231CA907EEE /* AppModel+Recognition.swift */,
+				D29570E3FAF502A89729C859 /* AppModel+Restore.swift */,
+				3B655C6A74B8D19F90CBB7C7 /* AppModel+Search.swift */,
 				1D35FFF78B9896C64AEE5FFD /* AppModel+Sync.swift */,
+				0E6104F876797ACE0165BAE8 /* SearchQueryDebouncer.swift */,
 				376127333FE73FD4A9D3F6E2 /* SyncChangeEncoder.swift */,
 				4CC15788FAB8F1B5C7FCF380 /* SyncEngine.swift */,
 			);
@@ -880,6 +931,7 @@
 				934DF4D1D763ECCBA574D817 /* NotionAPIClient+Notebooks.swift */,
 				CD14A8F5E08A305682A7991D /* NotionAPIClient+Restore.swift */,
 				322D46742429808117670D98 /* NotionAPIModels.swift */,
+				4E32EC34487B7C7D356996A2 /* NotionDownloadHost.swift */,
 				8808F2E4684F6BE21DD151A1 /* NotionLibraryManifestPageBuilder.swift */,
 				3389CD295A3D964E0E6D0B52 /* NotionManagedPageBuilder.swift */,
 				FBEAE78393D62D6CA7CD6279 /* NotionPageProperties.swift */,
@@ -901,7 +953,9 @@
 				CD43D0904572F825D29BD00A /* RemoteSyncReceiptBehaviorTests.swift */,
 				B996C3B3A94B3B0366A2BE56 /* SyncBehaviorTests.swift */,
 				90B528C04C382AB316FE5222 /* SyncDependencyRetryBehaviorTests.swift */,
+				2A53DFECA5C8B56A6BC0C238 /* SyncOutboxPersistBehaviorTests.swift */,
 				B24214171C906EC3C2D70E4C /* SyncPersistenceBehaviorTests.swift */,
+				5F15788AE6712801788BAC65 /* SyncPersistenceTestSupport.swift */,
 			);
 			path = Sync;
 			sourceTree = "<group>";
@@ -922,6 +976,7 @@
 				2FD4EB87C78B23531C4CE1AE /* NotionDestinationSelectionUITestProvider.swift */,
 				CA2C86949EA4ECB66ECE434D /* NotionIntegrationModel.swift */,
 				89906DAED13885195F293C21 /* NotionIntegrationModel+MeetingLinks.swift */,
+				9372A859A0239F78F3B9DAC5 /* NotionIntegrationModel+Restore.swift */,
 				EB47D74F07DC01CAB5263E5F /* NotionRestoreReviewView.swift */,
 			);
 			path = UI;
@@ -946,6 +1001,8 @@
 				627E08FE9624209393A49526 /* CanvasLayersPanel.swift */,
 				5B157EC5AA38C6D63875D759 /* CanvasMinimapView.swift */,
 				93379E7A35F9E89ADFED564E /* CanvasObjectOverlayView.swift */,
+				8E5637A359825854A0E25E19 /* CanvasOverlayState.swift */,
+				F19129993DBBBAC7BA12D3B4 /* CanvasSearchHighlights.swift */,
 				FB5F7F02BAD71FA8FFEC737F /* CanvasSearchHighlightView.swift */,
 				F478B70E62372610218328B5 /* CanvasSelectionOutlineLayers.swift */,
 				54175B0146804F079F2CE6A3 /* CanvasSelectionOverlayView.swift */,
@@ -970,6 +1027,7 @@
 				626A246CD0CCC545BC704A59 /* NotebookEditorView.swift */,
 				4EA0BDF971D5CAB85D50670B /* NotebookTitleToolbarView.swift */,
 				FEDB88B23D94B8E00669BB1B /* PaperGalleryView.swift */,
+				8BD6877C3C4F87617046C686 /* PencilCanvasActions.swift */,
 				6542558098F21147111B59C6 /* PencilCanvasInputAccessories.swift */,
 				6C8EE4EC96BEB638E3E195A0 /* PencilCanvasRenderer.swift */,
 				1577AB36069737A5AA5214C0 /* PencilCanvasSnapshotFlusher.swift */,
@@ -981,9 +1039,7 @@
 				CC031AC7A01AB651D91E6C85 /* PencilCanvasView+StrokeSamples.swift */,
 				9D6239E868AFAA78DA8C00CD /* PencilDrawingReconciliation.swift */,
 				8F81BBD57522E83C4057F5A7 /* PencilKitMappings.swift */,
-				E381756CB3815686C5518B17 /* PencilKitStrokeArchiveCodec.swift */,
 				7E2FA015D0BB033D151949BC /* PencilSqueezeBehavior.swift */,
-				7045CDA1D2D6754431E82C3C /* PencilStrokeArchiveCache.swift */,
 				D7E5A51009B9F32441E5B813 /* PlannerRegionPageControl.swift */,
 				856C12459DD709D6C820CB7B /* RadialPaletteBehavior.swift */,
 				E1C3C7013D5E8CC0BE01B606 /* RadialToolMenu.swift */,
@@ -1043,6 +1099,7 @@
 				67C09B0860644A145895CC81 /* NotionConnectionResetBehaviorTests.swift */,
 				54DA2CEDF0E89F5EDAE81820 /* NotionConnectionServiceBehaviorTests.swift */,
 				D21D4A9D7E588BA73AB62C6B /* NotionCredentialStoreBehaviorTests.swift */,
+				B196E8D6D5BCB1C5B4F0EB52 /* NotionDownloadHostBehaviorTests.swift */,
 				564EB000BAC305B973FC8E18 /* NotionEndToEndIntegrationTests.swift */,
 				D6CA986D5D18418792683148 /* NotionFileUploadBehaviorTests.swift */,
 				327AB49929B7FEDF1A72CBB5 /* NotionIntegrationModelBehaviorTests.swift */,
@@ -1077,6 +1134,7 @@
 				DD7AE53E59B2C5D935415F58 /* AppSettingsView.swift */,
 				D9791AF728535349D8067A6B /* AppSymbol.swift */,
 				C4E2B40C362F5718EA2284E0 /* CanvasContentThumbnail.swift */,
+				BD06E0ABAC169127DE65F379 /* CanvasThumbnailCache.swift */,
 				542D90679C1A4FB4545E036C /* RootView.swift */,
 				9E8DDFB6D965A20E371A59E5 /* Canvas */,
 				30AA10DD6DEC6186A8BEAC79 /* Library */,
@@ -1093,6 +1151,16 @@
 				BCD628FB567AE2C944C3ADAD /* NotionRestoreCoordinator.swift */,
 			);
 			path = Restore;
+			sourceTree = "<group>";
+		};
+		DA4537E2CAB77D1B790E18AA /* PencilKit */ = {
+			isa = PBXGroup;
+			children = (
+				B9D63C331D6C2B3AF3A46C1E /* PencilKitStrokeArchiveCodec.swift */,
+				824C2E370D22BE5BCBC0A811 /* PencilStrokeArchiveCache.swift */,
+				F4FA487A920730C44F1C3CD9 /* SelectionClipboard.swift */,
+			);
+			path = PencilKit;
 			sourceTree = "<group>";
 		};
 		DB9240AAF3582C8797C2886A /* Transport */ = {
@@ -1267,6 +1335,8 @@
 				FA85E68B0FF394CCC906A967 /* AppModel+LibrarySynchronization.swift in Sources */,
 				F0E2CE1A2E8FF9807E494DD6 /* AppModel+Notion.swift in Sources */,
 				9F918A380C5AEDFBC817B5AF /* AppModel+Recognition.swift in Sources */,
+				C112D4F1CDA3D429F1AFADC4 /* AppModel+Restore.swift in Sources */,
+				F47016130887CF26F221C0F6 /* AppModel+Search.swift in Sources */,
 				F6033D54ECE091036DFCA590 /* AppModel+Sync.swift in Sources */,
 				A7A1C2AF481FA6A3E95C7FBB /* AppModel.swift in Sources */,
 				900E7C43236A17F75449474F /* AppSettingsView.swift in Sources */,
@@ -1285,14 +1355,17 @@
 				A6DE979DCEBE0160AA4F5F98 /* CanvasMinimapView.swift in Sources */,
 				915530892A105E6279BA3F90 /* CanvasName.swift in Sources */,
 				7939482E3CABB47443B415B7 /* CanvasObjectOverlayView.swift in Sources */,
+				5DD8ABA12C0FE4FD616D2013 /* CanvasOverlayState.swift in Sources */,
 				5A356DBA3D5783A7B6F68A6A /* CanvasPNGExporter.swift in Sources */,
 				855EBC947621937198DA7929 /* CanvasSearchHighlightView.swift in Sources */,
+				54DBA15170FD1909614966D9 /* CanvasSearchHighlights.swift in Sources */,
 				55D56AD35C185E05F7069C4C /* CanvasSelectionOutlineLayers.swift in Sources */,
 				9A41432EEECE40AD7F46F177 /* CanvasSelectionOverlayView.swift in Sources */,
 				911CDE95255D524D10539F30 /* CanvasShapeInspector.swift in Sources */,
 				6D86412415A9F1F145D8E7A8 /* CanvasSystems.swift in Sources */,
 				1567A5EB4286B9C214380715 /* CanvasTextEditingSession.swift in Sources */,
 				0D7951D1A33FE62FF6D1DC21 /* CanvasTextPlacementOverlayView.swift in Sources */,
+				94DBFC6D128169AE8334E47D /* CanvasThumbnailCache.swift in Sources */,
 				3C0A9B24DED51F143E7DA42A /* CanvasToolInspectors.swift in Sources */,
 				08818B4ABB7AE9AC803CD37E /* CanvasToolPresentation.swift in Sources */,
 				30B37E96FD1D489297AC448F /* CanvasToolbarBehavior.swift in Sources */,
@@ -1304,6 +1377,7 @@
 				B22559C8A37CDC10D6789C65 /* Content.swift in Sources */,
 				4C225A27EDBEDD1031C63B1D /* Document.swift in Sources */,
 				63F859DB877AD4D64006574E /* DocumentHistory.swift in Sources */,
+				1F5BD716AC50457AF18DCB2F /* DocumentJournal.swift in Sources */,
 				F46C02362866E0785F769B91 /* DocumentOperation.swift in Sources */,
 				0230BED67CB1B11A5D508899 /* FolderEditorView.swift in Sources */,
 				43D9C491B74EA8E733AA3997 /* FolderIcon.swift in Sources */,
@@ -1360,8 +1434,10 @@
 				62BE5440E3C465A4DDA247D6 /* NotionConnectionService.swift in Sources */,
 				A82AE4A729F696EA728B927F /* NotionDestinationPickerView.swift in Sources */,
 				B76494CAA2EDA4CFA6185A23 /* NotionDestinationSelectionUITestProvider.swift in Sources */,
+				8D97C72518CD67DF5A6D3C76 /* NotionDownloadHost.swift in Sources */,
 				D3CFFEF09CEFCEDD09FF2BD0 /* NotionFolderPath.swift in Sources */,
 				2C9677136D5E42F539372204 /* NotionIntegrationModel+MeetingLinks.swift in Sources */,
+				1281A308944CD37C1635C904 /* NotionIntegrationModel+Restore.swift in Sources */,
 				E8F2FDE89D43E4E00AB1D722 /* NotionIntegrationModel.swift in Sources */,
 				36B5126F8229B137C795C7EE /* NotionLibraryManifest.swift in Sources */,
 				A0DC76269D0A38C15509028F /* NotionLibraryManifestPageBuilder.swift in Sources */,
@@ -1391,6 +1467,7 @@
 				6B33237340FDE2C796822EC7 /* PDFImporter.swift in Sources */,
 				29C8BA60F17DC07C00D206B5 /* PaperGalleryView.swift in Sources */,
 				230F1BD74BF22DE9B08840B7 /* PaperRenderer.swift in Sources */,
+				3745733217DEF43D8365BA81 /* PencilCanvasActions.swift in Sources */,
 				EA8ACA1DFC7F4E9094AC00BF /* PencilCanvasInputAccessories.swift in Sources */,
 				32BE0633931CF5C898F579B9 /* PencilCanvasRenderer.swift in Sources */,
 				9AC162E9F0B1C6CA3D242731 /* PencilCanvasSnapshotFlusher.swift in Sources */,
@@ -1402,19 +1479,22 @@
 				6E1E4A79882CB7814DC546E8 /* PencilCanvasView.swift in Sources */,
 				FA9A24228E6B3A8A75B99A0C /* PencilDrawingReconciliation.swift in Sources */,
 				97AC0ECBE7E8B608B1F34E41 /* PencilKitMappings.swift in Sources */,
-				73C6996D38D26D8572B0C4AC /* PencilKitStrokeArchiveCodec.swift in Sources */,
+				25564FC5919A3D270DA7F454 /* PencilKitStrokeArchiveCodec.swift in Sources */,
 				383D8247932AE3CB5A9F0AC7 /* PencilSqueezeBehavior.swift in Sources */,
-				F140673CE3E6731A2DF8485C /* PencilStrokeArchiveCache.swift in Sources */,
+				D00DA5115D75D940FE1F6087 /* PencilStrokeArchiveCache.swift in Sources */,
 				79EA1D04B7CB64C76E466163 /* PlannerPageLayout.swift in Sources */,
 				824C1F8ABBAD2217DD173FCB /* PlannerPaperRenderer.swift in Sources */,
 				0039D28CD9B51AE6CAB347F5 /* PlannerRegionPageControl.swift in Sources */,
 				5379016DD94D82D97FE6F1A1 /* PlannerRegions.swift in Sources */,
+				AEF123F21EE538A46F8AE150 /* ProtectedTemporaryFile.swift in Sources */,
 				C4D1D93D861AEEA624BBD5A8 /* RadialPaletteBehavior.swift in Sources */,
 				B10648B8065BD34D45141343 /* RadialToolMenu.swift in Sources */,
 				C3ABE42854849D1DBDE94038 /* RootView.swift in Sources */,
 				C9A81BE23987C71EC7CEC5E2 /* SVGFolderIconRasterizer.swift in Sources */,
 				4A72EF76B48A9CDFCAB47D8E /* Search.swift in Sources */,
+				61848FBA74A24E25999E4182 /* SearchQueryDebouncer.swift in Sources */,
 				7122539D4DEE7C625552BD1F /* Selection.swift in Sources */,
+				E117E606C1DE135D55E4C8CB /* SelectionClipboard.swift in Sources */,
 				C1507AD8EB0D0653918E177F /* ShapeFactory.swift in Sources */,
 				C3EB2AC008254ADB5E89752E /* ShapeRecognizer.swift in Sources */,
 				91D686C6BD6C2F423ABA1294 /* SyncChangeEncoder.swift in Sources */,
@@ -1443,6 +1523,7 @@
 			files = (
 				846D9CA1DFD0405FA3E4316F /* AdvancedOrganizationBehaviorTests.swift in Sources */,
 				315B4010FB50EFBDF5D5CD58 /* AppSessionBackgroundCheckpointBehaviorTests.swift in Sources */,
+				448F7C59770BA9D4BDB643C2 /* AppSessionImportRestoreBehaviorTests.swift in Sources */,
 				7EA0BD2101C79EB69A6650E1 /* AppSessionPersistenceBehaviorTests.swift in Sources */,
 				690487598DF78CA2C539D84D /* AppleInterfaceBehaviorTests.swift in Sources */,
 				D9602510DF38F2BE6165C131 /* ApplicationBackgroundSaveCoordinatorBehaviorTests.swift in Sources */,
@@ -1450,6 +1531,7 @@
 				237CB5FA2C5FA3547513C9D0 /* CanvasBrowserBehaviorTests.swift in Sources */,
 				CD4A28F4A70ED78D76EC2666 /* CanvasRedrawDecisionBehaviorTests.swift in Sources */,
 				8FC0F5AC24FFBA18987C3E1A /* CanvasSystemsBehaviorTests.swift in Sources */,
+				E7F19A5EA2783000D6E4F780 /* CanvasThumbnailCacheBehaviorTests.swift in Sources */,
 				F7BC8258D88A333305A79094 /* CanvasToolbarBehaviorTests.swift in Sources */,
 				C6FF54DCCCCC31FEA1C808A2 /* CanvasViewportBehaviorTests.swift in Sources */,
 				F7D2E8767C1700141529CF8D /* CanvasViewportBoundaryBehaviorTests.swift in Sources */,
@@ -1469,6 +1551,7 @@
 				1C6152FB9F5184399FBA3634 /* HandwritingRecognitionBehaviorTests.swift in Sources */,
 				3B0C0157B958DFA86D5A025D /* HandwritingSearchRecoveryBehaviorTests.swift in Sources */,
 				10E730F14915B3040CD05099 /* ImportExportBehaviorTests.swift in Sources */,
+				C0C2F046D5951766F4E3EDAE /* JournalSidecarBehaviorTests.swift in Sources */,
 				6CC2960C7535A43CD0752B05 /* LayerPanelBehaviorTests.swift in Sources */,
 				8C7B3AAE1F75B094824319A5 /* LibraryAssetBehaviorTests.swift in Sources */,
 				14CFF39D376DF578720E940B /* LibraryBehaviorTests.swift in Sources */,
@@ -1482,6 +1565,7 @@
 				2EA0D12FC685913C75BA3776 /* NotionConnectionResetBehaviorTests.swift in Sources */,
 				6BA782C0F4EA37DE799EB8DA /* NotionConnectionServiceBehaviorTests.swift in Sources */,
 				C2724303C0A2FA9EAF77D833 /* NotionCredentialStoreBehaviorTests.swift in Sources */,
+				0791ED1B10CCC9EFDC131A67 /* NotionDownloadHostBehaviorTests.swift in Sources */,
 				E399C438C01F71BF51543E9E /* NotionEndToEndIntegrationTests.swift in Sources */,
 				C6AE6CB7B7A08995A39599E5 /* NotionFileUploadBehaviorTests.swift in Sources */,
 				24D4E1432E5D1659F936F548 /* NotionIntegrationModelBehaviorTests.swift in Sources */,
@@ -1515,11 +1599,13 @@
 				72F6E91F807770FA61EC78FE /* PencilStrokeClipboardBehaviorTests.swift in Sources */,
 				767CC510093D8AD9BB58D735 /* PencilStrokePersistenceBehaviorTests.swift in Sources */,
 				FAD07D92C7BFD399EB236E10 /* PencilStrokeTestFixture.swift in Sources */,
+				C87A5FFF46D27ABD26BCF06C /* ProtectedTemporaryFileBehaviorTests.swift in Sources */,
 				6BBE18CCA6C8A31EA97C605A /* RadialPaletteBehaviorTests.swift in Sources */,
 				F08F65B8A7ADA05F2DDD7514 /* RemoteChangeThroughputBehaviorTests.swift in Sources */,
 				AAB2D0D943D831FD59531507 /* RemoteHandwritingSyncPersistenceBehaviorTests.swift in Sources */,
 				28680C08081731E1C7371FE2 /* RemoteSyncReceiptBehaviorTests.swift in Sources */,
 				9464405F3028390F36AE20F8 /* SearchIndexBehaviorTests.swift in Sources */,
+				22DD857C7E651D949AC1B09F /* SearchQueryDebouncerBehaviorTests.swift in Sources */,
 				4A5726E4D5CBF554E209D16A /* SelectionAndShapeBehaviorTests.swift in Sources */,
 				D5835AEA189903AD30B2C4B6 /* SerializationBehaviorTests.swift in Sources */,
 				BA7E8DEEEB293F81759F5E28 /* ShapePlacementBehaviorTests.swift in Sources */,
@@ -1528,7 +1614,9 @@
 				D6763C69BB661C97397D01C7 /* StrokeArchiveRepairBehaviorTests.swift in Sources */,
 				A9D0E1390FFA68692370A669 /* SyncBehaviorTests.swift in Sources */,
 				5CC57863D13C878EF6615311 /* SyncDependencyRetryBehaviorTests.swift in Sources */,
+				A29646BB628AB2141894DC09 /* SyncOutboxPersistBehaviorTests.swift in Sources */,
 				568448D127B7DE23996C5667 /* SyncPersistenceBehaviorTests.swift in Sources */,
+				AAFBFDAA8EDD1D59AD085793 /* SyncPersistenceTestSupport.swift in Sources */,
 				8A7BD4B5784E51D7216DCCCD /* SystemNotionBrowserBehaviorTests.swift in Sources */,
 				10A4E058C85A37A3ED7FF84C /* ToolInspectorBehaviorTests.swift in Sources */,
 				325980567CA6076D1C63B982 /* TypographyBehaviorTests.swift in Sources */,

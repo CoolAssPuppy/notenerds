@@ -7,12 +7,12 @@ extension AppModel {
         defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
         do {
             let fileExtension = url.pathExtension.lowercased()
-            if fileExtension == "notenerds" || url.hasDirectoryPath {
+            if fileExtension == "notenerds" || Self.isNativeNotebookPackage(url) {
                 let contents = try NativeNotebookArchive().read(from: url)
                 var notebook = contents.package.notebook
                 if library.notebook(id: notebook.id) != nil { notebook = notebook.duplicated(at: Date()) }
                 for asset in contents.assets {
-                    library.storeAsset(asset)
+                    rememberAsset(asset)
                     enqueueAssetForSync(asset)
                 }
                 try library.addNotebook(notebook, to: currentFolderID)
@@ -27,7 +27,7 @@ extension AppModel {
                     origin: CanvasPoint(x: 9_600, y: 9_600)
                 )
                 for asset in imported.assets {
-                    library.storeAsset(asset)
+                    rememberAsset(asset)
                     enqueueAssetForSync(asset)
                 }
                 try library.addNotebook(imported.notebook, to: currentFolderID)
@@ -77,7 +77,49 @@ extension AppModel {
     }
 
     func notebook(_ id: NotebookID) -> Notebook? { library.notebook(id: id) }
-    func asset(_ id: AssetID) -> DocumentAsset? { library.asset(id: id) }
+    func asset(_ id: AssetID) -> DocumentAsset? {
+        guard let stored = library.asset(id: id) else { return nil }
+        if !stored.data.isEmpty { return stored }
+        return loadedAssets[id] ?? stored
+    }
+
+    func loadAssets(for notebook: Notebook) async {
+        for identifier in assetIdentifiers(in: notebook) {
+            if let cached = loadedAssets[identifier], !cached.data.isEmpty { continue }
+            if let stored = library.asset(id: identifier), !stored.data.isEmpty {
+                loadedAssets[identifier] = stored
+                continue
+            }
+            let contentType = library.asset(id: identifier)?.contentType ?? "application/octet-stream"
+            guard let loaded = try? await repository.loadAsset(
+                id: identifier,
+                contentType: contentType
+            ) else { continue }
+            rememberAsset(loaded)
+        }
+    }
+
+    func rememberAsset(_ asset: DocumentAsset) {
+        library.storeAsset(asset)
+        loadedAssets[asset.id] = asset
+    }
+
+    private func assetIdentifiers(in notebook: Notebook) -> [AssetID] {
+        Array(Set(notebook.canvases.flatMap(\.layers).flatMap(\.objects).compactMap { object in
+            switch object {
+            case let .image(image): image.assetID
+            case let .pdf(pdf): pdf.assetID
+            case .stroke, .shape, .text: nil
+            }
+        }))
+    }
+
+    private static func isNativeNotebookPackage(_ url: URL) -> Bool {
+        let document = url.appending(path: "Document.json")
+        let manifest = url.appending(path: "Manifest.json")
+        return FileManager.default.fileExists(atPath: document.path)
+            && FileManager.default.fileExists(atPath: manifest.path)
+    }
 
     private func openNotebookDeepLink(_ url: URL) -> Bool {
         guard url.scheme?.lowercased() == "notenerds", url.host?.lowercased() == "notebook" else {
@@ -102,7 +144,7 @@ extension AppModel {
             case .stroke, .shape, .text: nil
             }
         })
-        return identifiers.compactMap { library.asset(id: $0) }
+        return identifiers.compactMap { asset($0) }
     }
 
     func addCanvas(to notebookID: NotebookID, paperType: PaperType = .blankWhite) {
@@ -223,7 +265,7 @@ extension AppModel {
             origin: CanvasPoint(x: 9_600, y: 9_600)
         )
         for asset in imported.assets {
-            library.storeAsset(asset)
+            rememberAsset(asset)
             enqueueAssetForSync(asset)
         }
         guard let pdfLayer = imported.notebook.canvases.first?.layers.first else { return }
@@ -244,7 +286,7 @@ extension AppModel {
             layerID: layerID,
             origin: CanvasPoint(x: 9_800, y: 9_800)
         )
-        library.storeAsset(imported.asset)
+        rememberAsset(imported.asset)
         enqueueAssetForSync(imported.asset)
         let placement = ObjectPlacement(layerID: layerID, index: Int.max, object: .image(imported.object))
         execute(.replaceObjects(canvasID: canvasID, before: [], after: [placement]), on: notebookID)
@@ -268,7 +310,7 @@ extension AppModel {
             modifiedAt: date,
             lastOpenedAt: date
         )
-        library.storeAsset(imported.asset)
+        rememberAsset(imported.asset)
         enqueueAssetForSync(imported.asset)
         try library.addNotebook(notebook, to: currentFolderID)
         selectedNotebookID = notebook.id

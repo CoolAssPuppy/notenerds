@@ -42,6 +42,7 @@ final class AppModel: ObservableObject {
     var syncSequence = 0
     var seenSyncChangeIDs: Set<ChangeID> = []
     var journalCounts: [NotebookID: Int] = [:]
+    var checkpointedNotebookIDs: Set<NotebookID> = []
     var libraryPersistenceTask: Task<Void, Never>?
     var libraryPersistenceOutcomeTask: Task<Bool, Never>?
     var didPersistLibrary = true
@@ -54,6 +55,7 @@ final class AppModel: ObservableObject {
     var remoteChangeIDsAwaitingPersistence: Set<ChangeID> = []
     var remoteNotebookIDsAwaitingPersistence: [ChangeID: Set<NotebookID>] = [:]
     var appliedRemoteChangeIDsByNotebook: [NotebookID: Set<ChangeID>] = [:]
+    var loadedAssets: [AssetID: DocumentAsset] = [:]
     private var libraryRestoreTask: Task<Void, Never>?
     private var initialSyncTask: Task<Void, Never>?
 
@@ -87,49 +89,6 @@ final class AppModel: ObservableObject {
         }
     }
 
-    var visibleNotebooks: [Notebook] {
-        let base: [Notebook]
-        switch selectedSection {
-        case .files:
-            let sortMode: LibrarySortMode = currentFolderID == nil ? .recentlyModified : library.preferredSortMode
-            base = library.notebooks(in: currentFolderID, sortedBy: sortMode)
-        case .favorites:
-            base = library.notebooks(sortedBy: library.preferredSortMode).filter(\.isFavorite)
-        case .recents:
-            base = library.notebooks(sortedBy: .recentlyOpened)
-        case .trash:
-            base = library.notebooks.filter { $0.trashedAt != nil }.sorted { $0.modifiedAt > $1.modifiedAt }
-        }
-        let scoped = base
-        guard !searchQuery.isEmpty else { return scoped }
-        return scoped.filter { $0.matches(searchQuery) }
-    }
-
-    var visibleFolders: [Folder] {
-        switch selectedSection {
-        case .files:
-            let active = library.folders(sortedBy: library.preferredSortMode).filter { $0.trashedAt == nil }
-            return searchQuery.isEmpty
-                ? active.filter { $0.parentID == currentFolderID }
-                : active.filter {
-                    $0.name.localizedCaseInsensitiveContains(searchQuery)
-                        || $0.tags.contains { $0.localizedCaseInsensitiveContains(searchQuery) }
-                }
-        case .favorites:
-            return library.folders(sortedBy: library.preferredSortMode).filter {
-                $0.isFavorite && $0.trashedAt == nil
-            }
-        case .recents:
-            return []
-        case .trash:
-            return library.folders(sortedBy: .recentlyModified).filter { $0.trashedAt != nil }
-        }
-    }
-
-    var searchResults: [LibrarySearchResult] {
-        searchIndex.search(searchQuery)
-    }
-
     func restoreLibrary() async {
         await restoreLocalLibrary()
         await initialSyncTask?.value
@@ -159,26 +118,10 @@ final class AppModel: ObservableObject {
             CanvasDiagnostics.mark("library index loaded notebooks=\(library.notebooks.count)")
             var didRepairLibrary = false
             if let documentStore {
-                for notebook in library.notebooks {
-                    do {
-                        var recovered = try await documentStore.recover(notebookID: notebook.id)
-                        CanvasDiagnostics.mark("recovered notebook")
-                        appliedRemoteChangeIDsByNotebook[notebook.id] = recovered.appliedRemoteChangeIDs
-                        recovered.notebook = notebook.restoringDocumentContent(from: recovered.notebook)
-                        if recovered.notebook.repairDuplicateCanvasIdentifiers() {
-                            try await documentStore.save(recovered)
-                            didRepairLibrary = true
-                        }
-                        library.updateNotebook(recovered.notebook)
-                    } catch LocalDocumentStoreError.notebookNotFound {
-                        var repairedNotebook = notebook
-                        didRepairLibrary = repairedNotebook.repairDuplicateCanvasIdentifiers() || didRepairLibrary
-                        library.updateNotebook(repairedNotebook)
-                        try await documentStore.save(
-                            nativePackage(for: repairedNotebook)
-                        )
-                    }
-                }
+                didRepairLibrary = try await recoverNotebooks(
+                    library.notebooks,
+                    from: documentStore
+                ) || didRepairLibrary
             } else {
                 for notebook in library.notebooks {
                     var repairedNotebook = notebook
@@ -366,6 +309,7 @@ final class AppModel: ObservableObject {
             await precedingTask?.value
             do {
                 try await documentStore.save(checkpoint)
+                noteCheckpointSaved(for: notebook.id)
                 persistLibrary()
                 didPersistDocuments = true
                 return true
@@ -387,16 +331,19 @@ final class AppModel: ObservableObject {
         guard let documentStore else {
             flushDeferredCheckpoints()
             await libraryPersistenceTask?.value
-            await syncSubmissionTask?.value
+            await waitForSyncOutboxToPersist()
             return
         }
         // Everything below writes every notebook, so anything the timer was
         // holding is already covered. Flushing as well would write those
         // notebooks twice inside the limited window the system grants for
         // backgrounding.
+        let dirtyIDs = notebooksNeedingCheckpoint
         cancelDeferredCheckpoints()
 
-        let checkpoints = library.notebooks.map(nativePackage(for:))
+        let checkpoints = library.notebooks
+            .filter { dirtyIDs.contains($0.id) }
+            .map(nativePackage(for:))
         for checkpoint in checkpoints {
             journalCounts[checkpoint.notebook.id] = 0
         }
@@ -407,6 +354,7 @@ final class AppModel: ObservableObject {
             for checkpoint in checkpoints {
                 do {
                     try await documentStore.save(checkpoint)
+                    noteCheckpointSaved(for: checkpoint.notebook.id)
                 } catch {
                     didSaveEveryDocument = false
                     presentedError = "Your latest change could not be saved. \(error.localizedDescription)"
@@ -422,7 +370,7 @@ final class AppModel: ObservableObject {
 
         persistLibrary()
         await libraryPersistenceTask?.value
-        await syncSubmissionTask?.value
+        await waitForSyncOutboxToPersist()
         await waitForDocumentPersistenceToFinish()
     }
 
@@ -473,27 +421,27 @@ final class AppModel: ObservableObject {
     }
 }
 
-private extension Notebook {
-    func matches(_ query: String) -> Bool {
-        title.localizedCaseInsensitiveContains(query)
-            || tags.contains { $0.localizedCaseInsensitiveContains(query) }
-            || canvases.contains { canvas in
-                canvas.layers.flatMap(\.objects).contains { object in
-                    object.searchableText?.localizedCaseInsensitiveContains(query) == true
-                }
-            }
-            || recognitionByCanvas.values.flatMap({ $0 }).contains { record in
-                record.result.text.localizedCaseInsensitiveContains(query)
-            }
+extension AppModel {
+    var notebooksNeedingCheckpoint: Set<NotebookID> {
+        var identifiers = notebookIDsAwaitingCheckpoint
+        for (notebookID, count) in journalCounts where count > 0 {
+            identifiers.insert(notebookID)
+        }
+        for notebook in library.notebooks where !checkpointedNotebookIDs.contains(notebook.id) {
+            identifiers.insert(notebook.id)
+        }
+        return identifiers
     }
-}
 
-private extension CanvasObject {
-    var searchableText: String? {
-        switch self {
-        case let .text(text): text.text
-        case let .pdf(pdf): pdf.embeddedText
-        case .stroke, .shape, .image: nil
+    func noteCheckpointSaved(for notebookID: NotebookID) {
+        checkpointedNotebookIDs.insert(notebookID)
+        journalCounts[notebookID] = 0
+    }
+
+    func waitForSyncOutboxToPersist() async {
+        await syncSubmissionTask?.value
+        if let syncEngine {
+            await syncEngine.flushPendingState()
         }
     }
 }

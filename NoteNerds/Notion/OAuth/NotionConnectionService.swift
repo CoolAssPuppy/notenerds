@@ -64,7 +64,7 @@ final class SystemNotionBrowser: NSObject, NotionBrowserOpening, ASWebAuthentica
             }
         }
         session.presentationContextProvider = self
-        session.prefersEphemeralWebBrowserSession = false
+        session.prefersEphemeralWebBrowserSession = true
         self.session = session
         return session.start()
     }

@@ -106,10 +106,8 @@ actor CloudKitSyncProvider: SyncProvider {
                 try createProtectedFile(change.payload, at: payloadURL)
                 return record(for: change, payloadURL: payloadURL)
             }
-            for record in records {
-                let saveResults = try await recordSaver.save([record])
-                try validate(saveResults, includeEvery: [record])
-            }
+            let saveResults = try await recordSaver.save(records)
+            try validate(saveResults, includeEvery: records)
         } catch {
             throw syncFailure(from: error)
         }

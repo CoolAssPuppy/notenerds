@@ -5,6 +5,13 @@ import XCTest
 
 @MainActor
 final class ImportExportBehaviorTests: XCTestCase {
+    func testPDFAndImageImportersUseTightDefaultLimits() {
+        XCTAssertEqual(PDFImporter.defaultMaximumByteCount, 50 * 1_024 * 1_024)
+        XCTAssertEqual(PDFImporter.defaultMaximumPageCount, 200)
+        XCTAssertEqual(ImageImporter.defaultMaximumByteCount, 50 * 1_024 * 1_024)
+        XCTAssertEqual(ImageImporter.defaultMaximumPixelCount, 25_000_000)
+    }
+
     func testPDFImportKeepsSourceAssetAndArrangesPagesVertically() throws {
         let pdfData = makePDF(pageCount: 2)
 

@@ -118,7 +118,6 @@ final class NotionLoopbackServer: NotionLoopbackServing, @unchecked Sendable {
             connection.cancel()
             return
         }
-        hasAcceptedConnection = true
         self.connection = connection
         connection.start(queue: queue)
         receive(from: connection, accumulated: Data())
@@ -130,7 +129,7 @@ final class NotionLoopbackServer: NotionLoopbackServing, @unchecked Sendable {
             var request = accumulated
             if let data { request.append(data) }
             if request.count > NotionLoopbackRequestParser.maximumRequestByteCount {
-                self.respond(to: connection, status: 400, body: Self.failureHTML)
+                self.reject(connection)
                 return
             }
             if request.range(of: Data("\r\n\r\n".utf8)) != nil {
@@ -138,7 +137,7 @@ final class NotionLoopbackServer: NotionLoopbackServing, @unchecked Sendable {
                 return
             }
             if error != nil || isComplete {
-                self.respond(to: connection, status: 400, body: Self.failureHTML)
+                self.reject(connection)
                 return
             }
             self.receive(from: connection, accumulated: request)
@@ -152,14 +151,17 @@ final class NotionLoopbackServer: NotionLoopbackServing, @unchecked Sendable {
                 expectedState: expectedState,
                 port: activePort
             )
+            hasAcceptedConnection = true
             respond(to: connection, status: 200, body: Self.successHTML) {
                 self.finish(.success(callback))
             }
         } catch {
-            respond(to: connection, status: 400, body: Self.failureHTML) {
-                self.finish(.failure(error))
-            }
+            reject(connection)
         }
+    }
+
+    private func reject(_ connection: NWConnection) {
+        respond(to: connection, status: 400, body: Self.failureHTML)
     }
 
     private func respond(
@@ -184,11 +186,7 @@ final class NotionLoopbackServer: NotionLoopbackServing, @unchecked Sendable {
         connection.send(content: Data(response.utf8), completion: .contentProcessed { [weak self] _ in
             connection.cancel()
             self?.connection = nil
-            if let completion {
-                completion()
-            } else {
-                self?.finish(.failure(NotionOAuthError.invalidCallback))
-            }
+            completion?()
         })
     }
 

@@ -10,6 +10,26 @@ import XCTest
 /// document store rather than exercising the repair in isolation.
 @MainActor
 final class StoredNoteCompatibilityBehaviorTests: XCTestCase {
+    func testCurrentNotesOmitStrokeSamplesWhenAnArchiveIsPresent() throws {
+        let stroke = archivedStroke()
+        var notebook = DomainFixtures.notebook()
+        notebook.canvases[0].layers[0].objects = [.stroke(stroke)]
+        let package = NativeNotebookPackage(schemaVersion: .current, notebook: notebook)
+        let encoded = try NativeDocumentSerializer().encode(package)
+        let encodedText = try XCTUnwrap(String(data: encoded, encoding: .utf8))
+        let decoded = try NativeDocumentSerializer().decode(encoded)
+        let restored = try XCTUnwrap(firstStroke(in: decoded))
+
+        XCTAssertFalse(encodedText.contains("\"x\":10"))
+        XCTAssertTrue(encodedText.contains("pencilKitArchive"))
+        XCTAssertFalse(restored.samples.isEmpty)
+        XCTAssertNotNil(restored.pencilKitArchive)
+        XCTAssertEqual(
+            PencilCanvasRenderer.drawing(from: [restored]).strokes.first?.randomSeed,
+            PencilKitStrokeArchiveCodec.stroke(for: stroke)?.randomSeed
+        )
+    }
+
     func testAnOlderNoteKeepsInkWhoseArchiveStillDescribesIt() async throws {
         let context = try makeStore()
         defer { context.remove() }

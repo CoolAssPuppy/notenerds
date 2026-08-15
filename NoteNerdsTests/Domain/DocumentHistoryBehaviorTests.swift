@@ -37,21 +37,21 @@ final class DocumentHistoryBehaviorTests: XCTestCase {
         }
     }
 
-    func testHistoryRetainsAtLeastOneHundredActions() throws {
+    func testHistoryDropsTheOldestActionsWhenItExceedsCapacity() throws {
         var notebook = emptyNotebook()
-        var history = DocumentHistory(capacity: 100)
+        var history = DocumentHistory(capacity: 40)
         let canvas = notebook.canvases[0]
         let layer = canvas.layers[0]
 
-        for _ in 0..<120 {
+        for _ in 0..<50 {
             let stroke = DomainFixtures.stroke(id: StrokeID(), layerID: layer.id)
             try history.execute(.addStroke(canvasID: canvas.id, layerID: layer.id, stroke: stroke), on: &notebook)
         }
-        for _ in 0..<100 {
+        for _ in 0..<40 {
             try history.undo(on: &notebook)
         }
 
-        XCTAssertEqual(notebook.canvases[0].layers[0].objects.count, 20)
+        XCTAssertEqual(notebook.canvases[0].layers[0].objects.count, 10)
     }
 
     func testHandwritingConversionUndoRestoresExactOriginalStroke() throws {

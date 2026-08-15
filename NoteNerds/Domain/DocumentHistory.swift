@@ -10,8 +10,8 @@ struct DocumentHistory: Sendable {
     private var appliedOperations: [DocumentOperation] = []
     private var redoOperations: [DocumentOperation] = []
 
-    init(capacity: Int = 100) {
-        self.capacity = max(100, capacity)
+    init(capacity: Int = 40) {
+        self.capacity = max(1, capacity)
     }
 
     var canUndo: Bool { !appliedOperations.isEmpty }

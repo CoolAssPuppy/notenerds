@@ -177,6 +177,26 @@ final class NotionOAuthBehaviorTests: XCTestCase {
         XCTAssertEqual(callback, .authorizationCode("live-code"))
     }
 
+    func testLoopbackServerIgnoresAnInvalidFirstConnectionAndAcceptsTheNextCallback() async throws {
+        let server = NotionLoopbackServer()
+        let port = try await server.start(port: 0, expectedState: "expected")
+        let callbackTask = Task { try await server.waitForCallback(timeout: .seconds(2)) }
+
+        let (_, invalidResponse) = try await URLSession.shared.data(
+            from: URL(string: "http://localhost:\(port)/wrong")!
+        )
+        XCTAssertEqual((invalidResponse as? HTTPURLResponse)?.statusCode, 400)
+
+        let (body, validResponse) = try await URLSession.shared.data(
+            from: URL(string: "http://localhost:\(port)/oauth/notion?code=live-code&state=expected")!
+        )
+        let callback = try await callbackTask.value
+
+        XCTAssertEqual((validResponse as? HTTPURLResponse)?.statusCode, 200)
+        XCTAssertTrue(String(data: body, encoding: .utf8)?.contains("Return to Note Nerds") == true)
+        XCTAssertEqual(callback, .authorizationCode("live-code"))
+    }
+
     func testLoopbackServerTimesOutAndReleasesItsPort() async throws {
         let server = NotionLoopbackServer()
         let port = try await server.start(port: 0, expectedState: "expected")

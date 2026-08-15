@@ -249,8 +249,11 @@ final class SyncPersistenceBehaviorTests: XCTestCase {
             didWaitForOutboxSave,
             "The background checkpoint returned before the sync outbox had been saved"
         )
-        let savedState = await stateStore.load()
-        XCTAssertEqual(savedState?.pendingChanges.count, 1)
+        let savedPendingCounts = await stateStore.savedPendingCounts
+        XCTAssertTrue(
+            savedPendingCounts.contains(1),
+            "The outbox was never saved with the local change: \(savedPendingCounts)"
+        )
     }
 
     @MainActor
@@ -445,55 +448,5 @@ private actor FailingLibraryRepository: LibraryRepository {
 
     func save(_ library: LibraryState) async throws {
         throw CocoaError(.fileWriteUnknown)
-    }
-}
-
-private actor PausingInitialLoadSyncStateStore: SyncStateStore {
-    private var snapshot: SyncEngineSnapshot?
-    private var hasStartedLoading = false
-    private var loadContinuation: CheckedContinuation<Void, Never>?
-    private var loadWaiters: [CheckedContinuation<Void, Never>] = []
-    private var hasResumedLoad = false
-
-    func load() async -> SyncEngineSnapshot? {
-        guard !hasStartedLoading else { return snapshot }
-        hasStartedLoading = true
-        loadWaiters.forEach { $0.resume() }
-        loadWaiters.removeAll()
-        await withCheckedContinuation { loadContinuation = $0 }
-        return snapshot
-    }
-
-    func save(_ snapshot: SyncEngineSnapshot) {
-        self.snapshot = snapshot
-    }
-
-    func waitUntilLoadStarted() async {
-        guard !hasStartedLoading else { return }
-        await withCheckedContinuation { loadWaiters.append($0) }
-    }
-
-    func resumeLoad() {
-        hasResumedLoad = true
-        loadContinuation?.resume()
-        loadContinuation = nil
-    }
-
-    func hasResumed() -> Bool {
-        hasResumedLoad
-    }
-}
-
-private actor CheckpointCompletionProbe {
-    private var didFinish = false
-    private(set) var didFinishAfterOutboxSave = false
-
-    func finish(afterOutboxSave: Bool) {
-        didFinish = true
-        didFinishAfterOutboxSave = afterOutboxSave
-    }
-
-    func isFinished() -> Bool {
-        didFinish
     }
 }

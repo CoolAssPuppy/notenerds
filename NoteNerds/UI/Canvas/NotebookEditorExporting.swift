@@ -50,10 +50,7 @@ extension NotebookEditorView {
     func preparePDFShare() {
         do {
             let data = try NotebookPDFExporter().export(notebook, assets: model.assets(in: notebook))
-            let url = FileManager.default.temporaryDirectory
-                .appending(path: notebook.title)
-                .appendingPathExtension("pdf")
-            try data.write(to: url, options: .atomic)
+            let url = try ProtectedTemporaryFile.write(data, pathExtension: "pdf")
             sharedFile = SharedFile(url: url)
         } catch {
             model.presentedError = error.localizedDescription

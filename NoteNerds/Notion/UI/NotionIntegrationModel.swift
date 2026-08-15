@@ -35,12 +35,12 @@ extension NotionAPIClient: NotionDestinationProviding {}
 
 @MainActor
 final class NotionIntegrationModel: ObservableObject {
-    @Published private(set) var state: NotionIntegrationState
+    @Published var state: NotionIntegrationState
     @Published private(set) var pages: [NotionPageSummary] = []
     @Published private(set) var destination: NotionDestination?
-    @Published private(set) var failureMessage: String?
+    @Published var failureMessage: String?
     @Published private(set) var lastSyncSummary: String?
-    @Published private(set) var restoreCandidates: [NotionRestoreCandidate] = []
+    @Published var restoreCandidates: [NotionRestoreCandidate] = []
     @Published private(set) var syncedNotebookIDs: Set<String> = []
     @Published var meetingChoices: [NotionMeetingNote] = []
     @Published var meetingLinkMessage: String?
@@ -51,11 +51,11 @@ final class NotionIntegrationModel: ObservableObject {
     private let destinationProviderFactory: (String) -> any NotionDestinationProviding
     private let registry: NotionSyncRegistry
     private let publisher: (any NotionLibraryPublishing)?
-    private let restorer: (any NotionLibraryRestoring)?
+    let restorer: (any NotionLibraryRestoring)?
     private let automaticSyncDelay: Duration
     let meetingLinkCoordinator: (any NotionMeetingLinkCoordinating)?
     let meetingPollInterval: Duration
-    private var connection: NotionStoredConnection?
+    var connection: NotionStoredConnection?
     private var destinationProvider: (any NotionDestinationProviding)?
     private var pendingAutomaticSync: LibraryState?
     private var automaticSyncInFlight: LibraryState?
@@ -293,42 +293,6 @@ final class NotionIntegrationModel: ObservableObject {
         return URL(string: "https://www.notion.so/\(compactID)")
     }
 
-    func prepareRestore(local: LibraryState) async -> [NotionRestoreCandidate] {
-        guard destination != nil, let restorer else { return [] }
-        state = .preparingRestore
-        failureMessage = nil
-        do {
-            restoreCandidates = try await restorer.prepare(local: local)
-            state = .reviewingRestore
-            return restoreCandidates
-        } catch {
-            showFailure("Your Notion notebooks could not be prepared for restore.")
-            return []
-        }
-    }
-
-    func completeRestore(
-        local: LibraryState,
-        choices: [NotebookID: NotionRestoreChoice]
-    ) -> LibraryState? {
-        guard let restorer else { return nil }
-        state = .restoring
-        do {
-            let restored = try restorer.complete(
-                local: local,
-                choices: choices
-            )
-            restoreCandidates = []
-            if let connection {
-                state = .connected(workspaceName: connection.credentials.workspaceName)
-            }
-            return restored
-        } catch {
-            showFailure("The selected notebooks could not be restored.")
-            return nil
-        }
-    }
-
     private func applyConnection(_ stored: NotionStoredConnection) async throws {
         connection = stored
         destinationProvider = destinationProviderFactory(stored.credentials.accessToken)
@@ -353,7 +317,7 @@ final class NotionIntegrationModel: ObservableObject {
         scheduleAutomaticSync(library, delay: wait > 0 ? .seconds(wait) : automaticSyncDelay)
     }
 
-    private func showFailure(_ message: String) {
+    func showFailure(_ message: String) {
         failureMessage = message
         state = .actionNeeded
     }

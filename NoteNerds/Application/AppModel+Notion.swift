@@ -8,6 +8,7 @@ extension AppModel {
                     try await documentStore.save(
                         NativeNotebookPackage(schemaVersion: .current, notebook: notebook)
                     )
+                    noteCheckpointSaved(for: notebook.id)
                 }
             }
             try await repository.save(restored)

@@ -10,13 +10,7 @@ enum PencilStrokeTestFixture {
     ) -> PencilCanvasView.Coordinator {
         PencilCanvasView.Coordinator(
             activeLayerID: activeLayerID,
-            onStrokesCompleted: onCompletedPencilStrokes,
-            onDrawingChanged: { _, _ in },
-            onConvertStrokesToText: { _ in },
-            onViewportChanged: { _ in },
-            onPencilSqueeze: { _, _ in },
-            onPencilDoubleTap: {},
-            onPlannerRegionPageRequested: { _ in }
+            actions: .testActions(onStrokesCompleted: onCompletedPencilStrokes)
         )
     }
 
@@ -28,14 +22,11 @@ enum PencilStrokeTestFixture {
     ) -> PencilCanvasView.Coordinator {
         PencilCanvasView.Coordinator(
             activeLayerID: activeLayerID,
-            onStrokesCompleted: { onStrokesCompleted($0.map(\.stroke)) },
-            onDrawingChanged: { edit, _ in onDrawingChanged(edit.after) },
-            onConvertStrokesToText: { _ in },
-            onViewportChanged: { _ in },
-            onPencilSqueeze: { _, _ in },
-            onPencilDoubleTap: {},
-            onPlannerRegionPageRequested: { _ in },
-            onPencilContactChanged: onPencilContactChanged
+            actions: .testActions(
+                onStrokesCompleted: { onStrokesCompleted($0.map(\.stroke)) },
+                onDrawingChanged: { edit, _ in onDrawingChanged(edit.after) },
+                onPencilContactChanged: onPencilContactChanged
+            )
         )
     }
 
@@ -206,6 +197,35 @@ enum PencilStrokeTestFixture {
                 tx: 200 - 100 * scale,
                 ty: 300 - 200 * scale
             )
+        )
+    }
+}
+
+extension PencilCanvasActions {
+    static func testActions(
+        onStrokesCompleted: @escaping @MainActor ([CompletedPencilStroke]) -> Void = { _ in },
+        onDrawingChanged: @escaping @MainActor (CanvasStrokeEdit, [CompletedPencilStroke]) -> Void = { _, _ in },
+        onPencilContactChanged: @escaping @MainActor (Bool) -> Void = { _ in }
+    ) -> PencilCanvasActions {
+        PencilCanvasActions(
+            onStrokesCompleted: onStrokesCompleted,
+            onDrawingChanged: onDrawingChanged,
+            onConvertStrokesToText: { _ in },
+            onTransformObjects: { _, _, _, _ in },
+            onDeleteObjects: { _ in },
+            onPasteObjects: { _ in },
+            onMoveObjectsToLayer: { _, _ in },
+            onEditText: { _ in },
+            onPlaceText: { _ in },
+            onPlaceShape: { _ in },
+            onCommitText: { _ in },
+            onCancelText: {},
+            onObjectSelectionChanged: { _ in },
+            onViewportChanged: { _ in },
+            onPencilSqueeze: { _, _ in },
+            onPencilDoubleTap: {},
+            onPlannerRegionPageRequested: { _ in },
+            onPencilContactChanged: onPencilContactChanged
         )
     }
 }

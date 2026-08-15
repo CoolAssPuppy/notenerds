@@ -11,13 +11,7 @@ extension PencilCanvasView {
         var lastEditingCommandID: UUID?
         weak var objectSelectionOverlay: CanvasSelectionOverlayView?
         weak var inlineTextEditor: InlineCanvasTextEditor?
-        var overlayStrokes: [Stroke] = []
-        var overlayObjects: [CanvasObject] = []
-        var overlayAssets: [AssetID: Data] = [:]
-        var highlightedStrokeIDs: Set<StrokeID> = []
-        var isLassoOverlayEnabled = false
-        var isTextPlacementOverlayEnabled = false
-        var shapePlacementKind: RecognizedShapeKind?
+        var overlay = CanvasOverlayState()
         var configuration = ToolConfiguration.favoriteOne
         var appliedToolConfiguration: ToolConfiguration?
         var activeLayerID: LayerID
@@ -62,26 +56,16 @@ extension PencilCanvasView {
         var onPlannerRegionPageRequested: @MainActor (Int) -> Void
         private var onPencilContactChanged: @MainActor (Bool) -> Void
 
-        init(
-            activeLayerID: LayerID,
-            onStrokesCompleted: @escaping @MainActor ([CompletedPencilStroke]) -> Void,
-            onDrawingChanged: @escaping @MainActor (CanvasStrokeEdit, [CompletedPencilStroke]) -> Void,
-            onConvertStrokesToText: @escaping @MainActor ([Stroke]) -> Void,
-            onViewportChanged: @escaping @MainActor (CanvasRect) -> Void,
-            onPencilSqueeze: @escaping @MainActor (PencilSqueezeResponse, CGPoint?) -> Void,
-            onPencilDoubleTap: @escaping @MainActor () -> Void,
-            onPlannerRegionPageRequested: @escaping @MainActor (Int) -> Void,
-            onPencilContactChanged: @escaping @MainActor (Bool) -> Void = { _ in }
-        ) {
+        init(activeLayerID: LayerID, actions: PencilCanvasActions) {
             self.activeLayerID = activeLayerID
-            self.onStrokesCompleted = onStrokesCompleted
-            self.onDrawingChanged = onDrawingChanged
-            self.onConvertStrokesToText = onConvertStrokesToText
-            self.onViewportChanged = onViewportChanged
-            self.onPencilSqueeze = onPencilSqueeze
-            self.onPencilDoubleTap = onPencilDoubleTap
-            self.onPlannerRegionPageRequested = onPlannerRegionPageRequested
-            self.onPencilContactChanged = onPencilContactChanged
+            self.onStrokesCompleted = actions.onStrokesCompleted
+            self.onDrawingChanged = actions.onDrawingChanged
+            self.onConvertStrokesToText = actions.onConvertStrokesToText
+            self.onViewportChanged = actions.onViewportChanged
+            self.onPencilSqueeze = actions.onPencilSqueeze
+            self.onPencilDoubleTap = actions.onPencilDoubleTap
+            self.onPlannerRegionPageRequested = actions.onPlannerRegionPageRequested
+            self.onPencilContactChanged = actions.onPencilContactChanged
         }
 
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
@@ -155,14 +139,14 @@ extension PencilCanvasView {
         }
 
         func updateHandlers(from view: PencilCanvasView) {
-            onStrokesCompleted = view.onStrokesCompleted
-            onDrawingChanged = view.onDrawingChanged
-            onConvertStrokesToText = view.onConvertStrokesToText
-            onViewportChanged = view.onViewportChanged
-            onPencilSqueeze = view.onPencilSqueeze
-            onPencilDoubleTap = view.onPencilDoubleTap
-            onPlannerRegionPageRequested = view.onPlannerRegionPageRequested
-            onPencilContactChanged = view.onPencilContactChanged
+            onStrokesCompleted = view.actions.onStrokesCompleted
+            onDrawingChanged = view.actions.onDrawingChanged
+            onConvertStrokesToText = view.actions.onConvertStrokesToText
+            onViewportChanged = view.actions.onViewportChanged
+            onPencilSqueeze = view.actions.onPencilSqueeze
+            onPencilDoubleTap = view.actions.onPencilDoubleTap
+            onPlannerRegionPageRequested = view.actions.onPlannerRegionPageRequested
+            onPencilContactChanged = view.actions.onPencilContactChanged
         }
 
         func attachSnapshotFlusher(

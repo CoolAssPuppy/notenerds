@@ -4,7 +4,7 @@ import XCTest
 
 final class SystemNotionBrowserBehaviorTests: XCTestCase {
     @MainActor
-    func testAuthorizationUsesANonEphemeralSystemAuthenticationSession() async throws {
+    func testAuthorizationUsesAnEphemeralSystemAuthenticationSession() async throws {
         let session = RecordingWebAuthenticationSession()
         var receivedURL: URL?
         var receivedScheme: String?
@@ -20,7 +20,7 @@ final class SystemNotionBrowserBehaviorTests: XCTestCase {
         XCTAssertTrue(didStart)
         XCTAssertEqual(receivedURL, url)
         XCTAssertNil(receivedScheme)
-        XCTAssertFalse(session.prefersEphemeralWebBrowserSession)
+        XCTAssertTrue(session.prefersEphemeralWebBrowserSession)
         XCTAssertTrue(session.presentationContextProvider === browser)
         XCTAssertEqual(session.startCallCount, 1)
     }

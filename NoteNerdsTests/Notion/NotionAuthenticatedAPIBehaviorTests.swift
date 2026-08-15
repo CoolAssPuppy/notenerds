@@ -51,6 +51,37 @@ final class NotionAuthenticatedAPIBehaviorTests: XCTestCase {
         XCTAssertEqual(refreshCount, 1)
     }
 
+    func testParallelUnauthorizedRequestsShareOneRefresh() async throws {
+        let store = AuthCredentialStore(connection: connection(access: "expired"))
+        let recorder = TokenRecorder()
+        let refresh = RefreshRecorder(
+            store: store,
+            result: connection(access: "rotated"),
+            delayNanoseconds: 40_000_000
+        )
+        let api = NotionRefreshingAPI(
+            credentialStore: store,
+            refresh: { try await refresh.run() },
+            apiFactory: { token in TokenAwareSyncAPI(token: token, recorder: recorder) }
+        )
+
+        async let first = api.uploadFile(
+            data: Data("one".utf8),
+            filename: "one.pdf",
+            contentType: "application/pdf"
+        )
+        async let second = api.uploadFile(
+            data: Data("two".utf8),
+            filename: "two.pdf",
+            contentType: "application/pdf"
+        )
+        let identifiers = try await [first, second]
+        let refreshCount = await refresh.count
+
+        XCTAssertEqual(Set(identifiers), ["11111111-1111-1111-1111-111111111111"])
+        XCTAssertEqual(refreshCount, 1)
+    }
+
     func testMeetingQueryUsesTheSameTokenRefreshPath() async throws {
         let store = AuthCredentialStore(connection: connection(access: "expired"))
         let recorder = TokenRecorder()
@@ -106,15 +137,24 @@ private final class AuthCredentialStore: NotionCredentialStore, @unchecked Senda
 private actor RefreshRecorder {
     private let store: AuthCredentialStore
     private let result: NotionStoredConnection
+    private let delayNanoseconds: UInt64
     private(set) var count = 0
 
-    init(store: AuthCredentialStore, result: NotionStoredConnection) {
+    init(
+        store: AuthCredentialStore,
+        result: NotionStoredConnection,
+        delayNanoseconds: UInt64 = 0
+    ) {
         self.store = store
         self.result = result
+        self.delayNanoseconds = delayNanoseconds
     }
 
-    func run() throws -> NotionStoredConnection {
+    func run() async throws -> NotionStoredConnection {
         count += 1
+        if delayNanoseconds > 0 {
+            try await Task.sleep(nanoseconds: delayNanoseconds)
+        }
         try store.save(result)
         return result
     }

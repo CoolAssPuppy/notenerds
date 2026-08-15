@@ -235,25 +235,10 @@ enum PencilDrawingReconciler {
         transformedBy transform: CGAffineTransform,
         roll: Double
     ) -> StrokeSample {
-        let location = point.location.applying(transform)
-        let horizontalScale = hypot(transform.a, transform.b)
-        let verticalScale = hypot(transform.c, transform.d)
-        return StrokeSample(
-            point: CanvasPoint(x: location.x, y: location.y),
-            pressure: point.force,
-            altitude: point.altitude,
-            azimuth: point.azimuth,
-            roll: roll,
-            timeOffset: point.timeOffset,
-            rendering: StrokeSampleRendering(
-                size: CanvasSize(
-                    width: point.size.width * horizontalScale,
-                    height: point.size.height * verticalScale
-                ),
-                opacity: point.opacity,
-                secondaryScale: point.secondaryScale,
-                threshold: point.threshold
-            )
+        PencilKitStrokeArchiveCodec.sample(
+            from: point,
+            transformedBy: transform,
+            roll: roll
         )
     }
 }

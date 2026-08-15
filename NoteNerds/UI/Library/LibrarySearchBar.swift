@@ -39,6 +39,7 @@ struct LibrarySearchBar: UIViewRepresentable {
     final class Coordinator: NSObject, UITextFieldDelegate {
         @Binding private var text: String
         @Binding private var isFocused: Bool
+        private let debouncer = SearchQueryDebouncer()
 
         init(text: Binding<String>, isFocused: Binding<Bool>) {
             _text = text
@@ -46,7 +47,14 @@ struct LibrarySearchBar: UIViewRepresentable {
         }
 
         @objc func searchTextChanged(_ searchField: UISearchTextField) {
-            text = searchField.text ?? ""
+            let value = searchField.text ?? ""
+            if value.isEmpty {
+                text = value
+                return
+            }
+            debouncer.submit(value) { [weak self] latest in
+                self?.text = latest
+            }
         }
 
         func textFieldShouldReturn(_ textField: UITextField) -> Bool {

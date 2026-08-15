@@ -4,41 +4,53 @@ extension AppModel {
     func enqueueForSync(_ action: SyncedDocumentAction, notebookID: NotebookID) {
         guard let syncEngine else { return }
         syncSequence = nextSyncSequence()
-        do {
-            let change = try syncChangeEncoder.change(
-                for: action,
-                notebookID: notebookID,
-                sequence: syncSequence
-            )
-            seenSyncChangeIDs.insert(change.id)
-            let persistenceOutcomeTask = documentStore == nil
-                ? libraryPersistenceOutcomeTask
-                : documentPersistenceOutcomeTask
-            submitForSync(using: syncEngine) { engine in
+        let sequence = syncSequence
+        let encoder = syncChangeEncoder
+        let persistenceOutcomeTask = documentStore == nil
+            ? libraryPersistenceOutcomeTask
+            : documentPersistenceOutcomeTask
+        submitForSync(using: syncEngine) { [weak self] engine in
+            do {
+                let change = try encoder.change(
+                    for: action,
+                    notebookID: notebookID,
+                    sequence: sequence
+                )
+                await self?.markSeen(change.id)
                 let wasAppliedLocally = await persistenceOutcomeTask?.value ?? false
                 await engine.enqueue(change, wasAppliedLocally: wasAppliedLocally)
+            } catch {
+                await self?.markSyncIssue()
             }
-        } catch {
-            syncIssue = "This change is saved locally and is waiting for iCloud sync."
         }
     }
 
     func enqueueForSync(_ mutation: LibrarySyncMutation, notebookID: NotebookID) {
         guard let syncEngine else { return }
         syncSequence = nextSyncSequence()
-        do {
-            let change = try syncChangeEncoder.change(
-                for: mutation,
-                notebookID: notebookID,
-                sequence: syncSequence
-            )
-            seenSyncChangeIDs.insert(change.id)
-            submitForSync(using: syncEngine) {
-                await $0.enqueue(change, wasAppliedLocally: false)
+        let sequence = syncSequence
+        let encoder = syncChangeEncoder
+        submitForSync(using: syncEngine) { [weak self] engine in
+            do {
+                let change = try encoder.change(
+                    for: mutation,
+                    notebookID: notebookID,
+                    sequence: sequence
+                )
+                await self?.markSeen(change.id)
+                await engine.enqueue(change, wasAppliedLocally: false)
+            } catch {
+                await self?.markSyncIssue()
             }
-        } catch {
-            syncIssue = "This change is saved locally and is waiting for iCloud sync."
         }
+    }
+
+    private func markSeen(_ id: ChangeID) {
+        seenSyncChangeIDs.insert(id)
+    }
+
+    private func markSyncIssue() {
+        syncIssue = "This change is saved locally and is waiting for iCloud sync."
     }
 
     func enqueueAssetForSync(_ asset: DocumentAsset) {
@@ -153,7 +165,7 @@ extension AppModel {
             for checkpoint in checkpoints {
                 do {
                     try await documentStore.save(checkpoint)
-                    journalCounts[checkpoint.notebook.id] = 0
+                    noteCheckpointSaved(for: checkpoint.notebook.id)
                 } catch {
                     presentedError = "Sync history cleanup could not be saved. \(error.localizedDescription)"
                 }
@@ -254,7 +266,7 @@ extension AppModel {
             for checkpoint in checkpoints {
                 do {
                     try await documentStore.save(checkpoint.package)
-                    journalCounts[checkpoint.package.notebook.id] = 0
+                    noteCheckpointSaved(for: checkpoint.package.notebook.id)
                 } catch {
                     didSaveEveryDocument = false
                     failedChangeIDs.formUnion(checkpoint.changeIDs)
@@ -360,7 +372,7 @@ extension AppModel {
         for id in identifiers {
             Task {
                 guard let data = try? await syncEngine.fetchAsset(id) else { return }
-                library.storeAsset(DocumentAsset(id: id, data: data, contentType: "application/octet-stream"))
+                rememberAsset(DocumentAsset(id: id, data: data, contentType: "application/octet-stream"))
                 persistLibrary()
             }
         }

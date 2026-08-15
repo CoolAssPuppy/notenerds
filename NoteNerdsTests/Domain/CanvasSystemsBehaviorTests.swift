@@ -19,6 +19,28 @@ final class CanvasSystemsBehaviorTests: XCTestCase {
         XCTAssertEqual(visible.map(\.id), [near.id])
     }
 
+    func testSearchHighlightsQueryOnlyStrokesInTheVisibleRegion() {
+        let layerID = LayerID()
+        let near = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        var far = DomainFixtures.stroke(id: StrokeID(), layerID: layerID)
+        far.samples = [
+            StrokeSample(
+                point: CanvasPoint(x: 4_000, y: 4_000),
+                pressure: 0.5,
+                altitude: 0.5,
+                azimuth: 0,
+                roll: 0,
+                timeOffset: 0
+            )
+        ]
+        let visible = CanvasSearchHighlights.strokes(
+            [near, far],
+            intersecting: CanvasRect(x: 0, y: 0, width: 200, height: 200)
+        )
+
+        XCTAssertEqual(visible.map(\.id), [near.id])
+    }
+
     func testMinimapMapsContentAndViewportIntoAvailableBounds() {
         let layout = MinimapLayout(
             contentBounds: CanvasRect(x: -1_000, y: -500, width: 2_000, height: 1_000),

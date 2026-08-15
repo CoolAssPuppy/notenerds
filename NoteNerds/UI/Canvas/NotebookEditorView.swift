@@ -89,63 +89,10 @@ struct NotebookEditorView: View {
                 textEditingSession: textEditingSession,
                 isTextToolActive: isTextToolActive,
                 shapePlacementKind: selectedShapeKind,
-                onStrokesCompleted: persistenceCallbacks.onStrokesCompleted,
-                onDrawingChanged: persistenceCallbacks.onDrawingChanged,
-                onConvertStrokesToText: { strokes in
-                    model.convertStrokesToText(Set(strokes.map(\.id)), in: notebook.id, canvasID: currentCanvas.id)
-                },
-                onTransformObjects: { objectIDs, transform, center, transformedStrokes in
-                    model.transformObjects(
-                        CanvasObjectTransformRequest(
-                            objectIDs: objectIDs,
-                            transform: transform,
-                            center: center,
-                            strokeReplacements: transformedStrokes
-                        ),
-                        notebookID: notebook.id,
-                        canvasID: currentCanvas.id
-                    )
-                },
-                onDeleteObjects: { objectIDs in
-                    model.deleteObjects(objectIDs, notebookID: notebook.id, canvasID: currentCanvas.id)
-                },
-                onPasteObjects: { objects in
-                    model.pasteObjects(
-                        objects,
-                        notebookID: notebook.id,
-                        canvasID: currentCanvas.id,
-                        layerID: activeLayer.id
-                    )
-                },
-                onMoveObjectsToLayer: { objectIDs, layerID in
-                    model.moveObjects(
-                        objectIDs,
-                        to: layerID,
-                        notebookID: notebook.id,
-                        canvasID: currentCanvas.id
-                    )
-                },
-                onEditText: { textBlock in
-                    textEditingSession = .editing(textBlock)
-                },
-                onPlaceText: placeText,
-                onPlaceShape: placeShape,
-                onCommitText: commitText,
-                onCancelText: { textEditingSession = nil },
-                onObjectSelectionChanged: { isObjectSelectionActive = $0 },
-                onViewportChanged: { viewport.report($0) },
-                onPencilSqueeze: { response, location in
-                    handlePencilSqueeze(response, location: location)
-                },
-                onPencilDoubleTap: switchDrawingToolAndEraser,
-                onPlannerRegionPageRequested: selectPlannerRegion,
-                onPencilContactChanged: { isActive in
-                    if isActive {
-                        model.pencilContactBegan(on: currentCanvas.id)
-                    } else {
-                        model.pencilContactEnded(on: currentCanvas.id)
-                    }
-                }
+                actions: pencilCanvasActions(
+                    canvasID: targetCanvasID,
+                    persistence: persistenceCallbacks
+                )
             )
             .id(targetCanvasID)
             floatingToolbar
@@ -464,5 +411,53 @@ private extension NotebookEditorView {
             try? await Task.sleep(for: .seconds(2))
             highlightedStrokeIDs = []
         }
+    }
+}
+
+extension NotebookEditorView {
+    func pencilCanvasActions(
+        canvasID: CanvasID,
+        persistence: NotebookEditorPencilPersistenceCallbacks
+    ) -> PencilCanvasActions {
+        let notebookID = notebook.id
+        return PencilCanvasActions(
+            onStrokesCompleted: persistence.onStrokesCompleted,
+            onDrawingChanged: persistence.onDrawingChanged,
+            onConvertStrokesToText: { strokes in
+                model.convertStrokesToText(Set(strokes.map(\.id)), in: notebookID, canvasID: canvasID)
+            },
+            onTransformObjects: { objectIDs, transform, center, strokes in
+                model.transformObjects(
+                    CanvasObjectTransformRequest(
+                        objectIDs: objectIDs,
+                        transform: transform,
+                        center: center,
+                        strokeReplacements: strokes
+                    ),
+                    notebookID: notebookID,
+                    canvasID: canvasID
+                )
+            },
+            onDeleteObjects: { model.deleteObjects($0, notebookID: notebookID, canvasID: canvasID) },
+            onPasteObjects: { objects in
+                model.pasteObjects(objects, notebookID: notebookID, canvasID: canvasID, layerID: activeLayer.id)
+            },
+            onMoveObjectsToLayer: { objectIDs, layerID in
+                model.moveObjects(objectIDs, to: layerID, notebookID: notebookID, canvasID: canvasID)
+            },
+            onEditText: { textEditingSession = .editing($0) },
+            onPlaceText: placeText,
+            onPlaceShape: placeShape,
+            onCommitText: commitText,
+            onCancelText: { textEditingSession = nil },
+            onObjectSelectionChanged: { isObjectSelectionActive = $0 },
+            onViewportChanged: { viewport.report($0) },
+            onPencilSqueeze: { handlePencilSqueeze($0, location: $1) },
+            onPencilDoubleTap: switchDrawingToolAndEraser,
+            onPlannerRegionPageRequested: selectPlannerRegion,
+            onPencilContactChanged: { isActive in
+                if isActive { model.pencilContactBegan(on: canvasID) } else { model.pencilContactEnded(on: canvasID) }
+            }
+        )
     }
 }

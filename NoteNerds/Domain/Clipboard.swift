@@ -10,16 +10,7 @@ struct SelectionClipboardPayload: Codable, Hashable, Sendable {
             rotation: 0,
             translation: offset
         )
-        return objects.map { object in
-            let pastedObject = object.duplicated().applying(transform, around: .zero)
-            guard case let .stroke(sourceStroke) = object,
-                  case let .stroke(pastedStroke) = pastedObject else { return pastedObject }
-            return .stroke(PencilKitStrokeArchiveCodec.translating(
-                sourceStroke,
-                to: pastedStroke,
-                by: offset
-            ))
-        }
+        return objects.map { $0.duplicated().applying(transform, around: .zero) }
     }
 }
 

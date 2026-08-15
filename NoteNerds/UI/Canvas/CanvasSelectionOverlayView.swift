@@ -98,12 +98,15 @@ final class CanvasSelectionOverlayView: UIView, UIGestureRecognizerDelegate {
         guard let data = UIPasteboard.general.data(forPasteboardType: "com.strategicnerds.notenerds.selection"),
               data.count <= 100 * 1_024 * 1_024,
               let payload = try? JSONDecoder().decode(SelectionClipboardPayload.self, from: data) else { return }
-        onPaste(payload.pasted(offset: CanvasPoint(x: 24, y: 24)))
+        onPaste(payload.pastedPreservingStrokeArchives(offset: CanvasPoint(x: 24, y: 24)))
     }
 
     func duplicateSelection() {
         let selectedObjects = objects.filter { selectedIDs.contains($0.id) }
-        onPaste(SelectionClipboardPayload(objects: selectedObjects).pasted(offset: CanvasPoint(x: 24, y: 24)))
+        onPaste(
+            SelectionClipboardPayload(objects: selectedObjects)
+                .pastedPreservingStrokeArchives(offset: CanvasPoint(x: 24, y: 24))
+        )
     }
 
     func deleteSelection() {

@@ -21,9 +21,11 @@ final class LocalLibraryRepositoryBehaviorTests: XCTestCase {
             .appending(path: "Assets", directoryHint: .isDirectory)
             .appending(path: asset.id.rawValue.uuidString)
         let restored = try await repository.load()
+        let loadedAsset = try await repository.loadAsset(id: asset.id, contentType: asset.contentType)
         XCTAssertLessThan(metadata.count, 100_000)
         XCTAssertEqual(try Data(contentsOf: assetURL), asset.data)
-        XCTAssertEqual(restored, library)
+        XCTAssertEqual(restored.asset(id: asset.id)?.data, Data())
+        XCTAssertEqual(loadedAsset?.data, asset.data)
     }
 
     func testSavingAReplacementAssetUpdatesThePersistedBytes() async throws {
@@ -38,7 +40,25 @@ final class LocalLibraryRepositoryBehaviorTests: XCTestCase {
 
         try await repository.save(replacement)
         let restored = try await repository.load()
+        let loadedAsset = try await repository.loadAsset(id: assetID, contentType: "image/png")
 
-        XCTAssertEqual(restored.asset(id: assetID)?.data, Data("new".utf8))
+        XCTAssertEqual(restored.asset(id: assetID)?.data, Data())
+        XCTAssertEqual(loadedAsset?.data, Data("new".utf8))
+    }
+
+    func testLoadRejectsALibraryIndexLargerThanSixtyFourMegabytes() async throws {
+        let directoryURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        let fileURL = directoryURL.appending(path: "library.json")
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        try Data(repeating: 0x20, count: LocalLibraryRepository.maximumLibraryByteCount + 1)
+            .write(to: fileURL)
+        let repository = LocalLibraryRepository(fileURL: fileURL)
+
+        do {
+            _ = try await repository.load()
+            XCTFail("Expected an oversized library index to fail")
+        } catch {
+            XCTAssertEqual(error as? BoundedFileReaderError, .fileTooLarge)
+        }
     }
 }

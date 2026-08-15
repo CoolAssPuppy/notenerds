@@ -1,10 +1,10 @@
 import UIKit
 
 final class CanvasSearchHighlightView: UIView {
-    private let strokes: [Stroke]
+    private let spatialIndex: CanvasSpatialIndex
 
     init(frame: CGRect, strokes: [Stroke]) {
-        self.strokes = strokes
+        spatialIndex = CanvasSpatialIndex(objects: strokes.map(CanvasObject.stroke))
         super.init(frame: frame)
         isOpaque = false
         backgroundColor = .clear
@@ -18,7 +18,10 @@ final class CanvasSearchHighlightView: UIView {
     override func draw(_ rect: CGRect) {
         guard let context = UIGraphicsGetCurrentContext() else { return }
         context.setFillColor(UIColor.systemYellow.withAlphaComponent(0.28).cgColor)
-        for stroke in strokes {
+        let visible = spatialIndex.objects(
+            in: CanvasRect(x: rect.minX, y: rect.minY, width: rect.width, height: rect.height)
+        ).compactMap(\.strokeValue)
+        for stroke in visible {
             let bounds = stroke.bounds
             context.fill(CGRect(
                 x: bounds.minX - 10,

@@ -26,6 +26,7 @@ enum PencilKitStrokeArchiveCodec {
     /// stroke's samples while leaving its archive in place. Those notes are
     /// repaired once when they load instead of being re-checked on every render.
     static func validated(_ stroke: Stroke) -> Stroke {
+        if stroke.samples.isEmpty, stroke.pencilKitArchive != nil { return stroke }
         guard let archive = stroke.pencilKitArchive,
               archive.renderingFingerprint != renderingFingerprint(for: stroke) else { return stroke }
         var repaired = stroke
@@ -52,6 +53,83 @@ enum PencilKitStrokeArchiveCodec {
             CGAffineTransform(translationX: offset.x, y: offset.y)
         )
         return preserving(pencilStroke, in: canonicalStroke)
+    }
+
+    static func samples(from pencilStroke: PKStroke, roll: Double = 0) -> [StrokeSample] {
+        pencilStroke.path.map { point in
+            sample(from: point, transformedBy: pencilStroke.transform, roll: roll)
+        }
+    }
+
+    static func sample(
+        from point: PKStrokePoint,
+        transformedBy transform: CGAffineTransform,
+        roll: Double
+    ) -> StrokeSample {
+        let location = point.location.applying(transform)
+        let horizontalScale = hypot(transform.a, transform.b)
+        let verticalScale = hypot(transform.c, transform.d)
+        return StrokeSample(
+            point: CanvasPoint(x: location.x, y: location.y),
+            pressure: point.force,
+            altitude: point.altitude,
+            azimuth: point.azimuth,
+            roll: roll,
+            timeOffset: point.timeOffset,
+            rendering: StrokeSampleRendering(
+                size: CanvasSize(
+                    width: point.size.width * horizontalScale,
+                    height: point.size.height * verticalScale
+                ),
+                opacity: point.opacity,
+                secondaryScale: point.secondaryScale,
+                threshold: point.threshold
+            )
+        )
+    }
+
+    static func compactingSamplesForStorage(in notebook: Notebook) -> Notebook {
+        mappingStrokes(in: notebook) { stroke in
+            guard stroke.pencilKitArchive != nil, !stroke.samples.isEmpty else { return stroke }
+            return Stroke(
+                id: stroke.id,
+                layerID: stroke.layerID,
+                samples: [],
+                style: stroke.style,
+                createdAt: stroke.createdAt,
+                pencilKitArchive: stroke.pencilKitArchive
+            )
+        }
+    }
+
+    static func restoringSamples(in notebook: Notebook) -> Notebook {
+        mappingStrokes(in: notebook) { stroke in
+            guard stroke.samples.isEmpty, let pencilStroke = self.stroke(for: stroke) else {
+                return stroke
+            }
+            return Stroke(
+                id: stroke.id,
+                layerID: stroke.layerID,
+                samples: samples(from: pencilStroke),
+                style: stroke.style,
+                createdAt: stroke.createdAt,
+                pencilKitArchive: stroke.pencilKitArchive
+            )
+        }
+    }
+
+    private static func mappingStrokes(in notebook: Notebook, update: (Stroke) -> Stroke) -> Notebook {
+        var notebook = notebook
+        for canvasIndex in notebook.canvases.indices {
+            for layerIndex in notebook.canvases[canvasIndex].layers.indices {
+                notebook.canvases[canvasIndex].layers[layerIndex].objects =
+                    notebook.canvases[canvasIndex].layers[layerIndex].objects.map { object in
+                        guard case let .stroke(stroke) = object else { return object }
+                        return .stroke(update(stroke))
+                    }
+            }
+        }
+        return notebook
     }
 
     private static func renderingFingerprint(for stroke: Stroke) -> UInt64 {

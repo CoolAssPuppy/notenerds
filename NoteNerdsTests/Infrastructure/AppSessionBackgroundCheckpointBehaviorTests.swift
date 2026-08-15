@@ -71,6 +71,7 @@ extension AppSessionPersistenceBehaviorTests {
         )
         let model = AppModel(repository: repository, documentStore: store, automaticallyRestore: false)
         model.library = initialLibrary
+        model.scheduleDeferredCheckpoint(for: notebook.id)
         return BackgroundCheckpointScenario(
             repository: repository,
             documentRootURL: documentRootURL,

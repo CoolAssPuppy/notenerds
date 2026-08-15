@@ -24,37 +24,10 @@ struct PencilCanvasView: UIViewRepresentable {
     let textEditingSession: CanvasTextEditingSession?
     let isTextToolActive: Bool
     let shapePlacementKind: RecognizedShapeKind?
-    let onStrokesCompleted: @MainActor ([CompletedPencilStroke]) -> Void
-    let onDrawingChanged: @MainActor (CanvasStrokeEdit, [CompletedPencilStroke]) -> Void
-    let onConvertStrokesToText: @MainActor ([Stroke]) -> Void
-    let onTransformObjects: @MainActor (Set<ObjectID>, SelectionTransform, CanvasPoint, [Stroke]) -> Void
-    let onDeleteObjects: @MainActor (Set<ObjectID>) -> Void
-    let onPasteObjects: @MainActor ([CanvasObject]) -> Void
-    let onMoveObjectsToLayer: @MainActor (Set<ObjectID>, LayerID) -> Void
-    let onEditText: @MainActor (TextBlock) -> Void
-    let onPlaceText: @MainActor (CanvasPoint) -> Void
-    let onPlaceShape: @MainActor (CanvasPoint) -> Void
-    let onCommitText: @MainActor (TextBlock) -> Void
-    let onCancelText: @MainActor () -> Void
-    let onObjectSelectionChanged: @MainActor (Bool) -> Void
-    let onViewportChanged: @MainActor (CanvasRect) -> Void
-    let onPencilSqueeze: @MainActor (PencilSqueezeResponse, CGPoint?) -> Void
-    let onPencilDoubleTap: @MainActor () -> Void
-    let onPlannerRegionPageRequested: @MainActor (Int) -> Void
-    let onPencilContactChanged: @MainActor (Bool) -> Void
+    let actions: PencilCanvasActions
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(
-            activeLayerID: activeLayerID,
-            onStrokesCompleted: onStrokesCompleted,
-            onDrawingChanged: onDrawingChanged,
-            onConvertStrokesToText: onConvertStrokesToText,
-            onViewportChanged: onViewportChanged,
-            onPencilSqueeze: onPencilSqueeze,
-            onPencilDoubleTap: onPencilDoubleTap,
-            onPlannerRegionPageRequested: onPlannerRegionPageRequested,
-            onPencilContactChanged: onPencilContactChanged
-        )
+        Coordinator(activeLayerID: activeLayerID, actions: actions)
     }
 
     func makeUIView(context: Context) -> PKCanvasView {

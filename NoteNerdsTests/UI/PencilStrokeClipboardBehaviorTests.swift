@@ -9,7 +9,7 @@ final class PencilStrokeClipboardBehaviorTests: XCTestCase {
         let source = try archivedMaskedStroke()
         let offset = CanvasPoint(x: 24, y: 24)
         let pastedObjects = SelectionClipboardPayload(objects: [.stroke(source.canonical)])
-            .pasted(offset: offset)
+            .pastedPreservingStrokeArchives(offset: offset)
         let pastedStroke = try XCTUnwrap(pastedObjects.first?.strokeValue)
         let reopenedStroke = try XCTUnwrap(roundTripped([pastedStroke]).first)
         let reopened = try XCTUnwrap(
@@ -31,7 +31,7 @@ final class PencilStrokeClipboardBehaviorTests: XCTestCase {
         let source = try archivedMaskedStroke()
         let pastedStroke = try XCTUnwrap(
             SelectionClipboardPayload(objects: [.stroke(source.canonical)])
-                .pasted(offset: CanvasPoint(x: 24, y: 24))
+                .pastedPreservingStrokeArchives(offset: CanvasPoint(x: 24, y: 24))
                 .first?.strokeValue
         )
         let canvasView = PKCanvasView()

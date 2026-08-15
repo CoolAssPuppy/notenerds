@@ -424,17 +424,14 @@ extension PencilCanvasInputBehaviorTests {
     ) -> PencilCanvasView.Coordinator {
         PencilCanvasView.Coordinator(
             activeLayerID: layerID,
-            onStrokesCompleted: callbacks.onStrokesCompleted,
-            onDrawingChanged: { edit, completedStrokes in
-                onConversionIntents(completedStrokes.map(\.shouldConvertToText))
-                callbacks.onDrawingChanged(edit, completedStrokes)
-                published.fulfill()
-            },
-            onConvertStrokesToText: { _ in },
-            onViewportChanged: { _ in },
-            onPencilSqueeze: { _, _ in },
-            onPencilDoubleTap: {},
-            onPlannerRegionPageRequested: { _ in }
+            actions: .testActions(
+                onStrokesCompleted: callbacks.onStrokesCompleted,
+                onDrawingChanged: { edit, completedStrokes in
+                    onConversionIntents(completedStrokes.map(\.shouldConvertToText))
+                    callbacks.onDrawingChanged(edit, completedStrokes)
+                    published.fulfill()
+                }
+            )
         )
     }
 }

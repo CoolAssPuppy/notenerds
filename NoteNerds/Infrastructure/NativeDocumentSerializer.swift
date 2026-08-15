@@ -69,7 +69,9 @@ struct NativeDocumentSerializer: Sendable {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .millisecondsSince1970
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-        return try encoder.encode(package)
+        var compact = package
+        compact.notebook = PencilKitStrokeArchiveCodec.compactingSamplesForStorage(in: package.notebook)
+        return try encoder.encode(compact)
     }
 
     func decode(_ data: Data) throws -> NativeNotebookPackage {
@@ -81,6 +83,7 @@ struct NativeDocumentSerializer: Sendable {
         }
         let decoded = try decoder.decode(NativeNotebookPackage.self, from: data)
         var package = try validatedPackage(decoded)
+        package.notebook = PencilKitStrokeArchiveCodec.restoringSamples(in: package.notebook)
         package.repairStrokeArchivesIfWrittenBeforeSelfInvalidation(storedVersion: decoded.schemaVersion)
         return package
     }

@@ -48,13 +48,19 @@ struct NativeNotebookArchive {
                     filename: asset.id.rawValue.uuidString
                 )
             }
-        try serializer.encode(package).write(to: url.appending(path: "Document.json"), options: .atomic)
+        try serializer.encode(package).write(
+            to: url.appending(path: "Document.json"),
+            options: [.atomic, .completeFileProtection]
+        )
         try encodedManifest(Manifest(assets: entries)).write(
             to: url.appending(path: "Manifest.json"),
-            options: .atomic
+            options: [.atomic, .completeFileProtection]
         )
         for (asset, entry) in zip(assets.sorted(by: assetOrder), entries) {
-            try asset.data.write(to: assetsURL.appending(path: entry.filename), options: .atomic)
+            try asset.data.write(
+                to: assetsURL.appending(path: entry.filename),
+                options: [.atomic, .completeFileProtection]
+            )
         }
     }
 

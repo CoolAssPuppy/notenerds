@@ -48,6 +48,9 @@ extension AppModel {
         searchIndex.update(notebook)
         selectedNotebookID = notebookID
         persistLibrary()
+        Task { [weak self] in
+            await self?.loadAssets(for: notebook)
+        }
         syncNotebookMetadata(notebookID)
     }
 

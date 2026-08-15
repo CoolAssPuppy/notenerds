@@ -107,16 +107,13 @@ extension PencilCanvasInputBehaviorTests {
         var publishedEdit: CanvasStrokeEdit?
         let coordinator = PencilCanvasView.Coordinator(
             activeLayerID: scenario.originalLayerID,
-            onStrokesCompleted: { completed = $0 },
-            onDrawingChanged: { edit, mixedCompleted in
-                publishedEdit = edit
-                completed = mixedCompleted
-            },
-            onConvertStrokesToText: { _ in },
-            onViewportChanged: { _ in },
-            onPencilSqueeze: { _, _ in },
-            onPencilDoubleTap: {},
-            onPlannerRegionPageRequested: { _ in }
+            actions: .testActions(
+                onStrokesCompleted: { completed = $0 },
+                onDrawingChanged: { edit, mixedCompleted in
+                    publishedEdit = edit
+                    completed = mixedCompleted
+                }
+            )
         )
         coordinator.canonicalStrokes = scenario.baseline
         coordinator.committedNativeDrawing = scenario.baselineDrawing

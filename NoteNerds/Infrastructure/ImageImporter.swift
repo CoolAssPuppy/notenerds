@@ -14,10 +14,16 @@ struct ImportedImage: Sendable {
 
 @MainActor
 struct ImageImporter {
+    static let defaultMaximumByteCount = 50 * 1_024 * 1_024
+    static let defaultMaximumPixelCount = 25_000_000
+
     private let maximumByteCount: Int
     private let maximumPixelCount: Int
 
-    init(maximumByteCount: Int = 512 * 1_024 * 1_024, maximumPixelCount: Int = 100_000_000) {
+    init(
+        maximumByteCount: Int = defaultMaximumByteCount,
+        maximumPixelCount: Int = defaultMaximumPixelCount
+    ) {
         self.maximumByteCount = maximumByteCount
         self.maximumPixelCount = maximumPixelCount
     }

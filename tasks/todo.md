@@ -1,5 +1,24 @@
 # Current work
 
+## Release the review fixes to TestFlight
+
+- [x] Commit the review and journal sidecar work.
+- [x] Push `main`.
+- [x] Run the release preflight against App Store Connect.
+- [x] Build, sign, export, and upload TestFlight build 35.
+- [ ] Confirm Apple marks build 35 valid.
+- [ ] Commit the build number and release record, then push `main`.
+
+### Build 35 review
+
+- Commit `0cafb43` contains the security, performance, cleanliness, and journal
+  sidecar work.
+- Release preflight passed: XcodeGen 2.46.0, signing credentials, iOS 26.0,
+  and universal iPhone and iPad support.
+- Version 1.0.0 build 35 archived, exported, and uploaded without errors.
+  Delivery UUID: `3b522ea3-658c-4f93-827b-93e547dfe58c`.
+- What to Test notes are in `dist/whats-new-35.txt`.
+
 ## Fix the security, performance, and cleanliness review
 
 - [x] S1 Allowlist Notion download hosts
